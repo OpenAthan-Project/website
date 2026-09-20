@@ -1,0 +1,23 @@
+# Dependencies and package-manager state
+node_modules/
+
+# Generated output and caches
+build/
+dist/
+.cache/
+coverage/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs, editors, and operating systems
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

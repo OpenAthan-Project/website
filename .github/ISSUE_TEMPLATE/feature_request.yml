@@ -1,0 +1,32 @@
+name: Feature request
+description: Propose an improvement to the OpenAthan public site or installer
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Homepage or public documentation
+        - Hardware/build guidance
+        - Browser installer
+        - Other project infrastructure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: User problem
+      description: What problem would this solve for OpenAthan users?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+  - type: textarea
+    id: accessibility
+    attributes:
+      label: Accessibility or compatibility impact
+      description: Note any effect on assistive technology, mobile use, browser support, or installation complexity.
