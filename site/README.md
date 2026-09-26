@@ -1,12 +1,9 @@
-# OpenAthan Public Site
+# OpenAthan public site
 
-This directory will contain the source for:
+Astro uses this directory as `srcDir`; `pages/` defines the homepage, installer, setup/recovery guides and 404 page. Shared semantic structure and styles live in `layouts/`, `components/` and `styles.css`. Client-side installer logic lives in the framework-independent TypeScript modules in `../installer/`.
 
-- the OpenAthan homepage at `/`;
-- public project and hardware information;
-- shopping and assembly guidance for the supported reference build;
-- public installation, setup, recovery, and usage documentation.
+The build emits portable static files. The development-only simulator route is omitted from the static build, along with its simulator implementation. There are no remote fonts, trackers or client framework dependencies.
 
-The public site is separate from the device-local interface served from `openathan.local`. It must not become a runtime dependency for standalone Athan operation.
+The public website is separate from the device-hosted setup/settings interface and is never required for daily standalone operation. Users follow a reported unique hostname or IP fallback to the device; prayer settings and activation stay there.
 
-No static-site framework has been selected. The eventual build must emit provider-neutral static assets.
+See the root [README](../README.md) for commands, routes and validation. Original public documentation uses [CC BY 4.0](LICENSE.md); authored website software uses the repository's Apache-2.0 license.

@@ -1,0 +1,35 @@
+{
+  "name": "openathan-website",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node tools/astro.mjs dev",
+    "build": "node tools/astro.mjs build && node tools/check-static.mjs",
+    "preview": "node tools/astro.mjs preview",
+    "check": "node tools/astro.mjs check && tsc --noEmit",
+    "test": "vitest run",
+    "test:browser": "playwright test",
+    "release:import": "node --experimental-strip-types tools/import-release.ts",
+    "format": "prettier --write \"installer/**/*.{ts,json,md}\" \"site/**/*.{astro,css}\" \"tools/*.{mjs,ts}\" \"tests/**/*.ts\" \"*.{json,mjs,ts}\" README.md .github/workflows/website.yml",
+    "format:check": "prettier --check \"installer/**/*.{ts,json,md}\" \"site/**/*.{astro,css}\" \"tools/*.{mjs,ts}\" \"tests/**/*.ts\" \"*.{json,mjs,ts}\" README.md .github/workflows/website.yml"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "astro": "7.3.5",
+    "esptool-js": "0.7.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "@playwright/test": "1.63.0",
+    "@types/node": "24.19.0",
+    "@types/w3c-web-serial": "1.0.8",
+    "prettier": "3.6.2",
+    "prettier-plugin-astro": "0.14.1",
+    "typescript": "6.0.3",
+    "vitest": "5.0.2"
+  }
+}

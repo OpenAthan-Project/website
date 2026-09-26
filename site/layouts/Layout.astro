@@ -1,0 +1,66 @@
+---
+import '../styles.css';
+interface Props {
+  title: string;
+  description?: string;
+  preview?: boolean;
+}
+const {
+  title,
+  description = 'A standalone Athan speaker for your home. Set up OpenAthan and keep prayer at the heart of your day.',
+  preview = false,
+} = Astro.props;
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="referrer" content="no-referrer" />
+    {preview && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content="#163f36" />
+    <title>{title} · OpenAthan</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="brand" href="/" aria-label="OpenAthan home"
+        ><svg width="28" height="32" viewBox="0 0 28 32" fill="none" aria-hidden="true"
+          ><path
+            d="M3 29V15C3 8 9 4 14 2c5 2 11 6 11 13v14M9 29V16c0-4 2-6 5-8 3 2 5 4 5 8v13"
+            stroke="currentColor"
+            stroke-width="2"></path><path d="M1 30h26" stroke="currentColor" stroke-width="2"
+          ></path></svg
+        ><span>OpenAthan</span></a
+      >
+      <nav aria-label="Main navigation">
+        <a href="/guides/setup/" aria-current={path === '/guides/setup/' ? 'page' : undefined}
+          >Setup guide</a
+        ><a
+          href="/guides/recovery/"
+          aria-current={path === '/guides/recovery/' ? 'page' : undefined}>Help & recovery</a
+        ><a
+          class="nav-cta"
+          href="/install/"
+          aria-current={path === '/install/' ? 'page' : undefined}
+          >Set up a device <span aria-hidden="true">↗</span></a
+        >
+      </nav>
+    </header>
+    <main id="main"><slot /></main>
+    <footer class="site-footer wrap">
+      <div>
+        <a class="footer-brand" href="/">OpenAthan</a><p>Built for prayer. Made to be yours.</p>
+      </div><div class="footer-links">
+        <a href="https://github.com/OpenAthan-Project/openathan">Firmware on GitHub</a><a
+          href="https://github.com/OpenAthan-Project/website">Website source</a
+        ><a href="/third-party-notices.txt">Software notices</a><span
+          >Open source · Early development</span
+        >
+      </div>
+    </footer>
+  </body>
+</html>

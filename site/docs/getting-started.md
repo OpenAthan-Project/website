@@ -1,18 +1,9 @@
-# Getting Started
+# Getting started
 
-OpenAthan is not yet ready for end-user installation. The current repositories are early-development scaffolds and no stable firmware image is available.
+The reviewable website preview now includes a [setup guide](../pages/guides/setup.astro), [recovery guide](../pages/guides/recovery.astro) and [browser installer](../../installer/README.md). Run it locally using the [development instructions](../../README.md).
 
-The intended future flow is:
+No installation release is selected. New-device installation remains unavailable until a published firmware release, approved shared audio and physical browser qualification are reviewed. The development simulator lets reviewers explore the complete flow without connecting hardware.
 
-1. Buy the documented M5Stack AtomS3R C126 and Voice Pyramid A167 reference hardware.
-2. Attach the pre-assembled modules using the manufacturer's intended Atom interface.
-3. Connect the AtomS3R to a computer over USB.
-4. Visit `openathan.com/install` in a supported browser.
-5. Install a stable OpenAthan firmware release.
-6. Configure Wi-Fi.
-7. Power the finished device through the documented input.
-8. Open `openathan.local` and complete the setup wizard.
+The supported reference build uses AtomS3R C126 + Pyramid A167. Connect only the Atom USB-C data cable to the computer for installation/setup, then disconnect it and use only the Pyramid bottom power cable for normal operation. Complete prayer settings and activation on the device's returned unique hostname, using its IP fallback if needed.
 
-No soldering, custom PCB assembly, Home Assistant installation, or embedded-development toolchain should be necessary for the supported reference build.
-
-Final assembly, browser compatibility, flashing, power, and recovery instructions must be validated on physical hardware before this page is presented as an installation guide.
+The website consumes firmware releases; it never compiles them. No public deployment or speaker modification is part of this preview milestone.

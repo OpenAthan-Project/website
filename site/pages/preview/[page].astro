@@ -1,0 +1,45 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import InstallerShell from '../../components/InstallerShell.astro';
+export function getStaticPaths() {
+  return import.meta.env.DEV ? [{ params: { page: 'installer' } }] : [];
+}
+---
+
+<Layout title="Installer simulator" preview>
+  <section class="page-heading wrap">
+    <p class="eyebrow">DESIGN & BEHAVIOR PREVIEW</p><h1>Try it before connecting.</h1><p>
+      Walk through the installer with a simulated device.
+    </p>
+  </section>
+  <div class="wrap">
+    <div class="simulator-banner">
+      <div>
+        <strong>Simulator · no hardware access</strong><p>
+          Every device action on this page is simulated. Use made-up passwords.
+        </p>
+      </div><div>
+        <label for="scenario">Preview scenario</label><select id="scenario"
+          ><option value="success">Successful setup</option><option value="denied"
+            >No device selected</option
+          ><option value="busy">USB port busy</option><option value="unknown"
+            >Unrecognized firmware</option
+          ><option value="disconnect">Disconnected during scan</option><option value="wifi-failed"
+            >Incorrect Wi-Fi password</option
+          ><option value="storage-fault">Device storage fault</option><option value="lost-wifi-ack"
+            >Wi-Fi acknowledgement lost</option
+          ><option value="lost-password-ack">Password acknowledgement lost</option><option
+            value="flash-failed">Installation interrupted</option
+          ></select
+        >
+      </div>
+    </div><InstallerShell demo /><div class="under-installer">
+      <a href="/install/">Back to the device installer</a><span
+        >Development preview only · excluded from the static release</span
+      >
+    </div>
+  </div>
+</Layout>
+<script>
+  if (import.meta.env.DEV) await import('../../../installer/demo-entry');
+</script>
