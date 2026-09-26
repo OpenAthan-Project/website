@@ -17,7 +17,7 @@ Open `http://127.0.0.1:4321/`:
 
 | Route                    | Purpose                                                |
 | ------------------------ | ------------------------------------------------------ |
-| `/`                      | Homepage and reference hardware introduction           |
+| `/`                      | Everyday features and an introduction to OpenAthan     |
 | `/install/`              | Release-gated installation and command-only recovery   |
 | `/docs/`                 | Documentation, contribution, issue and license links   |
 | `/docs/getting-started/` | Cable, browser and first-time setup instructions       |
@@ -27,7 +27,7 @@ Open `http://127.0.0.1:4321/`:
 
 The former `/guides/setup/` and `/guides/recovery/` addresses redirect to `/docs/getting-started/` and `/docs/troubleshooting/`. These are ordinary HTML pages with an immediate meta refresh, a canonical URL and a fallback link; they work on static hosting without server redirect rules or JavaScript.
 
-Public documentation describes OpenAthan’s hardware-independent design goal separately from the first reference build, AtomS3R C126 + Pyramid A167. The browser installer and current setup/recovery instructions target that build. `/docs/getting-started/#other-hardware` explains the development path for additional hardware and links the firmware architecture and scheduler reuse documentation. The original SVG cable diagram is reused on the homepage and Getting started page, labelled for the reference build. Navigation and project links remain available on narrow screens. Only links that open a new tab use the ↗ indicator, with an accessible description.
+The homepage introduces automatic Athan playback, phone settings, and stored recordings in plain language, with a link to the parts and setup instructions. Getting started lists the AtomS3R C126 + Pyramid A167 hardware targeted by the browser installer and current setup/recovery instructions, includes the original SVG cable diagram, and explains the need for internet time synchronization after a restart. `/docs/getting-started/#other-hardware` describes the hardware-independent design goal and the development path for additional hardware, with links to the firmware architecture and scheduler reuse documentation. Navigation and project links remain available on narrow screens. Only links that open a new tab use the ↗ indicator, with an accessible description.
 
 Use made-up credentials in the simulator. It exercises complete success and failure flows without a speaker or firmware files. Its route and implementation are excluded from the production static build.
 

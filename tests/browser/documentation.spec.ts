@@ -73,7 +73,7 @@ test('public pages fit the viewport and diagrams explain both cable arrangements
     );
     // Ordinary navigation never promises a new tab. Device handoff links are tested separately.
     await expect(page.locator('a:not([target="_blank"])').filter({ hasText: '↗' })).toHaveCount(0);
-    if (path === '/' || path === '/docs/getting-started/') {
+    if (path === '/docs/getting-started/') {
       await expect(
         page.getByRole('img', { name: /Connect the computer to the Atom/ }),
       ).toBeVisible();

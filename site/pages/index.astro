@@ -1,19 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import CableDiagram from '../components/CableDiagram.astro';
 ---
 
-<Layout title="Software for standalone Athan devices">
+<Layout title="An open-source Athan speaker">
   <section class="hero wrap">
     <div class="hero-copy">
-      <p class="eyebrow">OPENATHAN</p><h1>Open-source software for standalone Athan devices</h1><p
-        class="lede"
-      >
-        OpenAthan calculates prayer times locally and plays stored Athan recordings. Its software is
-        designed to adapt to different hardware, allowing simpler, lower-cost builds and devices
-        with additional capabilities.
-      </p><p class="lede">
-        Our first reference build uses the M5Stack AtomS3R and Pyramid speaker base.
+      <p class="eyebrow">OPENATHAN</p><h1>An open-source Athan speaker</h1><p class="lede">
+        OpenAthan plays the Athan automatically at your prayer times. Set your location, choose your
+        prayer settings, and adjust the volume from your phone.
       </p><div class="actions">
         <a class="button" href="/docs/getting-started/">Getting started</a><a
           class="text-link"
@@ -21,8 +15,7 @@ import CableDiagram from '../components/CableDiagram.astro';
         >
       </div><aside class="notice release-note">
         <strong>In development — first-time installation is not available yet.</strong>
-        <p>USB recovery is available for compatible OpenAthan devices.</p>
-      </aside><a class="text-link" href="/install/">Fix Wi-Fi or password</a>
+      </aside>
     </div>
     <div class="hero-art" aria-hidden="true">
       <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div
@@ -41,36 +34,25 @@ import CableDiagram from '../components/CableDiagram.astro';
   </section>
   <section class="principles wrap" aria-label="OpenAthan features">
     <article>
-      <h2>Standalone operation</h2><p>
-        Your speaker keeps its settings and plays stored recordings without this website or Home
-        Assistant.
+      <h2>Automatic prayer times</h2><p>
+        Prayer times are calculated on the speaker using your location and chosen calculation
+        method.
       </p>
     </article><article>
-      <h2>Local prayer settings</h2><p>
-        Choose your location, calculation method, prayer offsets and volume from the device’s local
-        page.
+      <h2>Settings on your phone</h2><p>
+        Adjust your prayer settings and volume from a browser on your home Wi-Fi.
       </p>
     </article><article>
-      <h2>Open-source software</h2><p>
-        Read the source, report an issue, or contribute code and documentation on GitHub.
+      <h2>No audio streaming</h2><p>
+        Athan recordings are stored on the speaker and played directly.
       </p>
     </article>
   </section>
   <section class="home-hardware wrap" aria-labelledby="supported-hardware">
+    <h2 id="supported-hardware">What you’ll need</h2>
     <div>
-      <h2 id="supported-hardware">First reference build</h2><p>
-        Our first reference build pairs an <a href="https://docs.m5stack.com/en/core/AtomS3R"
-          >M5Stack AtomS3R C126</a
-        >{' '}
-        with the <a href="https://docs.m5stack.com/en/atom/Echo_Pyramid"
-          >Pyramid A167 speaker base</a
-        >. Purchase these modules separately. No soldering or separate home server is needed.
-      </p><a class="text-link" href="/docs/getting-started/#other-hardware">Other hardware</a>
-    </div><a class="docs-card" href="/docs/getting-started/"
-      ><span class="eyebrow">DOCUMENTATION</span><strong>Setup instructions</strong><span
-        >USB connections and device settings for the first reference build</span
-      ></a
-    >
-    <CableDiagram />
+      <p>OpenAthan is software for a speaker you assemble from separately purchased parts.</p>
+      <a class="text-link" href="/docs/getting-started/">See the parts and setup instructions</a>
+    </div>
   </section>
 </Layout>

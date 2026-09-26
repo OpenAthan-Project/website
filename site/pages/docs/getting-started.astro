@@ -5,27 +5,25 @@ import CableDiagram from '../../components/CableDiagram.astro';
 
 <Layout
   title="Getting started"
-  description="Set up the AtomS3R + Pyramid reference build, or learn about adapting OpenAthan to other hardware."
+  description="Find the parts you need, connect your speaker, and set up OpenAthan’s prayer times and volume."
 >
   <article class="docs wrap">
     <div class="docs-heading">
       <p class="eyebrow">DOCUMENTATION</p><h1>Getting started</h1><p class="lede">
-        Hardware, USB connections, and device setup for our first reference build: AtomS3R +
-        Pyramid.
+        The parts you’ll need and the steps to set up your Athan speaker.
       </p>
     </div><div class="docs-body">
-      <p>For a custom build, read about <a href="#other-hardware">other hardware</a>.</p>
       <aside class="notice">
         <strong>In development — first-time installation is not available yet.</strong><p>
           OpenAthan is in early development. The installer will open when tested firmware and
           approved recordings are published. Already have compatible OpenAthan firmware? You can
           <a href="/install/">fix Wi-Fi or your password over USB</a>.
         </p>
-      </aside><h2>First reference build</h2><p>
+      </aside><h2>What you’ll need</h2><p>
         Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
         and a <a href="https://docs.m5stack.com/en/atom/Echo_Pyramid">Pyramid A167</a> speaker base separately.
-        M5Stack calls the A167 “Echo Pyramid”; OpenAthan also refers to it as Voice Pyramid. The browser
-        installer currently targets only this AtomS3R C126 + Pyramid A167 reference build.
+        M5Stack calls the A167 “Echo Pyramid”; OpenAthan also refers to it as Voice Pyramid. These instructions
+        and the browser installer currently support only this combination of parts.
       </p><p>
         You will need a computer with desktop Chrome or Edge, a USB-C <strong>data</strong> cable, and
         a 2.4 GHz WPA2/WPA3 personal Wi-Fi network. A charging-only cable will not work for USB setup.
@@ -63,10 +61,10 @@ import CableDiagram from '../../components/CableDiagram.astro';
         prayer times. Select <strong>Finish setup</strong> to enable the Athan. If the clock has not
         synchronized yet, Athan playback will wait.
       </p><h2>Everyday use</h2><p>
-        Your device calculates prayer times and plays its stored recordings without this website or
-        Home Assistant. Wi-Fi is used to synchronize its clock and open its settings page. After a
-        cold boot it needs a usable time source before it can play the Athan. Keep the local
-        settings page on your trusted home network; do not expose it to the Internet.
+        Your speaker calculates prayer times and plays recordings stored on the device. The current
+        build needs internet access to set its clock after a restart, before it can play the Athan.
+        To open its settings, connect your phone or computer to the same home Wi-Fi. Keep the
+        settings page on your trusted home network; do not make it accessible from the internet.
       </p><div class="actions">
         <a class="button" href="/install/">Open device setup</a><a href="/docs/troubleshooting/"
           >Troubleshooting</a
