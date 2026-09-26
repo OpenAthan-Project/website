@@ -3,24 +3,29 @@ import Layout from '../../layouts/Layout.astro';
 import CableDiagram from '../../components/CableDiagram.astro';
 ---
 
-<Layout title="Getting started">
+<Layout
+  title="Getting started"
+  description="Set up the AtomS3R + Pyramid reference build, or learn about adapting OpenAthan to other hardware."
+>
   <article class="docs wrap">
     <div class="docs-heading">
       <p class="eyebrow">DOCUMENTATION</p><h1>Getting started</h1><p class="lede">
-        What you need, which cable goes where, and how to finish setting up your OpenAthan.
+        Hardware, USB connections, and device setup for our first reference build: AtomS3R +
+        Pyramid.
       </p>
     </div><div class="docs-body">
+      <p>For a custom build, read about <a href="#other-hardware">other hardware</a>.</p>
       <aside class="notice">
         <strong>In development — first-time installation is not available yet.</strong><p>
           OpenAthan is in early development. The installer will open when tested firmware and
           approved recordings are published. Already have compatible OpenAthan firmware? You can
           <a href="/install/">fix Wi-Fi or your password over USB</a>.
         </p>
-      </aside><h2>Supported hardware</h2><p>
+      </aside><h2>First reference build</h2><p>
         Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
         and a <a href="https://docs.m5stack.com/en/atom/Echo_Pyramid">Pyramid A167</a> speaker base separately.
-        M5Stack calls the A167 “Echo Pyramid”; OpenAthan also refers to it as Voice Pyramid. Other ESP32
-        boards are not supported by this installer.
+        M5Stack calls the A167 “Echo Pyramid”; OpenAthan also refers to it as Voice Pyramid. The browser
+        installer currently targets only this AtomS3R C126 + Pyramid A167 reference build.
       </p><p>
         You will need a computer with desktop Chrome or Edge, a USB-C <strong>data</strong> cable, and
         a 2.4 GHz WPA2/WPA3 personal Wi-Fi network. A charging-only cable will not work for USB setup.
@@ -67,6 +72,37 @@ import CableDiagram from '../../components/CableDiagram.astro';
           >Troubleshooting</a
         >
       </div>
+      <h2 id="other-hardware">Other hardware</h2>
+      <p>
+        OpenAthan is designed to keep prayer calculations, scheduling, and settings independent of
+        the hardware. Hardware adapters connect these functions to a device’s audio and controls,
+        allowing contributors to develop lower-cost builds or add capabilities on other hardware.
+      </p>
+      <p>
+        Audio playback is required. Displays, status lights, buttons, touch controls, microphones, a
+        hardware clock, and removable storage are optional capabilities. Standalone operation does
+        not require Home Assistant.
+      </p>
+      <p>
+        Additional hardware integrations require development and testing. The reusable core and
+        ESPHome integration provide a starting point; broader support for optional peripherals is
+        still planned. The browser installer currently targets only our first reference build.
+      </p>
+      <p>For implementation details, see:</p>
+      <ul>
+        <li>
+          <a
+            href="https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/architecture.md"
+            >Firmware architecture and hardware adapters</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://github.com/OpenAthan-Project/openathan/blob/main/firmware/esphome/scheduler/README.md#controls-and-reuse"
+            >Scheduler controls and reuse</a
+          >
+        </li>
+      </ul>
     </div>
   </article>
 </Layout>

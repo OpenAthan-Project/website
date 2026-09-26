@@ -3,14 +3,17 @@ import Layout from '../layouts/Layout.astro';
 import CableDiagram from '../components/CableDiagram.astro';
 ---
 
-<Layout title="Standalone Athan speaker software">
+<Layout title="Software for standalone Athan devices">
   <section class="hero wrap">
     <div class="hero-copy">
-      <p class="eyebrow">OPENATHAN</p><h1>Open-source software for a standalone Athan speaker</h1><p
+      <p class="eyebrow">OPENATHAN</p><h1>Open-source software for standalone Athan devices</h1><p
         class="lede"
       >
-        Build an Athan speaker with separately purchased M5Stack hardware. OpenAthan calculates
-        prayer times locally and plays recordings stored on your device.
+        OpenAthan calculates prayer times locally and plays stored Athan recordings. Its software is
+        designed to adapt to different hardware, allowing simpler, lower-cost builds and devices
+        with additional capabilities.
+      </p><p class="lede">
+        Our first reference build uses the M5Stack AtomS3R and Pyramid speaker base.
       </p><div class="actions">
         <a class="button" href="/docs/getting-started/">Getting started</a><a
           class="text-link"
@@ -55,17 +58,17 @@ import CableDiagram from '../components/CableDiagram.astro';
   </section>
   <section class="home-hardware wrap" aria-labelledby="supported-hardware">
     <div>
-      <h2 id="supported-hardware">Supported hardware</h2><p>
-        The reference build pairs an <a href="https://docs.m5stack.com/en/core/AtomS3R"
+      <h2 id="supported-hardware">First reference build</h2><p>
+        Our first reference build pairs an <a href="https://docs.m5stack.com/en/core/AtomS3R"
           >M5Stack AtomS3R C126</a
         >{' '}
         with the <a href="https://docs.m5stack.com/en/atom/Echo_Pyramid"
           >Pyramid A167 speaker base</a
         >. Purchase these modules separately. No soldering or separate home server is needed.
-      </p>
+      </p><a class="text-link" href="/docs/getting-started/#other-hardware">Other hardware</a>
     </div><a class="docs-card" href="/docs/getting-started/"
       ><span class="eyebrow">DOCUMENTATION</span><strong>Setup instructions</strong><span
-        >Hardware requirements, USB connections, and device settings</span
+        >USB connections and device settings for the first reference build</span
       ></a
     >
     <CableDiagram />

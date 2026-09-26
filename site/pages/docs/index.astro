@@ -4,12 +4,14 @@ import Layout from '../../layouts/Layout.astro';
 
 <Layout
   title="Documentation"
-  description="OpenAthan setup instructions, troubleshooting, source code, and contribution information."
+  description="Setup and troubleshooting for OpenAthan’s first reference build, plus hardware adaptation and contributor documentation."
 >
   <article class="docs wrap">
     <div class="docs-heading">
       <p class="eyebrow">OPENATHAN</p><h1>Documentation</h1>
-      <p class="lede">Hardware requirements, setup instructions, and help with your device.</p>
+      <p class="lede">
+        Set up the first reference build, explore hardware adaptation, or get help with your device.
+      </p>
     </div>
     <div class="docs-body">
       <aside class="notice">
@@ -22,15 +24,19 @@ import Layout from '../../layouts/Layout.astro';
       <div class="docs-cards">
         <a class="docs-card" href="/docs/getting-started/"
           ><strong>Getting started</strong><span
-            >Choose the supported hardware, connect USB, and finish setup on your device.</span
+            >Connect USB and finish setup on the AtomS3R + Pyramid reference build.</span
           ></a
         >
         <a class="docs-card" href="/docs/troubleshooting/"
           ><strong>Troubleshooting</strong><span
-            >Change Wi-Fi, reset your password, or resolve a connection problem.</span
+            >Change Wi-Fi, reset your password, or resolve a connection problem on the reference
+            build.</span
           ></a
         >
       </div>
+      <p>
+        For custom builds, see <a href="/docs/getting-started/#other-hardware">Other hardware</a>.
+      </p>
       <h2 id="contributing">Contributing</h2>
       <p>
         Help improve OpenAthan with bug reports, documentation, or code. Read the contribution
