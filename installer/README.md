@@ -2,7 +2,7 @@
 
 The `/install/` wizard supports two explicit paths: **Install a new device** and **Fix Wi-Fi or password**. Supported reference hardware is M5Stack AtomS3R C126 + Pyramid A167, with an unlocked ESP32-S3 and 8 MiB flash. USB setup targets desktop Chrome and Edge with Web Serial in a secure context. The guides remain available in other browsers.
 
-The current catalog has no release. Installation is disabled before the USB picker. Command-only recovery is implemented, but physical browser qualification remains pending. Review `/preview/installer/` on the development server to exercise the complete wizard safely. Its injected simulator transport cannot reach Web Serial or the flasher; its route and code are excluded from the static build. No firmware or recording fixtures are served.
+The current catalog has no release. Installation is disabled before the USB picker. Command-only recovery is implemented, but physical browser qualification remains pending. Review `/preview/installer/` on the development server to exercise the complete wizard safely. Its injected simulator transport cannot reach Web Serial or the flasher; its route and code are excluded from the static build. Both example addresses are clickable and open `/preview/device/` in a new tab, a clearly labelled local handoff preview. They never navigate to the example hostname or LAN IP. Actual device addresses open the reported local device URL. No firmware or recording fixtures are served.
 
 ## Protocol and session ownership
 

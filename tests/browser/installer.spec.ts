@@ -60,7 +60,7 @@ test('normal installer gates fresh installs before requesting USB access', async
   expect(requests).toBe(0);
 });
 
-test('full new-device simulator completes through verified setup and non-clickable example addresses', async ({
+test('full new-device simulator completes with clickable local handoff previews', async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -82,6 +82,24 @@ test('full new-device simulator completes through verified setup and non-clickab
   expect(
     await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })),
   ).toEqual({ local: 0, session: 0 });
+  for (const address of ['http://openathan-demo.local/', 'http://192.168.1.42/']) {
+    const link = page.getByRole('link', { name: address, exact: true });
+    await expect(link).toHaveAttribute('href', '/preview/device/');
+    const popupPromise = page.waitForEvent('popup');
+    // Verify both pointer and keyboard activation of the two addresses.
+    if (address.includes('.local')) await link.click();
+    else await link.press('Enter');
+    const popup = await popupPromise;
+    await expect(popup).toHaveURL(new URL('/preview/device/', page.url()).href);
+    await expect(popup.getByRole('heading', { name: 'Device settings preview' })).toBeVisible();
+    await expect(popup.getByText('Simulator · no hardware access')).toBeVisible();
+    expect(await popup.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await expect(popup.locator('form, input')).toHaveCount(0);
+    await popup.close();
+    await expect(page.getByRole('heading', { name: 'Ready for device setup' })).toBeVisible();
+  }
   expect(errors).toEqual([]);
 });
 

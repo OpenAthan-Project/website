@@ -22,6 +22,7 @@ Open `http://127.0.0.1:4321/`:
 | `/guides/setup/`      | Cable, browser and first-time setup guide              |
 | `/guides/recovery/`   | Wi-Fi/password and connection troubleshooting          |
 | `/preview/installer/` | Development-only simulator, with no hardware transport |
+| `/preview/device/`    | Local handoff preview opened by simulated device links |
 
 Use made-up credentials in the simulator. It exercises complete success and failure flows without a speaker or firmware files. Its route and implementation are excluded from the production static build.
 

@@ -989,3 +989,17 @@
 .path-grid + p {
   margin-top: 24px;
 }
+
+.address-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding-block: 0.35rem;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.address-link code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
