@@ -13,7 +13,7 @@ async function demo(page: Page, scenario = 'success') {
     });
   });
   await page.goto('/preview/installer/');
-  await expect(page.getByRole('heading', { name: 'How can we help?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Choose a setup option' })).toBeVisible();
   if (scenario !== 'success') await page.getByLabel('Preview scenario').selectOption(scenario);
 }
 async function connect(page: Page, path: 'install' | 'recovery') {
@@ -85,6 +85,7 @@ test('full new-device simulator completes with clickable local handoff previews'
   for (const address of ['http://openathan-demo.local/', 'http://192.168.1.42/']) {
     const link = page.getByRole('link', { name: address, exact: true });
     await expect(link).toHaveAttribute('href', '/preview/device/');
+    await expect(link).toHaveAccessibleDescription('Opens a local preview in a new tab');
     const popupPromise = page.waitForEvent('popup');
     // Verify both pointer and keyboard activation of the two addresses.
     if (address.includes('.local')) await link.click();
@@ -197,7 +198,7 @@ test('interrupted flashing gives a recovery exit', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Installation needs attention' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Disconnect and start again' })).toBeEnabled();
 });
-test('unsupported browsers retain usable guides and keyboard navigation', async ({
+test('unsupported browsers retain usable documentation and keyboard navigation', async ({
   page,
   browserName,
 }) => {
@@ -212,8 +213,8 @@ test('unsupported browsers retain usable guides and keyboard navigation', async 
   await page.getByRole('button', { name: /Fix Wi-Fi or password/ }).click();
   await expect(page.getByText(/For USB setup, open this page on a computer/)).toBeVisible();
   await expect(page.getByRole('button', { name: 'Choose USB device' })).toBeDisabled();
-  await page.goto('/guides/setup/');
-  await expect(page.getByRole('heading', { name: 'A home for the Athan.' })).toBeVisible();
+  await page.goto('/docs/getting-started/');
+  await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible();
   // WebKit follows macOS's default: Option-Tab includes links in keyboard navigation.
   await page.keyboard.press(browserName === 'webkit' ? 'Alt+Tab' : 'Tab');
   await expect(page.getByRole('link', { name: 'Skip to content' })).toBeFocused();

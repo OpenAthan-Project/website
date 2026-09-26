@@ -13,8 +13,8 @@ const isInstaller = Astro.params.page === 'installer';
       <>
         <section class="page-heading wrap">
           <>
-            <p class="eyebrow">DESIGN & BEHAVIOR PREVIEW</p>
-            <h1>Try it before connecting.</h1>
+            <p class="eyebrow">DEVELOPMENT PREVIEW</p>
+            <h1>Installer simulator</h1>
             <p>Walk through the installer with a simulated device.</p>
           </>
         </section>
@@ -60,13 +60,13 @@ const isInstaller = Astro.params.page === 'installer';
         </div>
       </>
     ) : (
-      <article class="guide wrap">
-        <div class="guide-heading">
+      <article class="docs wrap">
+        <div class="docs-heading">
           <p class="eyebrow">SIMULATED DEVICE HANDOFF</p>
           <h1>Device settings preview</h1>
           <p class="lede">This is where setup continues on your speaker.</p>
         </div>
-        <div class="guide-body">
+        <div class="docs-body">
           <aside class="notice">
             <strong>Simulator · no hardware access</strong>
             <p>
@@ -92,7 +92,7 @@ const isInstaller = Astro.params.page === 'installer';
             <a class="button" href="/preview/installer/">
               Return to installer simulator
             </a>
-            <a href="/guides/setup/">Read the setup guide</a>
+            <a href="/docs/getting-started/">Setup instructions</a>
           </div>
         </div>
       </article>

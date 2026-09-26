@@ -7,7 +7,7 @@ interface Props {
 }
 const {
   title,
-  description = 'A standalone Athan speaker for your home. Set up OpenAthan and keep prayer at the heart of your day.',
+  description = 'Open-source software for a standalone Athan speaker. Local prayer calculations and stored recordings on separately purchased hardware.',
   preview = false,
 } = Astro.props;
 const path = Astro.url.pathname;
@@ -37,29 +37,32 @@ const path = Astro.url.pathname;
         ><span>OpenAthan</span></a
       >
       <nav aria-label="Main navigation">
-        <a href="/guides/setup/" aria-current={path === '/guides/setup/' ? 'page' : undefined}
-          >Setup guide</a
-        ><a
-          href="/guides/recovery/"
-          aria-current={path === '/guides/recovery/' ? 'page' : undefined}>Help & recovery</a
-        ><a
+        <a
+          href="/docs/"
+          aria-current={path === '/docs/'
+            ? 'page'
+            : path.startsWith('/docs/')
+              ? 'location'
+              : undefined}>Documentation</a
+        ><a href="https://github.com/OpenAthan-Project/openathan">GitHub</a><a
           class="nav-cta"
           href="/install/"
-          aria-current={path === '/install/' ? 'page' : undefined}
-          >Set up a device <span aria-hidden="true">↗</span></a
+          aria-current={path === '/install/' ? 'page' : undefined}>USB setup</a
         >
       </nav>
     </header>
     <main id="main"><slot /></main>
     <footer class="site-footer wrap">
       <div>
-        <a class="footer-brand" href="/">OpenAthan</a><p>Built for prayer. Made to be yours.</p>
+        <a class="footer-brand" href="/">OpenAthan</a><p>
+          Open-source Athan software · In development
+        </p>
       </div><div class="footer-links">
-        <a href="https://github.com/OpenAthan-Project/openathan">Firmware on GitHub</a><a
-          href="https://github.com/OpenAthan-Project/website">Website source</a
-        ><a href="/third-party-notices.txt">Software notices</a><span
-          >Open source · Early development</span
-        >
+        <a href="/docs/#contributing">Contributing</a><a href="/docs/#report-an-issue"
+          >Report an issue</a
+        ><a href="/docs/#licenses">License</a><a href="https://github.com/OpenAthan-Project/website"
+          >Website source</a
+        ><a href="/third-party-notices.txt">Third-party notices</a>
       </div>
     </footer>
   </body>

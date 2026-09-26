@@ -1,25 +1,27 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import CableDiagram from '../components/CableDiagram.astro';
 ---
 
-<Layout title="Athan, at home">
+<Layout title="Standalone Athan speaker software">
   <section class="hero wrap">
     <div class="hero-copy">
-      <p class="eyebrow"><span class="status-dot"></span> OPEN SOURCE. STANDALONE. YOURS.</p><h1>
-        A familiar call.<br />A place in your day.
-      </h1><p class="lede">
-        Bring the Athan into your home with a small, standalone speaker. Prayer times calculated
-        locally. Recordings stored on your device.
+      <p class="eyebrow">OPENATHAN</p><h1>Open-source software for a standalone Athan speaker</h1><p
+        class="lede"
+      >
+        Build an Athan speaker with separately purchased M5Stack hardware. OpenAthan calculates
+        prayer times locally and plays recordings stored on your device.
       </p><div class="actions">
-        <a class="button" href="/install/">Set up OpenAthan <span aria-hidden="true">↗</span></a><a
+        <a class="button" href="/docs/getting-started/">Getting started</a><a
           class="text-link"
-          href="/guides/setup/">Explore the setup guide</a
+          href="https://github.com/OpenAthan-Project/openathan">View on GitHub</a
         >
-      </div><p class="release-note">
-        Early development · Public installation is not available yet.
-      </p>
+      </div><aside class="notice release-note">
+        <strong>In development — first-time installation is not available yet.</strong>
+        <p>USB recovery is available for compatible OpenAthan devices.</p>
+      </aside><a class="text-link" href="/install/">Fix Wi-Fi or password</a>
     </div>
-    <div class="hero-art" aria-label="A decorative arch with sound waves">
+    <div class="hero-art" aria-hidden="true">
       <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div
         class="arch-art"
       >
@@ -31,38 +33,41 @@ import Layout from '../layouts/Layout.astro';
             stroke-width="4"
             stroke-linecap="round"></path></svg
         >
-      </div><span class="art-caption">A moment to pause.</span><span
-        class="art-number"
-        aria-hidden="true">05 / EVERY DAY</span
-      >
+      </div>
     </div>
   </section>
-  <section class="principles wrap" aria-label="What makes OpenAthan different">
+  <section class="principles wrap" aria-label="OpenAthan features">
     <article>
-      <span class="number">01</span><h2>At home, on its own.</h2><p>
+      <h2>Standalone operation</h2><p>
         Your speaker keeps its settings and plays stored recordings without this website or Home
         Assistant.
       </p>
     </article><article>
-      <span class="number">02</span><h2>Your prayer settings.</h2><p>
+      <h2>Local prayer settings</h2><p>
         Choose your location, calculation method, prayer offsets and volume from the device’s local
         page.
       </p>
     </article><article>
-      <span class="number">03</span><h2>Open by design.</h2><p>
-        Built in the open, with documented hardware and software you can inspect and contribute to.
+      <h2>Open-source software</h2><p>
+        Read the source, report an issue, or contribute code and documentation on GitHub.
       </p>
     </article>
   </section>
-  <section class="home-guide wrap">
+  <section class="home-hardware wrap" aria-labelledby="supported-hardware">
     <div>
-      <p class="eyebrow">THE REFERENCE BUILD</p><h2>Two modules.<br />One place to start.</h2><p>
-        The reference hardware pairs an M5Stack AtomS3R C126 with the Pyramid A167 speaker base. No
-        soldering or separate home server is needed.
+      <h2 id="supported-hardware">Supported hardware</h2><p>
+        The reference build pairs an <a href="https://docs.m5stack.com/en/core/AtomS3R"
+          >M5Stack AtomS3R C126</a
+        >{' '}
+        with the <a href="https://docs.m5stack.com/en/atom/Echo_Pyramid"
+          >Pyramid A167 speaker base</a
+        >. Purchase these modules separately. No soldering or separate home server is needed.
       </p>
-    </div><a class="guide-card" href="/guides/setup/"
-      ><span class="eyebrow">GETTING STARTED</span><strong>From your desk<br />to your home.</strong
-      ><span>Hardware, cables and the setup steps <span aria-hidden="true">↗</span></span></a
+    </div><a class="docs-card" href="/docs/getting-started/"
+      ><span class="eyebrow">DOCUMENTATION</span><strong>Setup instructions</strong><span
+        >Hardware requirements, USB connections, and device settings</span
+      ></a
     >
+    <CableDiagram />
   </section>
 </Layout>

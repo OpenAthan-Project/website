@@ -1,6 +1,6 @@
 # Getting started
 
-The reviewable website preview now includes a [setup guide](../pages/guides/setup.astro), [recovery guide](../pages/guides/recovery.astro) and [browser installer](../../installer/README.md). Run it locally using the [development instructions](../../README.md).
+The reviewable website preview includes [setup instructions](../pages/docs/getting-started.astro), [troubleshooting instructions](../pages/docs/troubleshooting.astro) and a [browser installer](../../installer/README.md). Run it locally using the [development instructions](../../README.md).
 
 No installation release is selected. New-device installation remains unavailable until a published firmware release, approved shared audio and physical browser qualification are reviewed. The development simulator lets reviewers explore the complete flow without connecting hardware.
 

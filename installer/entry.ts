@@ -10,6 +10,6 @@ if (root) {
     mountInstaller(root, new RealService(parsePin(catalog)), usbSupport());
   } catch {
     root.querySelector('[data-panel]')!.textContent =
-      'The installer is temporarily unavailable. Please use the setup and recovery guides.';
+      'The installer is temporarily unavailable. Please use the setup and troubleshooting documentation.';
   }
 }

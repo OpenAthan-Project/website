@@ -8,27 +8,25 @@ import InstallerShell from '../../components/InstallerShell.astro';
   description="Install a new OpenAthan device or recover Wi-Fi and your device password over USB."
 >
   <section class="page-heading wrap">
-    <p class="eyebrow">OPENATHAN / DEVICE SETUP</p><h1>
-      A little setup.<br class="mobile-break" /> A daily connection.
-    </h1><p>Connect your speaker, make it yours, and let it take care of the call.</p>
+    <p class="eyebrow">OPENATHAN / DEVICE SETUP</p><h1>Set up OpenAthan</h1><p>
+      Install a new device or fix Wi-Fi and your device password over USB.
+    </p>
   </section>
   <div class="wrap">
     <InstallerShell /><div class="under-installer">
       <span>AtomS3R C126 + Pyramid A167</span><span>USB setup: desktop Chrome or Edge</span><a
-        href="/guides/recovery/">Connection trouble?</a
+        href="/docs/troubleshooting/">Connection trouble?</a
       >
     </div>{
       import.meta.env.DEV && (
         <div class="preview-link">
           <>
-            <strong>Review the preview</strong>
+            <strong>Installer simulator</strong>
             <p>
               Try installation and recovery with a simulated device. No USB access or firmware files
               are used.
             </p>
-            <a href="/preview/installer/">
-              Open the interactive simulator <span aria-hidden="true">↗</span>
-            </a>
+            <a href="/preview/installer/">Open the interactive simulator</a>
           </>
         </div>
       )

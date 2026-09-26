@@ -48,8 +48,8 @@ export function mountInstaller(
     mutationBlocked = false;
     notify('');
     render(
-      'How can we help?',
-      `<p class="muted">Choose what you need today. Your prayer settings live on your device.</p><div class="path-grid"><button class="path-card" data-action="choose-install"><span class="path-icon" aria-hidden="true">＋</span><strong>Install a new device</strong><span>Start with your AtomS3R and Pyramid.</span><span class="card-link">Start installation <span aria-hidden="true">↗</span></span></button><button class="path-card" data-action="choose-recovery"><span class="path-icon" aria-hidden="true">↻</span><strong>Fix Wi-Fi or password</strong><span>Reconnect an existing OpenAthan.</span><span class="card-link">Open recovery <span aria-hidden="true">↗</span></span></button></div>${!service.installAvailable ? '<div class="notice"><strong>Installation release not available yet.</strong><p>First-time installation will open when a tested firmware release and approved recordings are ready. USB recovery is available for compatible devices.</p></div>' : ''}<p class="small muted">Need a hand? <a href="/guides/setup/">Read the setup guide</a>.</p>`,
+      'Choose a setup option',
+      `<p class="muted">Install a new device or recover an existing one. Your prayer settings live on your device.</p><div class="path-grid"><button class="path-card" data-action="choose-install"><span class="path-icon" aria-hidden="true">＋</span><strong>Install a new device</strong><span>Start with your AtomS3R and Pyramid.</span><span class="card-link">Start installation</span></button><button class="path-card" data-action="choose-recovery"><span class="path-icon" aria-hidden="true">↻</span><strong>Fix Wi-Fi or password</strong><span>Reconnect an existing OpenAthan.</span><span class="card-link">Open recovery</span></button></div>${!service.installAvailable ? '<div class="notice"><strong>Installation release not available yet.</strong><p>First-time installation will open when a tested firmware release and approved recordings are ready. USB recovery is available for compatible devices.</p></div>' : ''}<p class="small muted"><a href="/docs/getting-started/">Setup instructions</a>.</p>`,
       0,
     );
   }
@@ -61,7 +61,7 @@ export function mountInstaller(
         : null);
     render(
       'Connect your device',
-      `<p>Use a <strong>USB data cable</strong> to connect your computer to the <strong>Atom’s USB-C port</strong>. Leave the Pyramid’s bottom power cable unplugged.</p><div class="connection-diagram" aria-label="Computer connects to Atom USB-C. Pyramid bottom power is unplugged."><span>Computer</span><span class="cable" aria-hidden="true"></span><span>Atom USB-C</span></div><p class="small muted">Close other serial tools first. Choose the USB JTAG/serial device in your browser’s connection window.</p>${blocked ? `<div class="notice"><strong>${escape(blocked)}</strong><p>The guides remain available without connecting hardware.</p></div>` : ''}<div class="actions"><button type="button" class="button" data-action="connect" ${blocked ? 'disabled' : ''}>${service.simulated ? 'Connect simulated device' : 'Choose USB device'}</button>${button('Back', 'start', true)}</div>`,
+      `<p>Use a <strong>USB data cable</strong> to connect your computer to the <strong>Atom’s USB-C port</strong>. Leave the Pyramid’s bottom power cable unplugged.</p><div class="connection-diagram" aria-label="Computer connects to Atom USB-C. Pyramid bottom power is unplugged."><span>Computer</span><span class="cable" aria-hidden="true"></span><span>Atom USB-C</span></div><p class="small muted">Close other serial tools first. Choose the USB JTAG/serial device in your browser’s connection window.</p>${blocked ? `<div class="notice"><strong>${escape(blocked)}</strong><p>The documentation remains available without connecting hardware.</p></div>` : ''}<div class="actions"><button type="button" class="button" data-action="connect" ${blocked ? 'disabled' : ''}>${service.simulated ? 'Connect simulated device' : 'Choose USB device'}</button>${button('Back', 'start', true)}</div>`,
       0,
     );
   }
@@ -82,7 +82,7 @@ export function mountInstaller(
       mutationBlocked = true;
       render(
         'The device needs attention',
-        '<p>The device reported a storage fault. Keep its current data and follow the recovery guide before making another change.</p><div class="actions"><a class="button" href="/guides/recovery/">Recovery guide</a>' +
+        '<p>The device reported a storage fault. Keep its current data and follow the troubleshooting instructions before making another change.</p><div class="actions"><a class="button" href="/docs/troubleshooting/">Troubleshooting</a>' +
           button('Disconnect', 'start', true) +
           '</div>',
         current,
@@ -131,7 +131,7 @@ export function mountInstaller(
     const urls = status.urls;
     render(
       'Ready for device setup',
-      `<div class="success-mark" aria-hidden="true">✓</div><p>${path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p><ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li><li>Wait for it to reconnect, then open its settings on the same home network.</li></ol><div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">Sign in as <strong>admin</strong> with the password you chose. Review your location, timezone and timetable, then select <strong>Finish setup</strong>. Athan playback waits until the device has synchronized its clock.</p>${!urls.length ? '<p class="notice">A device address was not returned. Reconnect through USB recovery to read it again.</p>' : ''}<div class="actions">${button('Done', 'start', true)}<a href="/guides/setup/">Setup guide</a></div>`,
+      `<div class="success-mark" aria-hidden="true">✓</div><p>${path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p><ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li><li>Wait for it to reconnect, then open its settings on the same home network.</li></ol>${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">Sign in as <strong>admin</strong> with the password you chose. Review your location, timezone and timetable, then select <strong>Finish setup</strong>. Athan playback waits until the device has synchronized its clock.</p>${!urls.length ? '<p class="notice">A device address was not returned. Reconnect through USB recovery to read it again.</p>' : ''}<div class="actions">${button('Done', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
       3,
     );
   }
@@ -165,7 +165,7 @@ export function mountInstaller(
         }
         render(
           'Check before trying again',
-          `<p>The device may have saved the change before the connection was interrupted. It was <strong>not sent again</strong>.</p><p>${escape(detail)}</p><p>Reconnect and check your device. For an uncertain Wi-Fi change, a connected status may refer to the previous network.</p><div class="actions">${button('Disconnect and start again', 'start')}<a href="/guides/recovery/">Recovery guide</a></div>`,
+          `<p>The device may have saved the change before the connection was interrupted. It was <strong>not sent again</strong>.</p><p>${escape(detail)}</p><p>Reconnect and check your device. For an uncertain Wi-Fi change, a connected status may refer to the previous network.</p><div class="actions">${button('Disconnect and start again', 'start')}<a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
           current,
         );
         notify('The result is uncertain. No automatic retry was made.', true);
@@ -268,7 +268,7 @@ export function mountInstaller(
             'Installation needs attention',
             '<p>Review the result below before any further installation. If writing was verified but setup could not reconnect, use USB recovery.</p><div class="actions">' +
               button('Disconnect and start again', 'start') +
-              '<a href="/guides/recovery/">Recovery guide</a></div>',
+              '<a href="/docs/troubleshooting/">Troubleshooting</a></div>',
             0,
           );
           throw error;

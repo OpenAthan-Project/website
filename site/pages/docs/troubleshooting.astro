@@ -1,0 +1,101 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout title="Troubleshooting">
+  <article class="docs wrap">
+    <div class="docs-heading">
+      <p class="eyebrow">DOCUMENTATION</p><h1>Troubleshooting</h1><p class="lede">
+        Change your Wi-Fi or reset a forgotten device password while keeping your prayer settings.
+      </p>
+    </div><div class="docs-body">
+      <h2>Connect for USB recovery</h2><ol>
+        <li>Unplug the Pyramid’s bottom power cable.</li><li>
+          Connect your computer to the Atom’s USB-C with a data cable.
+        </li><li>
+          Open <a href="/install/">device setup</a> in desktop Chrome or Edge and choose <strong
+            >Fix Wi-Fi or password</strong
+          >.
+        </li>
+      </ol>
+      <p>Then choose the change you need:</p>
+      <ul>
+        <li><a href="#change-wifi">Change Wi-Fi</a></li><li>
+          <a href="#reset-password">Reset your password</a>
+        </li>
+      </ul>
+      <h2 id="change-wifi">Change Wi-Fi</h2>
+      <p>
+        Choose <strong>Change Wi-Fi</strong>. Select your network or enter its name, enter the Wi-Fi
+        password, and select <strong>Save Wi-Fi</strong>. Wait for confirmation before
+        disconnecting. If the result is uncertain, <a href="#uncertain-result"
+          >check the device before trying again</a
+        >.
+      </p>
+      <h2 id="reset-password">Reset your password</h2>
+      <p>
+        Choose <strong>Reset device password</strong>, enter a new device password twice, and select <strong
+          >Save device password</strong
+        >. The old device password is not needed over USB. If no password is set, choose <strong
+          >Create device password</strong
+        >.
+      </p>
+      <p>
+        Wait for confirmation before disconnecting. If confirmation is missing, <a
+          href="#uncertain-result">check the result</a
+        > before attempting another reset.
+      </p><p>
+        Password recovery signs out existing sessions. It does not reinstall firmware, reset prayer
+        settings, or erase playback history.
+      </p><p>
+        After either change, unplug the Atom’s USB cable and reconnect only the Pyramid’s bottom
+        power. Open the device’s settings on the same home network and sign in as <strong
+          >admin</strong
+        >.
+      </p><h2>No device appears</h2><p>
+        Check that your cable transfers data and is connected to the Atom’s port. Close other
+        browser tabs or serial tools using the device. If you cancelled the browser picker, select
+        the connection button again when ready.
+      </p><h2>The port is busy or the connection drops</h2><p>
+        Close other software using the USB port, reconnect the data cable, and start again. Opening
+        or reopening USB has caused temporary Wi-Fi loss on the reference device. Allow time for it
+        to reconnect before checking its local page.
+      </p><h2>The Wi-Fi password did not work</h2><p>
+        Check the network name and password. Use a 2.4 GHz WPA2/WPA3 personal network, rather than a
+        guest sign-in portal or enterprise network. A rejected connection retains the previous saved
+        credentials.
+      </p><h2 id="uncertain-result">The result is uncertain</h2><p>
+        If the connection ends before confirmation, the device may already have saved the change.
+        The installer will not automatically send it again. Reconnect and check status before
+        another change. A connected status alone may describe the previous network; it does not
+        prove an uncertain Wi-Fi change succeeded.
+      </p><p>
+        For a password change, check the reported password revision and try signing in with the
+        password you just chose. If you still cannot sign in after checking the device state, choose <strong
+          >Reset device password</strong
+        > to set a new one.
+      </p><h2>The device reports a storage fault</h2><p>
+        Stop making changes and keep the current data. Record the error text without including
+        passwords and request help through the <a
+          href="https://github.com/OpenAthan-Project/openathan/issues">firmware issue tracker</a
+        >. Do not reinstall as a shortcut to repairing credentials.
+      </p><h2>The settings page will not open</h2><p>
+        Use the device’s exact address, not a generic <code>openathan.local</code>. Try the IP
+        fallback from USB setup. Keep your phone on the same home network; guest-network isolation
+        can prevent access. An IP address may change after reconnecting, so read it again over USB
+        if needed.
+      </p><h2>Installation was interrupted</h2><p>
+        First-time installation is not available yet. If an installation is interrupted, follow the
+        installer’s troubleshooting instructions before trying again. If it says the write was
+        verified but setup could not reconnect, use USB recovery rather than reinstalling. Do not
+        restore an old full-flash backup as routine recovery: it can restore old prayer history.
+      </p><p>
+        The browser installer does not yet support firmware upgrades on existing devices.
+      </p><div class="actions">
+        <a class="button" href="/install/">Open USB recovery</a><a href="/docs/getting-started/"
+          >Setup instructions</a
+        >
+      </div>
+    </div>
+  </article>
+</Layout>

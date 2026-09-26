@@ -4,7 +4,7 @@ export function usbSupport(): string | null {
   if (!window.isSecureContext)
     return 'USB setup needs HTTPS or localhost. Open this page in a secure browser window.';
   if (!navigator.serial?.requestPort)
-    return 'For USB setup, open this page on a computer in Chrome or Edge. You can read the guides on this device.';
+    return 'For USB setup, open this page on a computer in Chrome or Edge. You can read the documentation on this device.';
   return null;
 }
 export async function requestDevicePort(): Promise<SerialPort> {

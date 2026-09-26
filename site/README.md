@@ -1,6 +1,6 @@
 # OpenAthan public site
 
-Astro uses this directory as `srcDir`; `pages/` defines the homepage, installer, setup/recovery guides and 404 page. Shared semantic structure and styles live in `layouts/`, `components/` and `styles.css`. Client-side installer logic lives in the framework-independent TypeScript modules in `../installer/`.
+Astro uses this directory as `srcDir`; `pages/` defines the homepage, installer, documentation and 404 page. `/docs/` links to Getting started, Troubleshooting and project information. The former `/guides/` pages remain as static redirects with fallback links. Shared semantic structure and styles live in `layouts/`, `components/` and `styles.css`. Client-side installer logic lives in the framework-independent TypeScript modules in `../installer/`.
 
 The build emits portable static files. The development-only simulator route is omitted from the static build, along with its simulator implementation. There are no remote fonts, trackers or client framework dependencies.
 

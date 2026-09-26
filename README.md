@@ -15,14 +15,19 @@ npm run dev -- --host 127.0.0.1
 
 Open `http://127.0.0.1:4321/`:
 
-| Route                 | Purpose                                                |
-| --------------------- | ------------------------------------------------------ |
-| `/`                   | Homepage and reference hardware introduction           |
-| `/install/`           | Release-gated installation and command-only recovery   |
-| `/guides/setup/`      | Cable, browser and first-time setup guide              |
-| `/guides/recovery/`   | Wi-Fi/password and connection troubleshooting          |
-| `/preview/installer/` | Development-only simulator, with no hardware transport |
-| `/preview/device/`    | Local handoff preview opened by simulated device links |
+| Route                    | Purpose                                                |
+| ------------------------ | ------------------------------------------------------ |
+| `/`                      | Homepage and reference hardware introduction           |
+| `/install/`              | Release-gated installation and command-only recovery   |
+| `/docs/`                 | Documentation, contribution, issue and license links   |
+| `/docs/getting-started/` | Cable, browser and first-time setup instructions       |
+| `/docs/troubleshooting/` | Wi-Fi/password and connection troubleshooting          |
+| `/preview/installer/`    | Development-only simulator, with no hardware transport |
+| `/preview/device/`       | Local handoff preview opened by simulated device links |
+
+The former `/guides/setup/` and `/guides/recovery/` addresses redirect to `/docs/getting-started/` and `/docs/troubleshooting/`. These are ordinary HTML pages with an immediate meta refresh, a canonical URL and a fallback link; they work on static hosting without server redirect rules or JavaScript.
+
+Public documentation describes the current development status, separately purchased reference hardware and the two USB cable arrangements. The original SVG cable diagram is reused on the homepage and Getting started page. Navigation and project links remain available on narrow screens. Only links that open a new tab use the ↗ indicator, with an accessible description.
 
 Use made-up credentials in the simulator. It exercises complete success and failure flows without a speaker or firmware files. Its route and implementation are excluded from the production static build.
 
