@@ -21,21 +21,13 @@ const path = Astro.url.pathname;
     <meta name="description" content={description} />
     <meta name="referrer" content="no-referrer" />
     {preview && <meta name="robots" content="noindex, nofollow" />}
-    <meta name="theme-color" content="#163f36" />
+    <meta name="theme-color" content="#355e83" />
     <title>{title} · OpenAthan</title>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header wrap">
-      <a class="brand" href="/" aria-label="OpenAthan home"
-        ><svg width="28" height="32" viewBox="0 0 28 32" fill="none" aria-hidden="true"
-          ><path
-            d="M3 29V15C3 8 9 4 14 2c5 2 11 6 11 13v14M9 29V16c0-4 2-6 5-8 3 2 5 4 5 8v13"
-            stroke="currentColor"
-            stroke-width="2"></path><path d="M1 30h26" stroke="currentColor" stroke-width="2"
-          ></path></svg
-        ><span>OpenAthan</span></a
-      >
+      <a class="brand" href="/" aria-label="OpenAthan home">OpenAthan</a>
       <nav aria-label="Main navigation">
         <a
           href="/docs/"
@@ -45,7 +37,6 @@ const path = Astro.url.pathname;
               ? 'location'
               : undefined}>Documentation</a
         ><a href="https://github.com/OpenAthan-Project/openathan">GitHub</a><a
-          class="nav-cta"
           href="/install/"
           aria-current={path === '/install/' ? 'page' : undefined}>USB setup</a
         >
@@ -54,9 +45,7 @@ const path = Astro.url.pathname;
     <main id="main"><slot /></main>
     <footer class="site-footer wrap">
       <div>
-        <a class="footer-brand" href="/">OpenAthan</a><p>
-          Open-source Athan software · In development
-        </p>
+        <a class="footer-brand" href="/">OpenAthan</a>
       </div><div class="footer-links">
         <a href="/docs/#contributing">Contributing</a><a href="/docs/#report-an-issue"
           >Report an issue</a

@@ -27,7 +27,7 @@ Open `http://127.0.0.1:4321/`:
 
 The former `/guides/setup/` and `/guides/recovery/` addresses redirect to `/docs/getting-started/` and `/docs/troubleshooting/`. These are ordinary HTML pages with an immediate meta refresh, a canonical URL and a fallback link; they work on static hosting without server redirect rules or JavaScript.
 
-The homepage introduces automatic Athan playback, phone settings, and stored recordings in plain language, with a link to the parts and setup instructions. Getting started lists the AtomS3R C126 + Pyramid A167 hardware targeted by the browser installer and current setup/recovery instructions, includes the original SVG cable diagram, and explains the need for internet time synchronization after a restart. `/docs/getting-started/#other-hardware` describes the hardware-independent design goal and the development path for additional hardware, with links to the firmware architecture and scheduler reuse documentation. Navigation and project links remain available on narrow screens. Only links that open a new tab use the ↗ indicator, with an accessible description.
+The homepage introduces automatic Athan playback, phone settings, and stored recordings in plain language, with a link to the parts and setup instructions. Getting started lists the AtomS3R C126 + Pyramid A167 hardware targeted by the browser installer and current setup/recovery instructions, includes the original SVG cable diagram, and explains the need for internet time synchronization after a restart. `/docs/getting-started/#other-hardware` describes the hardware-independent design goal and the development path for additional hardware, with links to the firmware architecture and scheduler reuse documentation. The slate-blue design uses a text-only wordmark, a compact project introduction and visible contribution links. Navigation and project links remain available on narrow screens. Only links that open a new tab use the ↗ indicator, with an accessible description.
 
 Use made-up credentials in the simulator. It exercises complete success and failure flows without a speaker or firmware files. Its route and implementation are excluded from the production static build.
 
@@ -47,7 +47,7 @@ npm run test:browser
 
 `dist/` contains ordinary static assets. `npm run preview` serves that build locally. No provider-specific deployment is configured. The build checks local links, release-file integrity and simulator exclusion. Browser tests cover Chromium, desktop WebKit and a narrow WebKit viewport. Browser simulation is not physical USB qualification; Chrome/Edge installation, interruption and preservation acceptance remain required before public launch.
 
-Use `npm run format` when editing the website or installer. Dependencies are version-pinned with a lockfile. The esptool-js adapter loads only after a confirmed new installation with a reviewed release. Astro telemetry is disabled by the project CLI wrapper. The site has no analytics, account service or application backend.
+Use `npm run format` when editing the website or installer. Dependencies are version-pinned with a lockfile. The esptool-js adapter loads only after a confirmed new installation with a reviewed release. Astro telemetry is disabled by the project CLI wrapper. The site has no analytics, account service or application backend. Mukta Malar fonts are hosted locally with their SIL Open Font License. See [DESIGN.md](DESIGN.md) for the visual system.
 
 ## Repository boundary
 

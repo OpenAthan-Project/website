@@ -1,0 +1,380 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T23:44:35.712408Z",
+  "title": "Design System: OpenAthan",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "neutral",
+        "displayName": "Charcoal ink",
+        "tonalRamp": [
+          "oklch(15.00% 0.03064 252.69)",
+          "oklch(26.43% 0.03064 252.69)",
+          "oklch(37.86% 0.03064 252.69)",
+          "oklch(49.29% 0.03064 252.69)",
+          "oklch(60.71% 0.03064 252.69)",
+          "oklch(72.14% 0.03064 252.69)",
+          "oklch(83.57% 0.03064 252.69)",
+          "oklch(95.00% 0.03064 252.69)"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Reading charcoal",
+        "tonalRamp": [
+          "oklch(15.00% 0.02516 250.75)",
+          "oklch(26.43% 0.02516 250.75)",
+          "oklch(37.86% 0.02516 250.75)",
+          "oklch(49.29% 0.02516 250.75)",
+          "oklch(60.71% 0.02516 250.75)",
+          "oklch(72.14% 0.02516 250.75)",
+          "oklch(83.57% 0.02516 250.75)",
+          "oklch(95.00% 0.02516 250.75)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted slate",
+        "tonalRamp": [
+          "oklch(15.00% 0.03173 250.16)",
+          "oklch(26.43% 0.03173 250.16)",
+          "oklch(37.86% 0.03173 250.16)",
+          "oklch(49.29% 0.03173 250.16)",
+          "oklch(60.71% 0.03173 250.16)",
+          "oklch(72.14% 0.03173 250.16)",
+          "oklch(83.57% 0.03173 250.16)",
+          "oklch(95.00% 0.03173 250.16)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "White paper",
+        "tonalRamp": [
+          "oklch(15.00% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95.00% 0.00000 0.00)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Slate blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.07610 247.40)",
+          "oklch(26.43% 0.07610 247.40)",
+          "oklch(37.86% 0.07610 247.40)",
+          "oklch(49.29% 0.07610 247.40)",
+          "oklch(60.71% 0.07610 247.40)",
+          "oklch(72.14% 0.07610 247.40)",
+          "oklch(83.57% 0.07610 247.40)",
+          "oklch(95.00% 0.07610 247.40)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Deep slate",
+        "tonalRamp": [
+          "oklch(15.00% 0.06367 246.16)",
+          "oklch(26.43% 0.06367 246.16)",
+          "oklch(37.86% 0.06367 246.16)",
+          "oklch(49.29% 0.06367 246.16)",
+          "oklch(60.71% 0.06367 246.16)",
+          "oklch(72.14% 0.06367 246.16)",
+          "oklch(83.57% 0.06367 246.16)",
+          "oklch(95.00% 0.06367 246.16)"
+        ]
+      },
+      "panel": {
+        "role": "neutral",
+        "displayName": "Pale blue",
+        "tonalRamp": [
+          "oklch(15.00% 0.00686 247.90)",
+          "oklch(26.43% 0.00686 247.90)",
+          "oklch(37.86% 0.00686 247.90)",
+          "oklch(49.29% 0.00686 247.90)",
+          "oklch(60.71% 0.00686 247.90)",
+          "oklch(72.14% 0.00686 247.90)",
+          "oklch(83.57% 0.00686 247.90)",
+          "oklch(95.00% 0.00686 247.90)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Quiet rule",
+        "tonalRamp": [
+          "oklch(15.00% 0.01397 247.98)",
+          "oklch(26.43% 0.01397 247.98)",
+          "oklch(37.86% 0.01397 247.98)",
+          "oklch(49.29% 0.01397 247.98)",
+          "oklch(60.71% 0.01397 247.98)",
+          "oklch(72.14% 0.01397 247.98)",
+          "oklch(83.57% 0.01397 247.98)",
+          "oklch(95.00% 0.01397 247.98)"
+        ]
+      },
+      "field-border": {
+        "role": "neutral",
+        "displayName": "Field outline",
+        "tonalRamp": [
+          "oklch(15.00% 0.02608 250.22)",
+          "oklch(26.43% 0.02608 250.22)",
+          "oklch(37.86% 0.02608 250.22)",
+          "oklch(49.29% 0.02608 250.22)",
+          "oklch(60.71% 0.02608 250.22)",
+          "oklch(72.14% 0.02608 250.22)",
+          "oklch(83.57% 0.02608 250.22)",
+          "oklch(95.00% 0.02608 250.22)"
+        ]
+      },
+      "warning-bg": {
+        "role": "secondary",
+        "displayName": "Warm amber fill",
+        "tonalRamp": [
+          "oklch(15.00% 0.02252 78.22)",
+          "oklch(26.43% 0.02252 78.22)",
+          "oklch(37.86% 0.02252 78.22)",
+          "oklch(49.29% 0.02252 78.22)",
+          "oklch(60.71% 0.02252 78.22)",
+          "oklch(72.14% 0.02252 78.22)",
+          "oklch(83.57% 0.02252 78.22)",
+          "oklch(95.00% 0.02252 78.22)"
+        ]
+      },
+      "warning-text": {
+        "role": "secondary",
+        "displayName": "Warm amber text",
+        "tonalRamp": [
+          "oklch(15.00% 0.09261 72.86)",
+          "oklch(26.43% 0.09261 72.86)",
+          "oklch(37.86% 0.09261 72.86)",
+          "oklch(49.29% 0.09261 72.86)",
+          "oklch(60.71% 0.09261 72.86)",
+          "oklch(72.14% 0.09261 72.86)",
+          "oklch(83.57% 0.09261 72.86)",
+          "oklch(95.00% 0.09261 72.86)"
+        ]
+      },
+      "error-bg": {
+        "role": "secondary",
+        "displayName": "Muted red fill",
+        "tonalRamp": [
+          "oklch(15.00% 0.01716 35.34)",
+          "oklch(26.43% 0.01716 35.34)",
+          "oklch(37.86% 0.01716 35.34)",
+          "oklch(49.29% 0.01716 35.34)",
+          "oklch(60.71% 0.01716 35.34)",
+          "oklch(72.14% 0.01716 35.34)",
+          "oklch(83.57% 0.01716 35.34)",
+          "oklch(95.00% 0.01716 35.34)"
+        ]
+      },
+      "error-text": {
+        "role": "secondary",
+        "displayName": "Muted red text",
+        "tonalRamp": [
+          "oklch(15.00% 0.12065 31.50)",
+          "oklch(26.43% 0.12065 31.50)",
+          "oklch(37.86% 0.12065 31.50)",
+          "oklch(49.29% 0.12065 31.50)",
+          "oklch(60.71% 0.12065 31.50)",
+          "oklch(72.14% 0.12065 31.50)",
+          "oklch(83.57% 0.12065 31.50)",
+          "oklch(95.00% 0.12065 31.50)"
+        ]
+      },
+      "selection": {
+        "role": "neutral",
+        "displayName": "Blue selection",
+        "tonalRamp": [
+          "oklch(15.00% 0.02079 248.05)",
+          "oklch(26.43% 0.02079 248.05)",
+          "oklch(37.86% 0.02079 248.05)",
+          "oklch(49.29% 0.02079 248.05)",
+          "oklch(60.71% 0.02079 248.05)",
+          "oklch(72.14% 0.02079 248.05)",
+          "oklch(83.57% 0.02079 248.05)",
+          "oklch(95.00% 0.02079 248.05)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "General h1 headings, including homepage and documentation; responsive overrides are in DESIGN.md."
+      },
+      "page-title": {
+        "displayName": "Page title",
+        "purpose": "USB entry page h1."
+      },
+      "heading": {
+        "displayName": "Section heading",
+        "purpose": "Base h2 headings."
+      },
+      "subheading": {
+        "displayName": "Subheading",
+        "purpose": "Base h3 headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text; becomes 18px at 600px and below."
+      },
+      "lede": {
+        "displayName": "Introduction",
+        "purpose": "Documentation introductions; homepage uses a larger contextual variant."
+      },
+      "label": {
+        "displayName": "Field label",
+        "purpose": "Bold labels above form controls, following responsive body size."
+      },
+      "button": {
+        "displayName": "Action label",
+        "purpose": "Bold ordinary action labels; contextual and mobile variants are in DESIGN.md."
+      },
+      "small": {
+        "displayName": "Supporting text",
+        "purpose": "Helper text, footer links and installer support details."
+      },
+      "wordmark": {
+        "displayName": "Text wordmark",
+        "purpose": "OpenAthan brand link; no separate brand symbol."
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [
+      {
+        "name": "compact-grid",
+        "value": "800px"
+      },
+      {
+        "name": "narrow",
+        "value": "600px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "description": "The main action in the current task.",
+      "html": "<button class=\"ds-primary\" type=\"button\">Open recovery</button>",
+      "css": ".ds-primary { font-family: 'Mukta Malar', sans-serif; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 30px; border: 1px solid var(--accent, #355e83); border-radius: 4px; background: var(--accent, #355e83); color: var(--paper, #ffffff); font-size: 1.35rem; font-weight: 700; line-height: 1.35; text-decoration: none; text-align: center; cursor: pointer; } .ds-primary:hover:not(:disabled) { background: var(--accent-hover, #254764); border-color: var(--accent-hover, #254764); color: var(--paper, #ffffff); } .ds-primary:focus-visible { outline: 3px solid var(--accent, #355e83); outline-offset: 4px; } @media (max-width: 600px) { .ds-primary { font-size: 1.15rem; padding-inline: 22px; } }",
+      "refersTo": "button-primary"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "description": "A supporting action such as Back or Find networks.",
+      "html": "<button class=\"ds-secondary\" type=\"button\">Find networks</button>",
+      "css": ".ds-secondary { font-family: 'Mukta Malar', sans-serif; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 30px; border: 1px solid var(--accent, #355e83); border-radius: 4px; background: var(--accent, #355e83); color: var(--paper, #ffffff); font-size: 1.35rem; font-weight: 700; line-height: 1.35; text-decoration: none; text-align: center; cursor: pointer; } .ds-secondary:hover:not(:disabled) { background: var(--accent-hover, #254764); border-color: var(--accent-hover, #254764); color: var(--paper, #ffffff); } .ds-secondary:focus-visible { outline: 3px solid var(--accent, #355e83); outline-offset: 4px; } .ds-secondary { background: var(--paper, #ffffff); color: var(--accent, #355e83); } .ds-secondary:hover:not(:disabled) { background: var(--panel, #eff3f7); color: var(--accent-hover, #254764); } @media (max-width: 600px) { .ds-secondary { font-size: 1.15rem; padding-inline: 22px; } }",
+      "refersTo": "button-secondary"
+    },
+    {
+      "name": "Unavailable action",
+      "kind": "button",
+      "description": "Disabled primary and secondary controls retain a distinct pale fill.",
+      "html": "<button class=\"ds-disabled\" type=\"button\" disabled>Installation unavailable</button>",
+      "css": ".ds-disabled { font-family: 'Mukta Malar', sans-serif; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 30px; border: 1px solid var(--accent, #355e83); border-radius: 4px; background: var(--accent, #355e83); color: var(--paper, #ffffff); font-size: 1.35rem; font-weight: 700; line-height: 1.35; text-decoration: none; text-align: center; cursor: pointer; } .ds-disabled:hover:not(:disabled) { background: var(--accent-hover, #254764); border-color: var(--accent-hover, #254764); color: var(--paper, #ffffff); } .ds-disabled:focus-visible { outline: 3px solid var(--accent, #355e83); outline-offset: 4px; } .ds-disabled:disabled { background: var(--panel, #eff3f7); color: var(--muted, #526171); border-color: var(--field-border, #7b8896); cursor: not-allowed; } @media (max-width: 600px) { .ds-disabled { font-size: 1.15rem; padding-inline: 22px; } }",
+      "refersTo": "button-disabled"
+    },
+    {
+      "name": "Text field",
+      "kind": "input",
+      "description": "A full-width field with a preceding bold label.",
+      "html": "<label class=\"ds-label\" for=\"ds-network\">Network name</label><input class=\"ds-input\" id=\"ds-network\" type=\"text\" value=\"Home Wi-Fi\" />",
+      "css": ".ds-label { font-family: 'Mukta Malar', sans-serif; display: block; color: var(--text, #38434f); font-size: 20px; line-height: 1.45; font-weight: 700; margin: 20px 0 5px; } .ds-input { font-family: 'Mukta Malar', sans-serif; display: block; width: 100%; max-width: 760px; min-height: 48px; padding: 10px 14px; border: 2px solid var(--field-border, #7b8896); border-radius: 4px; background: var(--paper, #ffffff); color: var(--text, #38434f); font-size: 20px; line-height: 1.45; caret-color: var(--accent, #355e83); } .ds-input:disabled { background: var(--panel, #eff3f7); } .ds-input:focus-visible { outline: 3px solid var(--accent, #355e83); outline-offset: 4px; } @media (max-width: 600px) { .ds-label, .ds-input { font-size: 18px; } }",
+      "refersTo": "input"
+    },
+    {
+      "name": "Main navigation",
+      "kind": "nav",
+      "description": "Visible links with a current-page or current-section underline.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><a href=\"/docs/\" aria-current=\"page\">Documentation</a><a href=\"https://github.com/OpenAthan-Project/openathan\">GitHub</a><a href=\"/install/\">USB setup</a></nav>",
+      "css": ".ds-nav { font-family: 'Mukta Malar', sans-serif; display: flex; align-items: center; gap: 32px; font-size: 1.2rem; line-height: 1.45; } .ds-nav a { padding-block: 12px; color: var(--accent, #355e83); text-decoration: none; text-underline-offset: 0.16em; text-decoration-thickness: 1px; } .ds-nav a[aria-current], .ds-nav a:hover { text-decoration: underline; } .ds-nav a:hover { color: var(--accent-hover, #254764); text-decoration-thickness: 2px; } .ds-nav a:focus-visible { outline: 3px solid var(--accent, #355e83); outline-offset: 4px; } @media (max-width: 800px) { .ds-nav { gap: 20px; } } @media (max-width: 600px) { .ds-nav { width: 100%; justify-content: space-between; gap: 12px; font-size: 1.05rem; } .ds-nav a { padding-block: 8px; } }"
+    },
+    {
+      "name": "Supporting panel",
+      "kind": "card",
+      "description": "Flat supporting content, such as setup help or contribution guidance.",
+      "html": "<aside class=\"ds-panel\"><h3>Before you connect</h3><p>This installer supports <strong>AtomS3R C126 + Pyramid A167</strong>.</p></aside>",
+      "css": ".ds-panel { font-family: 'Mukta Malar', sans-serif; padding: 24px; background: var(--panel, #eff3f7); color: var(--text, #38434f); font-size: 20px; line-height: 1.45; } .ds-panel h3 { margin: 0 0 10px; color: var(--ink, #202c3a); font-size: 1.8rem; font-weight: 700; line-height: 1.12; } .ds-panel p { margin: 0 0 16px; } .ds-panel p:last-child { margin-bottom: 0; } .ds-panel strong { font-weight: 700; } @media (max-width: 600px) { .ds-panel { font-size: 18px; } }",
+      "refersTo": "supporting-panel"
+    },
+    {
+      "name": "Availability notice",
+      "kind": "custom",
+      "description": "An amber notice that explains availability or a caution.",
+      "html": "<aside class=\"ds-notice\"><strong>Installation release not available yet.</strong><p>First-time installation will open when a tested firmware release and approved recordings are ready.</p></aside>",
+      "css": ".ds-notice { font-family: 'Mukta Malar', sans-serif; margin: 20px 0; padding: 16px 20px; border-radius: 4px; background: var(--warning-bg, #fff5e6); color: var(--warning-text, #805719); font-size: 20px; line-height: 1.45; } .ds-notice strong { font-weight: 700; } .ds-notice p { margin: 4px 0 0; color: var(--text, #38434f); } @media (max-width: 600px) { .ds-notice { font-size: 18px; } }",
+      "refersTo": "notice"
+    },
+    {
+      "name": "Documentation destination",
+      "kind": "custom",
+      "description": "A full-width reading link with a title, description and bottom rule.",
+      "html": "<a class=\"ds-doc-link\" href=\"/docs/getting-started/\"><strong>Getting started</strong><span>Find the parts you need and follow the setup instructions.</span></a>",
+      "css": ".ds-doc-link { font-family: 'Mukta Malar', sans-serif; display: block; padding-bottom: 20px; border-bottom: 1px solid var(--line, #d6dee6); color: var(--accent, #355e83); text-decoration: none; font-size: 20px; line-height: 1.45; } .ds-doc-link strong { display: block; font-size: 1.8rem; font-weight: 700; line-height: 1.15; text-decoration: underline; text-underline-offset: 0.16em; } .ds-doc-link span { display: block; color: var(--text, #38434f); margin-top: 8px; } .ds-doc-link:hover { color: var(--accent-hover, #254764); text-decoration-thickness: 2px; } .ds-doc-link:focus-visible { outline: 3px solid var(--accent, #355e83); outline-offset: 4px; } @media (max-width: 600px) { .ds-doc-link strong { font-size: 1.6rem; } } @media (max-width: 600px) { .ds-doc-link { font-size: 18px; } }"
+    },
+    {
+      "name": "Uncertain feedback",
+      "kind": "custom",
+      "description": "A polite status message explaining that the result needs checking.",
+      "html": "<div class=\"ds-uncertain\" role=\"status\" aria-live=\"polite\" aria-atomic=\"true\">The device\u2019s current status could not be confirmed. Reconnect through recovery to check it before making another change.</div>",
+      "css": ".ds-uncertain { font-family: 'Mukta Malar', sans-serif; margin: 20px 0; padding: 14px 18px; border-radius: 4px; background: var(--warning-bg, #fff5e6); color: var(--warning-text, #805719); font-size: 20px; line-height: 1.45; overflow-wrap: anywhere; } @media (max-width: 600px) { .ds-uncertain { font-size: 18px; } }",
+      "refersTo": "feedback-uncertain"
+    },
+    {
+      "name": "Error feedback",
+      "kind": "custom",
+      "description": "A polite status message with a concrete recovery instruction.",
+      "html": "<div class=\"ds-error\" role=\"status\" aria-live=\"polite\" aria-atomic=\"true\">The device disconnected. Reconnect the USB data cable and start again.</div>",
+      "css": ".ds-error { font-family: 'Mukta Malar', sans-serif; margin: 20px 0; padding: 14px 18px; border-radius: 4px; background: #fff0ec; color: #8a3426; font-size: 20px; line-height: 1.45; overflow-wrap: anywhere; } @media (max-width: 600px) { .ds-error { font-size: 18px; } }",
+      "refersTo": "feedback-error"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Community Bulletin",
+    "overview": "OpenAthan is a welcoming, practical open-source project. Its website uses generous humanist type, a white canvas and quiet rules to make project information, documentation and setup tasks easy to find. The text-only wordmark gives the project a clear identity without a separate symbol or decorative imagery.\n\nCharcoal carries the reading hierarchy; slate blue identifies links and actions. Pale blue panels group supporting information, while amber calls attention to availability and uncertain outcomes. Pages remain flat and direct, with visible contribution paths and space for useful explanations.",
+    "keyCharacteristics": [
+      "A text-only OpenAthan wordmark and one humanist sans-serif family.",
+      "Charcoal reading text, slate-blue actions and a white canvas.",
+      "Fine rules and pale supporting panels instead of shadows.",
+      "Explicit page, section and task headings with narrow-screen layouts."
+    ],
+    "rules": [
+      {
+        "name": "The Contrast Rule",
+        "body": "Use the darker field outline for controls and the lighter rule for noninteractive separators.",
+        "section": "colors"
+      },
+      {
+        "name": "The Wordmark Rule",
+        "body": "Render OpenAthan as text in the established bold sans-serif; do not add a separate brand symbol.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Surface Rule",
+        "body": "Preserve hierarchy with type, spacing, rules and tonal panels; keep these components free of decorative shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use the text-only wordmark and the self-hosted regular/bold type family.",
+      "Do give supporting content pale panels and primary reading content white space.",
+      "Do preserve visible keyboard focus, explanatory feedback and responsive heading hierarchy.",
+      "Do distinguish availability notices, errors and uncertain outcomes with words as well as color.",
+      "Do keep functional connection diagrams close to the instructions they explain."
+    ],
+    "donts": [
+      "Don't add a symbol logo, decorative hero imagery or a competing display typeface.",
+      "Don't replace field outlines with the low-contrast separator color.",
+      "Don't add decorative shadows, pill controls or animated page transitions to these components.",
+      "Don't hide the release gate or style an unavailable installer action as enabled.",
+      "Don't use visual design or simulator behavior as evidence of physical installer qualification."
+    ]
+  }
+}

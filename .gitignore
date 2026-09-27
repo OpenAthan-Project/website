@@ -26,3 +26,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local design exploration and review captures
+.impeccable/*
+!.impeccable/design.json

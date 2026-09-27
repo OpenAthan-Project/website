@@ -19,7 +19,7 @@ async function demo(page: Page, scenario = 'success') {
 async function connect(page: Page, path: 'install' | 'recovery') {
   await page
     .getByRole('button', {
-      name: path === 'install' ? /Install a new device/ : /Fix Wi-Fi or password/,
+      name: path === 'install' ? /Install a new device/ : 'Open recovery',
     })
     .click();
   await page.getByRole('button', { name: 'Connect simulated device' }).click();
@@ -55,8 +55,8 @@ test('normal installer gates fresh installs before requesting USB access', async
   await expect(
     page.getByText('Installation release not available yet.', { exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: /Install a new device/ }).click();
-  await expect(page.getByRole('button', { name: 'Choose USB device' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Installation unavailable' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Choose USB device' })).toHaveCount(0);
   expect(requests).toBe(0);
 });
 
@@ -210,9 +210,11 @@ test('unsupported browsers retain usable documentation and keyboard navigation',
     }
   });
   await page.goto('/install/');
-  await page.getByRole('button', { name: /Fix Wi-Fi or password/ }).click();
+  await expect(page.getByRole('heading', { name: 'Use a computer for USB setup' })).toBeVisible();
   await expect(page.getByText(/For USB setup, open this page on a computer/)).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Choose USB device' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: /Open recovery|Choose USB device/ })).toHaveCount(
+    0,
+  );
   await page.goto('/docs/getting-started/');
   await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible();
   // WebKit follows macOS's default: Option-Tab includes links in keyboard navigation.
@@ -224,7 +226,7 @@ test('unsupported browsers retain usable documentation and keyboard navigation',
 test('installer layout fits the viewport and moves focus with the step', async ({ page }) => {
   await demo(page);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.getByRole('button', { name: /Fix Wi-Fi or password/ }).click();
+  await page.getByRole('button', { name: 'Open recovery' }).click();
   await expect(page.getByRole('heading', { name: 'Connect your device' })).toBeFocused();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

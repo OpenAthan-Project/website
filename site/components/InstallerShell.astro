@@ -10,35 +10,13 @@ const { demo = false } = Astro.props;
   data-real-installer={!demo || undefined}
   data-demo-installer={demo || undefined}
 >
-  <aside class="installer-sidebar" aria-label="Setup progress">
-    <p class="eyebrow">SETUP STEPS</p>
-    <ol class="steps">
-      <li data-step>
-        <span>01</span><div><strong>Connect</strong><small>Your device and computer</small></div>
-      </li>
-      <li data-step>
-        <span>02</span><div><strong>Wi-Fi</strong><small>Join your home network</small></div>
-      </li>
-      <li data-step>
-        <span>03</span><div><strong>Password</strong><small>Protect your settings</small></div>
-      </li>
-      <li data-step>
-        <span>04</span><div><strong>Finish setup</strong><small>Review prayer settings</small></div>
-      </li>
-    </ol>
-    <div class="sidebar-note">
-      <span class="tiny-arch" aria-hidden="true">⌒</span><p>
-        Once set up, your device calculates prayer times and plays its stored Athan recordings on
-        its own.
-      </p><a href="/docs/getting-started/">Setup instructions</a>
-    </div>
-  </aside>
   <section class="installer-panel" aria-label="Device setup">
+    <div class="installer-context" data-context hidden></div>
     <div data-message class="feedback" role="status" aria-live="polite" aria-atomic="true" hidden>
     </div>
     <div data-panel>
       <h2>Set up OpenAthan</h2><p>
-        Enable JavaScript to use the USB installer. The <a href="/docs/getting-started/"
+        Enable JavaScript to use USB setup. The <a href="/docs/getting-started/"
           >setup instructions</a
         > and <a href="/docs/troubleshooting/">troubleshooting documentation</a> remain available.
       </p>

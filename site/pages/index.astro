@@ -5,54 +5,57 @@ import Layout from '../layouts/Layout.astro';
 <Layout title="An open-source Athan speaker">
   <section class="hero wrap">
     <div class="hero-copy">
-      <p class="eyebrow">OPENATHAN</p><h1>An open-source Athan speaker</h1><p class="lede">
+      <h1>An open-source Athan speaker</h1><p class="lede">
         OpenAthan plays the Athan automatically at your prayer times. Set your location, choose your
         prayer settings, and adjust the volume from your phone.
-      </p><div class="actions">
+      </p><aside class="notice release-note">
+        <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"
+          ><circle cx="16" cy="16" r="15" fill="currentColor"></circle><path
+            d="M16 8v10m0 5v1"
+            stroke="white"
+            stroke-width="3"
+            stroke-linecap="round"></path></svg
+        ><strong>In development — first-time installation is not available yet.</strong>
+      </aside><div class="actions">
         <a class="button" href="/docs/getting-started/">Getting started</a><a
           class="text-link"
           href="https://github.com/OpenAthan-Project/openathan">View on GitHub</a
         >
-      </div><aside class="notice release-note">
-        <strong>In development — first-time installation is not available yet.</strong>
-      </aside>
-    </div>
-    <div class="hero-art" aria-hidden="true">
-      <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div
-        class="arch-art"
-      >
-        <svg viewBox="0 0 180 110" aria-hidden="true"
-          ><path
-            d="M15 55h14m12-13v26m13-40v54m13-54v54m13-68v82m13-59v36m13-45v54m13-67v80m13-67v54m13-40v26m13-20v14"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="4"
-            stroke-linecap="round"></path></svg
-        >
       </div>
     </div>
   </section>
-  <section class="principles wrap" aria-label="OpenAthan features">
-    <article>
-      <h2>Automatic prayer times</h2><p>
-        Prayer times are calculated on the speaker using your location and chosen calculation
-        method.
-      </p>
-    </article><article>
-      <h2>Settings on your phone</h2><p>
-        Adjust your prayer settings and volume from a browser on your home Wi-Fi.
-      </p>
-    </article><article>
-      <h2>No audio streaming</h2><p>
-        Athan recordings are stored on the speaker and played directly.
-      </p>
-    </article>
-  </section>
-  <section class="home-hardware wrap" aria-labelledby="supported-hardware">
-    <h2 id="supported-hardware">What you’ll need</h2>
-    <div>
-      <p>OpenAthan is software for a speaker you assemble from separately purchased parts.</p>
-      <a class="text-link" href="/docs/getting-started/">See the parts and setup instructions</a>
-    </div>
-  </section>
+  <div class="home-content wrap">
+    <section class="principles" aria-label="OpenAthan features">
+      <article>
+        <h2>Automatic prayer times</h2><p>
+          Prayer times are calculated on the speaker using your location and chosen calculation
+          method.
+        </p>
+      </article><article>
+        <h2>Settings on your phone</h2><p>
+          Adjust your prayer settings and volume from a browser on your home Wi-Fi.
+        </p>
+      </article><article>
+        <h2>No audio streaming</h2><p>
+          Athan recordings are stored on the speaker and played directly.
+        </p>
+      </article>
+    </section>
+    <aside class="home-contribute" aria-labelledby="contribute-title">
+      <h2 id="contribute-title">Help improve OpenAthan</h2><p>
+        Contribute documentation, report a problem, or help with the code.
+      </p><div class="inline-links">
+        <a href="/docs/#contributing">Contributing</a><a href="/docs/#report-an-issue"
+          >Report an issue</a
+        >
+      </div>
+    </aside>
+    <section class="home-hardware" aria-labelledby="supported-hardware">
+      <h2 id="supported-hardware">What you’ll need</h2>
+      <div>
+        <p>OpenAthan is software for a speaker you assemble from separately purchased parts.</p>
+        <a class="text-link" href="/docs/getting-started/">See the parts and setup instructions</a>
+      </div>
+    </section>
+  </div>
 </Layout>

@@ -29,7 +29,9 @@ test('documentation and project navigation work with the keyboard on every viewp
   await documentation.focus();
   await documentation.press('Enter');
   await expect(page).toHaveURL(/\/docs\/$/);
-  const troubleshooting = page.getByRole('link', { name: /^Troubleshooting/ });
+  const troubleshooting = page
+    .locator('.docs-cards')
+    .getByRole('link', { name: /^Troubleshooting/ });
   await troubleshooting.focus();
   await troubleshooting.press('Enter');
   await expect(page).toHaveURL(/\/docs\/troubleshooting\/$/);
