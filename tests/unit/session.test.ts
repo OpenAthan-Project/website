@@ -132,3 +132,26 @@ describe('one owner, no mutation retries', () => {
     await session.close();
   });
 });
+
+it('keeps the 40-second Wi-Fi deadline after a short discovery timeout', async () => {
+  vi.useFakeTimers();
+  const port = new Port(),
+    session = new ProvisioningSession(port);
+  const identity = session.identify(5000).catch((e: unknown) => e);
+  await vi.advanceTimersByTimeAsync(5000);
+  expect(await identity).toBeInstanceOf(Error);
+  let settled = false;
+  const save = session
+    .wifi('home', 'test password')
+    .catch((e: unknown) => e)
+    .finally(() => {
+      settled = true;
+    });
+  await vi.advanceTimersByTimeAsync(39999);
+  expect(settled).toBe(false);
+  await vi.advanceTimersByTimeAsync(1);
+  expect(await save).toBeInstanceOf(UncertainOutcome);
+  expect(port.writes).toHaveLength(2);
+  await expect(session.wifi('home', 'test password')).rejects.toThrow('Reconnect');
+  await session.close();
+});

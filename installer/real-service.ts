@@ -25,16 +25,19 @@ export class RealService implements InstallerService {
     await this.close();
     this.port = await requestDevicePort();
     const session = await this.open();
+    const discoveryDeadline = performance.now() + 10_000;
     let recognized = false;
     try {
       // The extension is a second recognition signal if the standard info read fails.
       try {
-        await session.identify();
+        await session.identify(5_000);
         recognized = true;
       } catch {
         /* Try read-only extension status below. */
       }
-      const status = await session.status();
+      const remaining = discoveryDeadline - performance.now();
+      if (remaining <= 0) throw new Error('Device discovery timed out.');
+      const status = await session.status(remaining);
       recognized = true;
       this.newDeviceConfirmedPath = false;
       return { kind: 'existing', status };

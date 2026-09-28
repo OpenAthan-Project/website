@@ -115,7 +115,7 @@ export class ProvisioningSession {
     extension: boolean,
     command: number,
     fields: readonly string[] = [],
-    options: { scan?: boolean; mutation?: boolean } = {},
+    options: { scan?: boolean; mutation?: boolean; timeoutMs?: number } = {},
   ): Promise<string[][]> {
     if (this.stopped) throw new Error('Connect the device first.');
     if (this.pending) throw new Error('Another device action is still running.');
@@ -131,7 +131,7 @@ export class ProvisioningSession {
                 'The device did not respond. Check the cable and close other serial tools.',
               ),
         );
-      }, this.timeout);
+      }, options.timeoutMs ?? this.timeout);
       const pending = {
         extension,
         command,
@@ -156,16 +156,16 @@ export class ProvisioningSession {
         .finally(() => packet.fill(0));
     });
   }
-  async identify(): Promise<void> {
-    const [fields] = await this.command(false, 3);
+  async identify(timeoutMs?: number): Promise<void> {
+    const [fields] = await this.command(false, 3, [], { timeoutMs });
     if (fields?.length !== 4 || fields[0] !== 'OpenAthan' || fields[2] !== 'ESP32-S3') {
       throw new Error(
         'OpenAthan firmware was not recognized. Recovery cannot install or erase firmware.',
       );
     }
   }
-  async status(): Promise<DeviceStatus> {
-    return parseStatus((await this.command(true, 1))[0]!);
+  async status(timeoutMs?: number): Promise<DeviceStatus> {
+    return parseStatus((await this.command(true, 1, [], { timeoutMs }))[0]!);
   }
   async scan(): Promise<{ ssid: string; signal: number; secured: boolean }[]> {
     const results = await this.command(false, 4, [], { scan: true });

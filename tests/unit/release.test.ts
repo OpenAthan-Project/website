@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import {
+  loadRelease,
   AUDIO_BYTES,
   AUDIO_OFFSET,
   FLASH_BYTES,
@@ -199,5 +200,98 @@ describe('flashing adapter with no physical transport', () => {
       );
       expect(source).not.toMatch(/navigator\.serial|requestDevicePort|loadRelease/);
     }
+  });
+});
+
+describe('bounded browser downloads', () => {
+  function stream(chunks: Uint8Array[], length?: string, failure = false) {
+    const cancel = vi.fn();
+    let index = 0;
+    const body = new ReadableStream<Uint8Array>(
+      {
+        pull(controller) {
+          if (index < chunks.length) controller.enqueue(chunks[index++]!);
+          else if (failure) controller.error(new Error('stream failed'));
+          else controller.close();
+        },
+        cancel,
+      },
+      { highWaterMark: 0 },
+    );
+    return {
+      body,
+      cancel,
+      response: new Response(body, {
+        headers: length === undefined ? {} : { 'content-length': length },
+      }),
+    };
+  }
+  it('accepts exact-limit fragmented files with absent or misleading headers', async () => {
+    const f = await fixture();
+    const padded = new Uint8Array(16384).fill(32);
+    padded.set(f.bytes);
+    const pin = { ...f.pin, manifestSha256: await sha256(padded) };
+    const streams = [
+      stream([padded.subarray(0, 100), padded.subarray(100)]),
+      stream([f.factory], '1'),
+      stream([f.audio.subarray(0, 100), f.audio.subarray(100)]),
+    ];
+    const fetcher = vi.fn<typeof fetch>();
+    for (const item of streams) fetcher.mockResolvedValueOnce(item.response);
+    expect((await loadRelease(pin, fetcher)).parts).toHaveLength(2);
+    for (const item of streams) expect(item.body.locked).toBe(false);
+  });
+  for (const fragmented of [false, true]) {
+    it(`cancels oversized manifest chunks (fragmented=${fragmented})`, async () => {
+      const f = await fixture();
+      const item = stream(
+        fragmented ? [new Uint8Array(16384), new Uint8Array(1)] : [new Uint8Array(16385)],
+        '1',
+      );
+      await expect(
+        loadRelease(f.pin, vi.fn<typeof fetch>().mockResolvedValue(item.response)),
+      ).rejects.toThrow('larger');
+      expect(item.cancel).toHaveBeenCalledTimes(1);
+      expect(item.body.locked).toBe(false);
+    });
+  }
+  it('rejects an oversized declared length before reading and cancels the body', async () => {
+    const f = await fixture();
+    const item = stream([], '16385');
+    await expect(
+      loadRelease(f.pin, vi.fn<typeof fetch>().mockResolvedValue(item.response)),
+    ).rejects.toThrow('larger');
+    expect(item.cancel).toHaveBeenCalledTimes(1);
+    expect(item.body.locked).toBe(false);
+  });
+  for (const kind of ['oversized', 'truncated', 'failure'] as const) {
+    it(`rejects ${kind} image downloads and releases the stream`, async () => {
+      const f = await fixture();
+      const item = stream(
+        [kind === 'oversized' ? new Uint8Array(f.factory.length + 1) : f.factory.subarray(0, 100)],
+        undefined,
+        kind === 'failure',
+      );
+      const fetcher = vi
+        .fn<typeof fetch>()
+        .mockResolvedValueOnce(new Response(f.bytes))
+        .mockResolvedValueOnce(item.response)
+        .mockResolvedValueOnce(new Response(f.audio));
+      await expect(loadRelease(f.pin, fetcher)).rejects.toThrow(
+        kind === 'oversized'
+          ? 'larger'
+          : kind === 'failure'
+            ? 'stream failed'
+            : 'verification failed',
+      );
+      expect(item.body.locked).toBe(false);
+      if (kind === 'oversized') expect(item.cancel).toHaveBeenCalledTimes(1);
+    });
+  }
+  it('rejects missing response bodies', async () => {
+    const f = await fixture();
+    await expect(
+      loadRelease(f.pin, vi.fn<typeof fetch>().mockResolvedValue(new Response(null))),
+    ).rejects.toThrow('no response body');
   });
 });

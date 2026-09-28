@@ -187,9 +187,29 @@ export async function loadRelease(
     });
     if (!response.ok)
       throw new Error('The reviewed release files are unavailable. Nothing was installed.');
-    const bytes = new Uint8Array(await response.arrayBuffer());
-    if (bytes.length > maximum) throw new Error('Release file is larger than expected.');
-    return bytes;
+    if (!response.body) throw new Error('Release download has no response body.');
+    const reader = response.body.getReader();
+    try {
+      const length = response.headers.get('content-length');
+      if (length !== null && Number(length) > maximum)
+        throw new Error('Release file is larger than expected.');
+      // Allocate only the permitted size; never retain an oversized response chunk.
+      const bytes = new Uint8Array(maximum);
+      let size = 0;
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) return bytes.subarray(0, size);
+        if (value.byteLength > maximum - size)
+          throw new Error('Release file is larger than expected.');
+        bytes.set(value, size);
+        size += value.byteLength;
+      }
+    } catch (error) {
+      await reader.cancel().catch(() => undefined);
+      throw error;
+    } finally {
+      reader.releaseLock();
+    }
   };
   const manifest = await checkedManifest(await get('manifest.json', 16_384), pin);
   const inputs = new Map<string, Uint8Array>();
