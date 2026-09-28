@@ -104,16 +104,16 @@ export class FrameDecoder {
 export function validateWifi(ssid: string, password: string): void {
   const size = encoder.encode(ssid).length,
     secretSize = encoder.encode(password).length;
+  if (ssid.includes('\0') || size < 1 || size > 32)
+    throw new Error('Use a network name of 1–32 UTF-8 bytes without null characters.');
   if (
-    ssid.includes('\0') ||
     password.includes('\0') ||
-    size < 1 ||
-    size > 32 ||
     secretSize < 8 ||
-    secretSize > 64
+    secretSize > 64 ||
+    (secretSize === 64 && !/^[0-9a-fA-F]{64}$/.test(password))
   ) {
     throw new Error(
-      'Use a network name of 1–32 UTF-8 bytes and a Wi-Fi password of 8–64 UTF-8 bytes.',
+      'Use a Wi-Fi password of 8–63 UTF-8 bytes, or a 64-character hexadecimal key (0–9, A–F).',
     );
   }
 }

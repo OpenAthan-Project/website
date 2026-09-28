@@ -55,6 +55,44 @@ describe('firmware protocol compatibility', () => {
     expect(() => validatePassword('long passphrase\n')).toThrow();
     expect(() => validatePassword('é'.repeat(20))).toThrow();
   });
+  // Expected boundaries come from openathan_device/protocol.cpp::valid_wifi.
+  it.each([
+    ['7-byte passphrase', 'x'.repeat(7), false],
+    ['8-byte passphrase', 'x'.repeat(8), true],
+    ['63-byte passphrase', 'x'.repeat(63), true],
+    ['64-byte non-hex passphrase', 'x'.repeat(64), false],
+    ['64-digit hex key', '01234567'.repeat(8), true],
+    ['mixed-case hex key', 'aBcDeF09'.repeat(8), true],
+    ['hex key with a non-hex character', 'a'.repeat(63) + 'g', false],
+    ['65-byte hex key', 'a'.repeat(65), false],
+    ['8-byte Unicode passphrase', 'é'.repeat(4), true],
+    ['63-byte Unicode passphrase', 'é'.repeat(31) + 'x', true],
+    ['64-byte Unicode passphrase', 'é'.repeat(32), false],
+    ['65-byte Unicode passphrase', 'é'.repeat(32) + 'x', false],
+    ['embedded null', 'abcd\0efgh', false],
+    ['significant spaces', '        ', true],
+  ])('matches firmware Wi-Fi validation for %s', (_name, password, accepted) => {
+    const validate = () => validateWifi('Test network', password);
+    if (accepted) expect(validate).not.toThrow();
+    else expect(validate).toThrow();
+  });
+  it.each([
+    ['', false],
+    ['a', true],
+    ['a'.repeat(32), true],
+    ['a'.repeat(33), false],
+    ['é'.repeat(16), true],
+    ['é'.repeat(17), false],
+    ['home\0network', false],
+  ])('matches firmware SSID boundaries for %j', (ssid, accepted) => {
+    const validate = () => validateWifi(ssid, 'test password');
+    if (accepted) expect(validate).not.toThrow();
+    else expect(validate).toThrow();
+  });
+  it('matches both printable-ASCII device-password boundaries', () => {
+    for (const size of [12, 128]) expect(() => validatePassword('x'.repeat(size))).not.toThrow();
+    for (const size of [11, 129]) expect(() => validatePassword('x'.repeat(size))).toThrow();
+  });
   it('parses status while keeping storage faults visible', () => {
     const status = parseStatus([
       '1',

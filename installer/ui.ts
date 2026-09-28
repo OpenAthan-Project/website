@@ -139,7 +139,7 @@ export function mountInstaller(
     if (storageFault()) return;
     render(
       'Connect to your Wi-Fi',
-      `<p>Choose your home’s 2.4 GHz network, or enter its name. Your computer and phone will need to be on the same home network.</p>${button('Find networks', 'scan', true)}<div data-networks></div><form data-form="wifi" autocomplete="off"><label for="ssid">Network name</label><input id="ssid" name="ssid" required autocomplete="off" autocapitalize="none" spellcheck="false" /><label for="wifi-password">Wi-Fi password</label><input id="wifi-password" name="password" type="password" required autocomplete="off" /><p class="field-help">WPA2/WPA3 personal networks. Guest portals and enterprise sign-ins are not supported.</p><div class="actions"><button class="button" type="submit">Save Wi-Fi</button>${button('Back', path === 'recovery' ? 'recovery' : 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div></form>`,
+      `<p>Choose your home’s 2.4 GHz network, or enter its name. Your computer and phone will need to be on the same home network.</p>${button('Find networks', 'scan', true)}<div data-networks></div><form data-form="wifi" autocomplete="off"><label for="ssid">Network name</label><input id="ssid" name="ssid" required autocomplete="off" autocapitalize="none" spellcheck="false" /><label for="wifi-password">Wi-Fi password</label><input id="wifi-password" name="password" type="password" required autocomplete="off" aria-describedby="wifi-password-help" /><p id="wifi-password-help" class="field-help">Use your router’s Wi-Fi password. A 64-character key must contain only 0–9 and A–F (upper or lower case).</p><p class="field-help">WPA2/WPA3 personal networks. Guest portals and enterprise sign-ins are not supported.</p><div class="actions"><button class="button" type="submit">Save Wi-Fi</button>${button('Back', path === 'recovery' ? 'recovery' : 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div></form>`,
       1,
     );
   }
@@ -152,8 +152,7 @@ export function mountInstaller(
     );
   }
   async function finish() {
-    status = await service.status();
-    if (storageFault()) return;
+    if (!(await readCurrentStatus()) || !status) return;
     if (status.wifi !== '4') {
       wifiScreen();
       notify('Connect Wi-Fi to open the device’s settings.');

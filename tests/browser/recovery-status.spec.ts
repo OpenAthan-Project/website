@@ -28,20 +28,21 @@ const write = (kind: 'wifi' | 'password') => ({
 });
 async function expectNoChanges(page: Page) {
   await expect(page.locator('[data-panel] form')).toHaveCount(0);
+  await expect(page.locator('.device-links a')).toHaveCount(0);
   await expect(
     page.getByRole('button', { name: /Change Wi-Fi|Reset device password|Open device settings/ }),
   ).toHaveCount(0);
 }
 
 for (const kind of ['wifi', 'password'] as const) {
-  for (const outcome of ['storage', 'unreadable', 'healthy'] as const) {
+  for (const outcome of ['storage', 'password', 'setup', 'unreadable', 'healthy'] as const) {
     test(`${kind} error 255 checks ${outcome} status before allowing more changes`, async ({
       page,
     }) => {
-      await fakeSerialDevice(page, { saveErrorStatus: outcome });
+      await fakeSerialDevice(page, { save: { reply: 'error255', status: outcome } });
       await connect(page);
       await save(page, kind);
-      if (outcome === 'storage') {
+      if (outcome === 'storage' || outcome === 'password' || outcome === 'setup') {
         await expect(
           page.getByRole('heading', { name: 'The device needs attention' }),
         ).toBeVisible();
@@ -115,25 +116,144 @@ test('recovery refreshes Wi-Fi and device links without reopening USB or writing
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-for (const fault of ['password', 'setup', 'unreadable'] as const) {
-  test(`refresh blocks changes when current ${fault} status is unsafe`, async ({ page }) => {
+for (const action of ['Refresh status', 'Open device settings']) {
+  for (const fault of ['storage', 'password', 'setup', 'unreadable'] as const) {
+    test(`${action} blocks changes when current ${fault} status is unsafe`, async ({ page }) => {
+      await fakeSerialDevice(page);
+      await connect(page);
+      await page.evaluate((fault) => {
+        if (fault === 'unreadable') window.recoveryDevice.unreadable = true;
+        else window.recoveryDevice[fault] = fault === 'setup' ? 'storage_fault' : 'fault';
+      }, fault);
+      await page.getByRole('button', { name: action, exact: true }).press('Enter');
+      await expect(
+        page.getByRole('heading', {
+          name: fault === 'unreadable' ? 'Check the device status' : 'The device needs attention',
+        }),
+      ).toBeFocused();
+      await expectNoChanges(page);
+      expect(await page.evaluate(() => window.recoveryDevice.requests)).toEqual([
+        identify,
+        status,
+        status,
+      ]);
+      await page.getByRole('button', { name: /Disconnect/ }).press('Enter');
+      await expect(page.getByRole('button', { name: 'Open recovery', exact: true })).toBeVisible();
+      expect(await page.evaluate(() => window.recoveryDevice.closes)).toBe(1);
+    });
+  }
+}
+
+test('invalid Wi-Fi keys stay in the browser and corrected input can be submitted', async ({
+  page,
+}) => {
+  await fakeSerialDevice(page, { save: { reply: 'error255', status: 'healthy' } });
+  await connect(page);
+  await page.getByRole('button', { name: 'Change Wi-Fi' }).click();
+  await page.getByLabel('Network name', { exact: true }).fill('Test network');
+  for (const password of ['x'.repeat(64), 'é'.repeat(32)]) {
+    await page.getByLabel('Wi-Fi password', { exact: true }).fill(password);
+    await page.getByRole('button', { name: 'Save Wi-Fi', exact: true }).click();
+    await expect(page.getByRole('status')).toContainText('hexadecimal');
+    expect(await page.evaluate(() => window.recoveryDevice.requests)).toEqual([identify, status]);
+  }
+  await page.getByLabel('Wi-Fi password', { exact: true }).fill('aBcDeF09'.repeat(8));
+  await page.getByRole('button', { name: 'Save Wi-Fi', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('storage is unavailable');
+  expect(await page.evaluate(() => window.recoveryDevice.requests)).toEqual([
+    identify,
+    status,
+    write('wifi'),
+    status,
+  ]);
+  await expect(page.getByLabel('Wi-Fi password', { exact: true })).toHaveValue('');
+});
+
+for (const kind of ['wifi', 'password'] as const) {
+  for (const outcome of ['storage', 'password', 'setup', 'unreadable', 'healthy'] as const) {
+    test(`acknowledged ${kind} save checks ${outcome} status before continuing`, async ({
+      page,
+    }) => {
+      await fakeSerialDevice(page, { save: { reply: 'acknowledged', status: outcome } });
+      await connect(page);
+      await save(page, kind);
+      if (outcome === 'healthy') {
+        await expect(
+          page.getByRole('heading', { name: 'Your OpenAthan is connected' }),
+        ).toBeFocused();
+        await expect(page.getByRole('status')).toContainText(
+          kind === 'wifi' ? 'Wi-Fi saved.' : 'Device password saved.',
+        );
+      } else {
+        await expect(
+          page.getByRole('heading', {
+            name:
+              outcome === 'unreadable' ? 'Check the device status' : 'The device needs attention',
+          }),
+        ).toBeFocused();
+        await expectNoChanges(page);
+        await expect(page.getByRole('status', { includeHidden: true })).not.toContainText('saved.');
+      }
+      expect(await page.evaluate(() => window.recoveryDevice.requests)).toEqual([
+        identify,
+        status,
+        write(kind),
+        status,
+      ]);
+    });
+  }
+  for (const outcome of ['healthy', 'unreadable', 'storage'] as const) {
+    test(`lost ${kind} acknowledgement stays blocked after ${outcome} status`, async ({ page }) => {
+      await fakeSerialDevice(page, { save: { reply: 'lost', status: outcome } });
+      await connect(page);
+      // Advance the real adapter's deadline without making the suite wait 40 seconds.
+      await page.clock.install();
+      await save(page, kind);
+      await expect.poll(() => page.evaluate(() => window.recoveryDevice.requests.length)).toBe(3);
+      await page.clock.runFor(40_001);
+      await expect(page.getByRole('heading', { name: 'Check before trying again' })).toBeFocused();
+      await expectNoChanges(page);
+      await expect(page.getByRole('status')).toContainText('No automatic retry');
+      await expect(page.getByRole('status')).not.toContainText('saved.');
+      if (outcome === 'unreadable')
+        await expect(page.getByText('Status is unavailable.')).toBeVisible();
+      else await expect(page.getByText(/This does not confirm the requested change/)).toBeVisible();
+      expect(await page.evaluate(() => window.recoveryDevice.requests)).toEqual([
+        identify,
+        status,
+        write(kind),
+        status,
+      ]);
+    });
+  }
+}
+
+for (const state of ['offline', 'password-absent'] as const) {
+  test(`handoff redirects to setup when the device becomes ${state}`, async ({ page }) => {
     await fakeSerialDevice(page);
     await connect(page);
-    await page.evaluate((fault) => {
-      if (fault === 'unreadable') window.recoveryDevice.unreadable = true;
-      else window.recoveryDevice[fault] = fault === 'setup' ? 'storage_fault' : 'fault';
-    }, fault);
-    await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
+    await page.evaluate((state) => {
+      if (state === 'offline') window.recoveryDevice.wifi = '2';
+      else window.recoveryDevice.password = 'absent';
+    }, state);
+    await page.getByRole('button', { name: 'Open device settings', exact: true }).press('Enter');
     await expect(
       page.getByRole('heading', {
-        name: fault === 'unreadable' ? 'Check the device status' : 'The device needs attention',
+        name: state === 'offline' ? 'Connect to your Wi-Fi' : 'Create a device password',
       }),
-    ).toBeVisible();
-    await expectNoChanges(page);
+    ).toBeFocused();
+    await expect(
+      page.getByRole('button', {
+        name: state === 'offline' ? 'Save Wi-Fi' : 'Save device password',
+        exact: true,
+      }),
+    ).toBeEnabled();
+    await expect(page.locator('.device-links a')).toHaveCount(0);
     expect(await page.evaluate(() => window.recoveryDevice.requests)).toEqual([
       identify,
       status,
       status,
     ]);
+    expect(await page.evaluate(() => window.recoveryDevice.closes)).toBe(0);
   });
 }

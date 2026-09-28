@@ -1,12 +1,13 @@
 import type { Page } from '@playwright/test';
 
 type Fault = 'storage' | 'password' | 'setup';
-type SaveErrorStatus = Fault | 'unreadable' | 'healthy';
+type StatusOutcome = Fault | 'unreadable' | 'healthy';
 interface DeviceFixture {
   wifi: string;
   password: string;
   setup: string;
   storage: string;
+  passwordRevision: number;
   unreadable: boolean;
   requests: { extension: boolean; command: number }[];
   opens: number;
@@ -21,7 +22,10 @@ declare global {
 /** Fake Web Serial boundary; the page still uses RealService and ProvisioningSession. */
 export async function fakeSerialDevice(
   page: Page,
-  options: { offline?: boolean; saveErrorStatus?: SaveErrorStatus } = {},
+  options: {
+    offline?: boolean;
+    save?: { reply: 'error255' | 'acknowledged' | 'lost'; status: StatusOutcome };
+  } = {},
 ) {
   await page.addInitScript((options) => {
     const encoder = new TextEncoder();
@@ -30,6 +34,7 @@ export async function fakeSerialDevice(
       password: 'ready',
       setup: 'active',
       storage: 'ready',
+      passwordRevision: 1,
       unreadable: false,
       requests: [],
       opens: 0,
@@ -87,7 +92,7 @@ export async function fakeSerialDevice(
                       device.wifi,
                       device.password,
                       device.setup,
-                      '1',
+                      String(device.passwordRevision),
                       'openathan-test.local',
                       device.storage,
                       ...(device.wifi === '4'
@@ -96,12 +101,20 @@ export async function fakeSerialDevice(
                     ],
               );
             } else if ((!extension && command === 1) || (extension && command === 2)) {
-              const outcome = options.saveErrorStatus;
-              if (!outcome) throw new Error('Unexpected credential write');
+              const save = options.save;
+              if (!save) throw new Error('Unexpected credential write');
+              if (save.reply !== 'error255' && extension) device.passwordRevision++;
+              const outcome = save.status;
               if (outcome === 'unreadable') device.unreadable = true;
               else if (outcome === 'setup') device.setup = 'storage_fault';
               else if (outcome !== 'healthy') device[outcome] = 'fault';
-              frame(extension, 2, new Uint8Array([255]));
+              if (save.reply === 'error255') frame(extension, 2, new Uint8Array([255]));
+              else if (save.reply === 'acknowledged')
+                reply(
+                  extension,
+                  command,
+                  extension ? ['saved', String(device.passwordRevision)] : [],
+                );
             } else {
               throw new Error('Unexpected serial command');
             }
