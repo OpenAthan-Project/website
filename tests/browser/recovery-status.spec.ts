@@ -169,6 +169,41 @@ test('invalid Wi-Fi keys stay in the browser and corrected input can be submitte
   await expect(page.getByLabel('Wi-Fi password', { exact: true })).toHaveValue('');
 });
 
+for (const [name, fields] of [
+  ['empty', []],
+  ['incomplete', ['http://openathan-test.local/']],
+  ['invalid', ['saved', '2']],
+] as const) {
+  test(`${name} Wi-Fi acknowledgement stays uncertain despite connected status`, async ({
+    page,
+  }) => {
+    await fakeSerialDevice(page, {
+      save: { reply: 'acknowledged', status: 'healthy', wifiAcknowledgement: [...fields] },
+    });
+    await connect(page);
+    await save(page, 'wifi');
+    await expect(page.getByRole('heading', { name: 'Check before trying again' })).toBeFocused();
+    await expect(
+      page.getByText(/Wi-Fi connected.*This does not confirm the requested change/),
+    ).toBeVisible();
+    await expectNoChanges(page);
+    await expect(page.getByRole('status')).not.toContainText('Wi-Fi saved');
+    await expect(page.getByRole('status')).toContainText('No automatic retry');
+    expect(await page.evaluate(() => window.recoveryDevice.requests)).toEqual([
+      identify,
+      status,
+      write('wifi'),
+      status,
+    ]);
+    expect(await page.evaluate(() => window.recoveryDevice.opens)).toBe(1);
+    await page
+      .getByRole('button', { name: 'Disconnect and start again', exact: true })
+      .press('Enter');
+    await expect(page.getByRole('button', { name: 'Open recovery', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => window.recoveryDevice.closes)).toBe(1);
+  });
+}
+
 for (const kind of ['wifi', 'password'] as const) {
   for (const outcome of ['storage', 'password', 'setup', 'unreadable', 'healthy'] as const) {
     test(`acknowledged ${kind} save checks ${outcome} status before continuing`, async ({

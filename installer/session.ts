@@ -18,7 +18,7 @@ export interface ByteTransport {
 export class UncertainOutcome extends Error {
   constructor() {
     super(
-      'No acknowledgement was received. The result is uncertain; the command was not repeated.',
+      'No valid acknowledgement was received. The result is uncertain; the command was not repeated.',
     );
     this.name = 'UncertainOutcome';
   }
@@ -182,7 +182,19 @@ export class ProvisioningSession {
   }
   async wifi(ssid: string, password: string): Promise<void> {
     validateWifi(ssid, password);
-    await this.command(false, 1, [ssid, password], { mutation: true });
+    const [fields] = await this.command(false, 1, [ssid, password], { mutation: true });
+    // Firmware v1 acknowledges a committed Wi-Fi save with its hostname and IPv4 URLs.
+    // A matching command number or a later connected status cannot replace this result.
+    const ip = /^http:\/\/(\d{1,3}(?:\.\d{1,3}){3})\/$/.exec(fields?.[1] ?? '')?.[1];
+    if (
+      fields?.length !== 2 ||
+      !/^http:\/\/openathan-[a-z0-9-]+\.local\/$/.test(fields[0] ?? '') ||
+      !ip ||
+      ip.split('.').some((octet) => Number(octet) > 255 || String(Number(octet)) !== octet)
+    ) {
+      this.uncertain = true;
+      throw new UncertainOutcome();
+    }
   }
   async password(password: string): Promise<number> {
     validatePassword(password);

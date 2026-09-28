@@ -24,7 +24,11 @@ export async function fakeSerialDevice(
   page: Page,
   options: {
     offline?: boolean;
-    save?: { reply: 'error255' | 'acknowledged' | 'lost'; status: StatusOutcome };
+    save?: {
+      reply: 'error255' | 'acknowledged' | 'lost';
+      status: StatusOutcome;
+      wifiAcknowledgement?: string[];
+    };
   } = {},
 ) {
   await page.addInitScript((options) => {
@@ -113,7 +117,12 @@ export async function fakeSerialDevice(
                 reply(
                   extension,
                   command,
-                  extension ? ['saved', String(device.passwordRevision)] : [],
+                  extension
+                    ? ['saved', String(device.passwordRevision)]
+                    : (save.wifiAcknowledgement ?? [
+                        'http://openathan-test.local/',
+                        'http://192.168.1.42/',
+                      ]),
                 );
             } else {
               throw new Error('Unexpected serial command');

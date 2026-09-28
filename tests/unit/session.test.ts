@@ -24,6 +24,73 @@ class Port implements ByteTransport {
   }
 }
 afterEach(() => vi.useRealTimers());
+describe('Wi-Fi save acknowledgement contract', () => {
+  const hostname = 'http://openathan-test.local/';
+  const ip = 'http://192.168.1.42/';
+  // Device::loop() returns Device::urls_() only after the Wi-Fi record is committed:
+  // the hostname URL followed by the IPv4 URL. Empty responses terminate scans only.
+  it.each([
+    ['empty result', []],
+    ['empty fields', ['', '']],
+    ['hostname only', [hostname]],
+    ['extra field', [hostname, ip, 'saved']],
+    ['password-shaped result', ['saved', '2']],
+    ['reversed addresses', [ip, hostname]],
+    ['unrelated hostname', ['http://other.local/', ip]],
+    ['non-HTTP hostname', ['https://openathan-test.local/', ip]],
+    ['hostname with a path', [hostname + 'settings', ip]],
+    ['invalid IP octet', [hostname, 'http://192.168.1.256/']],
+    ['non-IP fallback', [hostname, 'http://other.local/']],
+    ['IP with a query', [hostname, ip + '?saved=true']],
+  ] as const)('treats %s as uncertain even when status is connected', async (_name, fields) => {
+    const port = new Port(),
+      session = new ProvisioningSession(port);
+    const result = session.wifi('new network', 'test password').catch((error: unknown) => error);
+    port.response(false, 1, [...fields]);
+    expect(await result).toBeInstanceOf(UncertainOutcome);
+    expect(session.uncertain).toBe(true);
+    expect(port.writes).toHaveLength(1);
+    const status = session.status();
+    port.response(true, 1, [
+      '1',
+      '4',
+      'ready',
+      'active',
+      '2',
+      'openathan-test.local',
+      'ready',
+      hostname,
+      ip,
+    ]);
+    expect((await status).wifi).toBe('4');
+    await expect(session.wifi('new network', 'test password')).rejects.toThrow('Reconnect');
+    await expect(session.password('test device password')).rejects.toThrow('Reconnect');
+    expect(port.writes).toHaveLength(2);
+    await session.close();
+  });
+  it('waits for the fragmented firmware URL pair rather than a connected-state notification', async () => {
+    const port = new Port(),
+      session = new ProvisioningSession(port);
+    let settled = false;
+    const result = session.wifi('new network', 'test password').then(() => {
+      settled = true;
+    });
+    port.onBytes?.(encodeFrame(false, 1, new Uint8Array([4])));
+    port.onBytes?.(encodeFrame(false, 2, new Uint8Array([0])));
+    port.response(false, 4, []);
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    const response = encodeFrame(false, 4, rpcPayload(1, [hostname, ip]));
+    port.onBytes?.(response.subarray(0, 12));
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    port.onBytes?.(response.subarray(12));
+    await expect(result).resolves.toBeUndefined();
+    expect(session.uncertain).toBe(false);
+    expect(port.writes).toHaveLength(1);
+    await session.close();
+  });
+});
 describe('one owner, no mutation retries', () => {
   it('rejects concurrent commands and ignores unrelated responses', async () => {
     const port = new Port(),
