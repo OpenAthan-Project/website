@@ -45,7 +45,7 @@ npx playwright install chromium webkit
 npm run test:browser
 ```
 
-`dist/` contains ordinary static assets. `npm run preview` serves that build locally. No provider-specific deployment is configured. The build checks local links, release-file integrity and simulator exclusion. Browser tests cover Chromium, desktop WebKit and a narrow WebKit viewport. Browser simulation is not physical USB qualification; Chrome/Edge installation, interruption and preservation acceptance remain required before public launch.
+`dist/` contains ordinary static assets. `npm run preview` serves that build locally. After validation passes on `main`, GitHub Actions publishes `dist/` to GitHub Pages at `openathan.com`; pull requests only validate. See [deployment/README.md](deployment/README.md) for domain and HTTPS checks. The build checks local links, release-file integrity and simulator exclusion. Browser tests cover Chromium, desktop WebKit and a narrow WebKit viewport. Browser simulation is not physical USB qualification; Chrome/Edge installation, interruption and preservation acceptance remain required before an installation release.
 
 Use `npm run format` when editing the website or installer. Dependencies are version-pinned with a lockfile. The esptool-js adapter loads only after a confirmed new installation with a reviewed release. Astro telemetry is disabled by the project CLI wrapper. The site has no analytics, account service or application backend. Mukta Malar fonts are hosted locally with their SIL Open Font License. See [DESIGN.md](DESIGN.md) for the visual system.
 
