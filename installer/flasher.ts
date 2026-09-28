@@ -1,6 +1,7 @@
-import { ESPLoader, Transport } from 'esptool-js';
+import { ESPLoader } from 'esptool-js';
 import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
+import { FlashTransport } from './flash-transport';
 import { FLASH_BYTES, parseManifest, verifyBundle, type ReleaseBundle } from './release';
 
 export interface Programmer {
@@ -17,6 +18,7 @@ export async function flashBundle(
   confirmed: boolean,
   progress: (percent: number) => void,
 ): Promise<void> {
+  let failed = false;
   try {
     if (!confirmed) throw new Error('Confirm a new installation before continuing.');
     const manifest = parseManifest(input.manifest, {
@@ -46,13 +48,21 @@ export async function flashBundle(
         );
     }
     await programmer.restart();
+  } catch (error) {
+    failed = true;
+    throw error;
   } finally {
-    await programmer.close();
+    try {
+      await programmer.close();
+    } catch (error) {
+      // A removed port can also reject close; preserve the installation failure.
+      if (!failed) throw error;
+    }
   }
 }
 
 export function serialProgrammer(port: SerialPort): Programmer {
-  const transport = new Transport(port, false);
+  const transport = new FlashTransport(port, false);
   const loader = new ESPLoader({
     transport,
     baudrate: 115200,
@@ -107,7 +117,9 @@ export function serialProgrammer(port: SerialPort): Programmer {
     digest: (offset, bytes) => loader.flashMd5sum(offset, bytes),
     restart: () => loader.after('hard_reset'),
     async close() {
-      if (port.readable || port.writable) await transport.disconnect();
+      // connect() sets baudrate only after opening succeeds. A fatal USB error
+      // can null both streams while the port still needs to be closed.
+      if (transport.baudrate !== 0) await transport.disconnect();
     },
   };
 }
