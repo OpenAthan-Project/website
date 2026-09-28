@@ -1,5 +1,5 @@
 import { validatePassword, validateWifi, type DeviceStatus } from './protocol';
-import { UncertainOutcome } from './session';
+import { DeviceError, UncertainOutcome } from './session';
 import type { InstallerService, Path } from './service';
 
 const escape = (value: string) =>
@@ -107,11 +107,31 @@ export function mountInstaller(
     }
     return false;
   }
+  async function readCurrentStatus(): Promise<boolean> {
+    // A failed read must not leave the previous healthy status authorizing changes.
+    mutationBlocked = true;
+    status = undefined;
+    try {
+      status = await service.status();
+    } catch (error) {
+      render(
+        'Check the device status',
+        '<p>The device’s current status could not be confirmed. Reconnect through recovery before making another change.</p><div class="actions">' +
+          button('Disconnect and start again', 'start') +
+          '<a href="/docs/troubleshooting/">Troubleshooting</a></div>',
+        current,
+      );
+      throw error;
+    }
+    if (storageFault()) return false;
+    mutationBlocked = false;
+    return true;
+  }
   function recoveryMenu() {
     if (storageFault()) return;
     render(
       'Your OpenAthan is connected',
-      `<p class="device-name">${escape(status?.hostname ?? '')}</p><p>Choose what to repair. Your prayer settings and playback history will stay on the device.</p><div class="actions">${button('Change Wi-Fi', 'wifi-screen')}${button(status?.password === 'absent' ? 'Create device password' : 'Reset device password', 'password-screen', true)}</div><div class="actions">${status?.wifi === '4' && status.password === 'ready' ? button('Open device settings', 'finish', true) : ''}${button('Disconnect', 'start', true)}</div>`,
+      `<p class="device-name">${escape(status?.hostname ?? '')}</p><p>Choose what to repair. Your prayer settings and playback history will stay on the device.</p>${status?.wifi !== '4' ? '<p>Wi-Fi is not connected. If the speaker is reconnecting, wait a moment and select <strong>Refresh status</strong>.</p>' : ''}<div class="actions">${button('Change Wi-Fi', 'wifi-screen')}${button(status?.password === 'absent' ? 'Create device password' : 'Reset device password', 'password-screen', true)}</div><div class="actions">${status?.wifi === '4' && status.password === 'ready' ? button('Open device settings', 'finish', true) : ''}${button('Refresh status', 'refresh-status', true)}${button('Disconnect', 'start', true)}</div>`,
       1,
     );
   }
@@ -291,6 +311,15 @@ export function mountInstaller(
           );
           throw error;
         }
+      } else if (action === 'refresh-status') {
+        if (await readCurrentStatus()) {
+          recoveryMenu();
+          notify(
+            status?.wifi === '4'
+              ? 'Wi-Fi is connected.'
+              : 'Wi-Fi is still not connected. Wait a moment and refresh again, or choose Change Wi-Fi.',
+          );
+        }
       } else if (action === 'recovery') recoveryMenu();
       else if (action === 'wifi-screen') wifiScreen();
       else if (action === 'password-screen') passwordScreen();
@@ -361,7 +390,9 @@ export function mountInstaller(
           }
         }
       } catch (error) {
-        if (acknowledged && !(error instanceof UncertainOutcome)) {
+        if (!acknowledged && error instanceof DeviceError && error.code === 255) {
+          if (!(await readCurrentStatus())) return;
+        } else if (acknowledged && !(error instanceof UncertainOutcome)) {
           mutationBlocked = true;
           render(
             'Check the device status',
