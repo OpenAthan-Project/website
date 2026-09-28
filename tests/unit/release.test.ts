@@ -192,6 +192,27 @@ describe('flashing adapter with no physical transport', () => {
     expect(p.write).toHaveBeenCalledOnce();
     expect(p.restart).not.toHaveBeenCalled();
   });
+  it('preserves a write failure when the removed port also rejects cleanup', async () => {
+    const f = await fixture(),
+      bundle = await verifyBundle(f.manifest, f.inputs),
+      p = programmer(bundle);
+    p.write.mockRejectedValue(new Error('USB communication failed'));
+    p.close.mockRejectedValue(new Error('Port already closed'));
+    await expect(flashBundle(p, bundle, true, () => {})).rejects.toThrow(
+      'USB communication failed',
+    );
+    expect(p.write).toHaveBeenCalledOnce();
+    expect(p.digest).not.toHaveBeenCalled();
+    expect(p.restart).not.toHaveBeenCalled();
+    expect(p.close).toHaveBeenCalledOnce();
+  });
+  it('does not claim success if cleanup fails after verification', async () => {
+    const f = await fixture(),
+      bundle = await verifyBundle(f.manifest, f.inputs),
+      p = programmer(bundle);
+    p.close.mockRejectedValue(new Error('Port close failed'));
+    await expect(flashBundle(p, bundle, true, () => {})).rejects.toThrow('Port close failed');
+  });
   it('keeps simulator dependencies separate from physical transports and release files', async () => {
     for (const name of ['simulator.ts', 'demo-entry.ts', 'ui.ts', 'session.ts', 'protocol.ts']) {
       const source = await readFile(new URL(`../../installer/${name}`, import.meta.url), 'utf8');
