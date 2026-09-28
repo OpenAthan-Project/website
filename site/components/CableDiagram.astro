@@ -1,0 +1,66 @@
+---
+const connections = [
+  {
+    setup: true,
+    title: 'Installation and USB recovery',
+    description:
+      'Connect the computer to the Atom’s USB-C port with a data cable. Leave Pyramid bottom power unplugged.',
+  },
+  {
+    setup: false,
+    title: 'Normal operation',
+    description: 'Unplug the Atom’s USB cable, then connect only the Pyramid’s bottom USB-C power.',
+  },
+];
+---
+
+<figure class="cable-figure">
+  <figcaption>AtomS3R + Pyramid USB connections</figcaption>
+  <div class="cable-panels">
+    {
+      connections.map(({ setup, title, description }) => (
+        <div class="cable-panel">
+          <h3>{title}</h3>
+          <svg viewBox="0 0 400 210" role="img" aria-label={description}>
+            <title>{title}</title>
+            <g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round">
+              {setup ? (
+                <>
+                  <rect x="24" y="55" width="82" height="55" rx="4" />
+                  <path d="M14 120h102M65 110v10M106 80h62V54h78" />
+                </>
+              ) : (
+                <>
+                  <rect x="35" y="65" width="62" height="55" rx="5" />
+                  <path d="M52 65V51m27 14V51M97 95h70v91h109v-23" />
+                </>
+              )}
+              <rect x="246" y="32" width="60" height="44" rx="4" fill="var(--green)" />
+              <path d="M276 76v12M238 88h76l28 75H210z" fill="var(--green)" />
+              {setup ? (
+                <path d="M270 177l12 12m0-12l-12 12" />
+              ) : (
+                <path d="M220 48l12 12m0-12l-12 12" />
+              )}
+            </g>
+            <g fill="currentColor" font-size="18" text-anchor="middle">
+              <text x="65" y="145">
+                {setup ? 'Computer' : 'USB power'}
+              </text>
+              <text x="276" y="59">
+                Atom
+              </text>
+              <text x="276" y="132">
+                Pyramid
+              </text>
+              <text x="150" y={setup ? '36' : '204'}>
+                {setup ? 'USB data' : 'Bottom USB-C'}
+              </text>
+            </g>
+          </svg>
+          <p>{description}</p>
+        </div>
+      ))
+    }
+  </div>
+</figure>

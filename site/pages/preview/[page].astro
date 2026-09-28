@@ -1,0 +1,102 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import InstallerShell from '../../components/InstallerShell.astro';
+export function getStaticPaths() {
+  return import.meta.env.DEV ? ['installer', 'device'].map((page) => ({ params: { page } })) : [];
+}
+const isInstaller = Astro.params.page === 'installer';
+---
+
+<Layout title={isInstaller ? 'Installer simulator' : 'Device settings preview'} preview>
+  {
+    isInstaller ? (
+      <>
+        <section class="page-heading wrap">
+          <>
+            <h1>Installer simulator</h1>
+            <p>Walk through the installer with a simulated device.</p>
+          </>
+        </section>
+        <div class="wrap">
+          <>
+            <div class="simulator-banner">
+              <>
+                <div>
+                  <>
+                    <strong>Simulator · no hardware access</strong>
+                    <p>Every device action on this page is simulated. Use made-up passwords.</p>
+                  </>
+                </div>
+                <div>
+                  <>
+                    <label for="scenario">Preview scenario</label>
+                    <select id="scenario">
+                      <>
+                        <option value="success">Successful setup</option>
+                        <option value="denied">No device selected</option>
+                        <option value="busy">USB port busy</option>
+                        <option value="unknown">Unrecognized firmware</option>
+                        <option value="disconnect">Disconnected during scan</option>
+                        <option value="wifi-failed">Incorrect Wi-Fi password</option>
+                        <option value="storage-fault">Device storage fault</option>
+                        <option value="lost-wifi-ack">Wi-Fi acknowledgement lost</option>
+                        <option value="lost-password-ack">Password acknowledgement lost</option>
+                        <option value="flash-failed">Installation interrupted</option>
+                      </>
+                    </select>
+                  </>
+                </div>
+              </>
+            </div>
+            <InstallerShell demo />
+            <div class="under-installer">
+              <>
+                <a href="/install/">Back to the device installer</a>
+                <span>Development preview only · excluded from the static release</span>
+              </>
+            </div>
+          </>
+        </div>
+      </>
+    ) : (
+      <article class="docs wrap">
+        <div class="docs-heading">
+          <h1>Device settings preview</h1>
+          <p class="lede">This is where setup continues on your speaker.</p>
+        </div>
+        <div class="docs-body">
+          <aside class="notice">
+            <strong>Simulator · no hardware access</strong>
+            <p>
+              You opened a local preview. With a real device, the selected address opens that
+              speaker’s own settings page.
+            </p>
+          </aside>
+          <h2>On your speaker</h2>
+          <ol>
+            <li>
+              Sign in as <strong>admin</strong> with the device password you chose.
+            </li>
+            <li>Review your location, timezone, calculation method and prayer times.</li>
+            <li>
+              Select <strong>Finish setup</strong> to enable the Athan once the clock is
+              synchronized.
+            </li>
+          </ol>
+          <p>
+            The simulator ends here. Your speaker’s settings and prayer controls live on the device.
+          </p>
+          <div class="actions">
+            <a class="button" href="/preview/installer/">
+              Return to installer simulator
+            </a>
+            <a href="/docs/getting-started/">Setup instructions</a>
+          </div>
+        </div>
+      </article>
+    )
+  }
+</Layout>
+<script>
+  if (import.meta.env.DEV) await import('../../../installer/demo-entry');
+</script>

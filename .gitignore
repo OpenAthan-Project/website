@@ -6,6 +6,11 @@ build/
 dist/
 .cache/
 coverage/
+.astro/
+test-results/
+playwright-report/
+# Reviewed release imports are reproducible build inputs, never private firmware.
+public/releases/
 
 # Local configuration and secrets
 .env
@@ -21,3 +26,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local design exploration and review captures
+.impeccable/*
+!.impeccable/design.json

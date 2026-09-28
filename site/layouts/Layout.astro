@@ -1,0 +1,58 @@
+---
+import '../styles.css';
+interface Props {
+  title: string;
+  description?: string;
+  preview?: boolean;
+}
+const {
+  title,
+  description = 'An open-source Athan speaker that plays the Athan automatically at your prayer times. Adjust prayer settings and volume from your phone. Parts purchased separately.',
+  preview = false,
+} = Astro.props;
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <meta name="referrer" content="no-referrer" />
+    {preview && <meta name="robots" content="noindex, nofollow" />}
+    <meta name="theme-color" content="#355e83" />
+    <title>{title} · OpenAthan</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header wrap">
+      <a class="brand" href="/" aria-label="OpenAthan home">OpenAthan</a>
+      <nav aria-label="Main navigation">
+        <a
+          href="/docs/"
+          aria-current={path === '/docs/'
+            ? 'page'
+            : path.startsWith('/docs/')
+              ? 'location'
+              : undefined}>Documentation</a
+        ><a href="https://github.com/OpenAthan-Project/openathan">GitHub</a><a
+          href="/install/"
+          aria-current={path === '/install/' ? 'page' : undefined}>USB setup</a
+        >
+      </nav>
+    </header>
+    <main id="main"><slot /></main>
+    <footer class="site-footer wrap">
+      <div>
+        <a class="footer-brand" href="/">OpenAthan</a>
+      </div><div class="footer-links">
+        <a href="/docs/#contributing">Contributing</a><a href="/docs/#report-an-issue"
+          >Report an issue</a
+        ><a href="/docs/#licenses">License</a><a href="https://github.com/OpenAthan-Project/website"
+          >Website source</a
+        ><a href="/third-party-notices.txt">Third-party notices</a>
+      </div>
+    </footer>
+  </body>
+</html>

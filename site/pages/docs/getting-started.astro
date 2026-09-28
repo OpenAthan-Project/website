@@ -1,0 +1,106 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CableDiagram from '../../components/CableDiagram.astro';
+---
+
+<Layout
+  title="Getting started"
+  description="Find the parts you need, connect your speaker, and set up OpenAthan’s prayer times and volume."
+>
+  <article class="docs wrap">
+    <div class="docs-heading">
+      <h1>Getting started</h1><p class="lede">
+        The parts you’ll need and the steps to set up your Athan speaker.
+      </p>
+    </div><div class="docs-body">
+      <aside class="notice">
+        <strong>In development — first-time installation is not available yet.</strong><p>
+          OpenAthan is in early development. The installer will open when tested firmware and
+          approved recordings are published. Already have compatible OpenAthan firmware? You can
+          <a href="/install/">fix Wi-Fi or your password over USB</a>.
+        </p>
+      </aside><h2>What you’ll need</h2><p>
+        Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
+        and a <a href="https://docs.m5stack.com/en/atom/Echo_Pyramid">Pyramid A167</a> speaker base separately.
+        M5Stack calls the A167 “Echo Pyramid”; OpenAthan also refers to it as Voice Pyramid. These instructions
+        and the browser installer currently support only this combination of parts.
+      </p><p>
+        You will need a computer with desktop Chrome or Edge, a USB-C <strong>data</strong> cable, and
+        a 2.4 GHz WPA2/WPA3 personal Wi-Fi network. A charging-only cable will not work for USB setup.
+        Enterprise networks and networks with a sign-in page are not supported.
+      </p><CableDiagram /><h2>1. Connect through the Atom</h2><p>
+        Attach the modules using their intended connector. Disconnect bottom power, then connect the
+        computer to the <strong>Atom’s USB-C port</strong>. Use only this one cable during USB
+        setup.
+      </p><p>
+        Close other serial tools and browser tabs using the device. On <a href="/install/"
+          >the installer page</a
+        >, choose your path and select the USB JTAG/serial device when prompted.
+      </p><h2>2. Install, or recover an existing device</h2><p>
+        A new installation replaces the device’s existing firmware and data. It is not a
+        settings-preserving update. If OpenAthan is already installed, choose <strong
+          >Fix Wi-Fi or password</strong
+        >. Recovery preserves your prayer settings and playback history.
+      </p><h2>3. Save Wi-Fi and a device password</h2><p>
+        Select your home network or enter its name for a hidden network, then enter its Wi-Fi
+        password. Next, create a separate, long device password. Your browser sends these
+        credentials directly over USB; the website does not store them.
+      </p><p>
+        Remember the device password. You will use the username <strong>admin</strong> to sign into the
+        device’s settings.
+      </p><h2>4. Move the power cable</h2><p>
+        When USB setup finishes, unplug the Atom’s USB cable. Connect <strong
+          >only the Pyramid’s bottom USB-C power</strong
+        > for normal speaker operation. Wait for Wi-Fi to reconnect.
+      </p><h2>5. Finish on the device</h2><p>
+        Keep your computer or phone on the same home network and open the device address shown by
+        the installer, such as <code>http://openathan-a1b2c3.local/</code>. Each device has its own
+        address. If the hostname does not work, try its displayed IP address.
+      </p><p>
+        Sign in, enter your location and timezone, choose a calculation method, and review the
+        prayer times. Select <strong>Finish setup</strong> to enable the Athan. If the clock has not
+        synchronized yet, Athan playback will wait.
+      </p><h2>Everyday use</h2><p>
+        Your speaker calculates prayer times and plays recordings stored on the device. The current
+        build needs internet access to set its clock after a restart, before it can play the Athan.
+        To open its settings, connect your phone or computer to the same home Wi-Fi. Keep the
+        settings page on your trusted home network; do not make it accessible from the internet.
+      </p><div class="actions">
+        <a class="button" href="/install/">Open device setup</a><a href="/docs/troubleshooting/"
+          >Troubleshooting</a
+        >
+      </div>
+      <h2 id="other-hardware">Other hardware</h2>
+      <p>
+        OpenAthan is designed to keep prayer calculations, scheduling, and settings independent of
+        the hardware. Hardware adapters connect these functions to a device’s audio and controls,
+        allowing contributors to develop lower-cost builds or add capabilities on other hardware.
+      </p>
+      <p>
+        Audio playback is required. Displays, status lights, buttons, touch controls, microphones, a
+        hardware clock, and removable storage are optional capabilities. Standalone operation does
+        not require Home Assistant.
+      </p>
+      <p>
+        Additional hardware integrations require development and testing. The reusable core and
+        ESPHome integration provide a starting point; broader support for optional peripherals is
+        still planned. The browser installer currently targets only our first reference build.
+      </p>
+      <p>For implementation details, see:</p>
+      <ul>
+        <li>
+          <a
+            href="https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/architecture.md"
+            >Firmware architecture and hardware adapters</a
+          >
+        </li>
+        <li>
+          <a
+            href="https://github.com/OpenAthan-Project/openathan/blob/main/firmware/esphome/scheduler/README.md#controls-and-reuse"
+            >Scheduler controls and reuse</a
+          >
+        </li>
+      </ul>
+    </div>
+  </article>
+</Layout>

@@ -1,0 +1,25 @@
+---
+interface Props {
+  demo?: boolean;
+}
+const { demo = false } = Astro.props;
+---
+
+<div
+  class="installer-shell"
+  data-real-installer={!demo || undefined}
+  data-demo-installer={demo || undefined}
+>
+  <section class="installer-panel" aria-label="Device setup">
+    <div class="installer-context" data-context hidden></div>
+    <div data-message class="feedback" role="status" aria-live="polite" aria-atomic="true" hidden>
+    </div>
+    <div data-panel>
+      <h2>Set up OpenAthan</h2><p>
+        Enable JavaScript to use USB setup. The <a href="/docs/getting-started/"
+          >setup instructions</a
+        > and <a href="/docs/troubleshooting/">troubleshooting documentation</a> remain available.
+      </p>
+    </div>
+  </section>
+</div>

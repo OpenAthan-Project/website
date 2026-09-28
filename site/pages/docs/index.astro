@@ -1,0 +1,111 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout
+  title="Documentation"
+  description="Find the parts and setup instructions for OpenAthan, get help with your speaker, or learn how to contribute."
+>
+  <article class="docs wrap docs-index">
+    <div class="docs-grid">
+      <div>
+        <div class="docs-heading">
+          <h1>Documentation</h1>
+          <p class="lede">
+            Find what you need to get started, set up your speaker, or fix a problem.
+          </p>
+        </div>
+        <div class="docs-body">
+          <aside class="notice">
+            <strong>In development — first-time installation is not available yet.</strong>
+            <p>USB recovery is available for compatible OpenAthan devices.</p>
+          </aside>
+          <div class="docs-cards">
+            <a class="docs-card" href="/docs/getting-started/"
+              ><strong id="getting-started">Getting started</strong><span
+                >Find the parts you need and follow the setup instructions.</span
+              ></a
+            >
+            <a class="docs-card" href="/docs/troubleshooting/"
+              ><strong id="troubleshooting">Troubleshooting</strong><span
+                >Change Wi-Fi, reset your password, or fix a connection problem.</span
+              ></a
+            >
+          </div>
+          <p>
+            For custom builds, see <a href="/docs/getting-started/#other-hardware">Other hardware</a
+            >.
+          </p>
+          <h2 id="contributing">Contributing</h2>
+          <p>
+            Help improve OpenAthan with bug reports, documentation, or code. Read the contribution
+            instructions for the part you want to work on:
+          </p>
+          <ul>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/openathan/blob/main/CONTRIBUTING.md"
+                >Firmware and device interface contributions</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/website/blob/main/CONTRIBUTING.md"
+                >Website and browser installer contributions</a
+              >
+            </li>
+          </ul>
+          <h2 id="report-an-issue">Report an issue</h2>
+          <p>
+            Include what you expected, what happened, and the steps to reproduce it. Leave passwords
+            and other private information out of your report.
+          </p>
+          <ul>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/openathan/issues"
+                >Device or firmware issues</a
+              > — Athan playback, prayer settings, and the device’s local interface.
+            </li>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/website/issues"
+                >Website or browser installer issues</a
+              > — this website, documentation, and the USB wizard.
+            </li>
+          </ul>
+          <h2 id="licenses">Licenses</h2>
+          <p>
+            OpenAthan software uses Apache License 2.0. Original project documentation uses CC BY
+            4.0. Third-party hardware, software, and recordings retain their own terms.
+          </p>
+          <ul>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/openathan/blob/main/LICENSE"
+                >Firmware software license</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/website/blob/main/LICENSE"
+                >Website software license</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/openathan/blob/main/docs/LICENSE.md"
+                >Firmware documentation license</a
+              >
+            </li>
+            <li>
+              <a href="https://github.com/OpenAthan-Project/website/blob/main/site/LICENSE.md"
+                >Website documentation license</a
+              >
+            </li>
+            <li><a href="/third-party-notices.txt">Third-party software notices</a></li>
+          </ul>
+        </div>
+      </div><nav class="docs-toc" aria-label="On this page">
+        <h2>On this page</h2><a href="#getting-started">Getting started</a><a
+          href="#troubleshooting">Troubleshooting</a
+        ><a href="#contributing">Contributing</a><a href="#report-an-issue">Report an issue</a><a
+          href="#licenses">Licenses</a
+        >
+      </nav>
+    </div>
+  </article>
+</Layout>

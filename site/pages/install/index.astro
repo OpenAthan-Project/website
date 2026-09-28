@@ -1,0 +1,36 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import InstallerShell from '../../components/InstallerShell.astro';
+---
+
+<Layout
+  title="Set up your device"
+  description="USB installation and Wi-Fi/password recovery for OpenAthan’s AtomS3R C126 + Pyramid A167 reference build. First-time installation is not yet available."
+>
+  <section class="page-heading wrap">
+    <h1>Set up OpenAthan</h1><p>Fix Wi-Fi or your device password over USB.</p>
+  </section>
+  <div class="wrap">
+    <InstallerShell /><div class="under-installer">
+      <span>AtomS3R C126 + Pyramid A167</span><span>USB setup: desktop Chrome or Edge</span><a
+        href="/docs/troubleshooting/">Connection trouble?</a
+      >
+    </div>{
+      import.meta.env.DEV && (
+        <div class="preview-link">
+          <>
+            <strong>Installer simulator</strong>
+            <p>
+              Try installation and recovery with a simulated device. No USB access or firmware files
+              are used.
+            </p>
+            <a href="/preview/installer/">Open the interactive simulator</a>
+          </>
+        </div>
+      )
+    }
+  </div>
+</Layout>
+<script>
+  import '../../../installer/entry';
+</script>
