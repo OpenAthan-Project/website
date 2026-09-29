@@ -62,7 +62,7 @@ export async function flashBundle(
 }
 
 export function serialProgrammer(port: SerialPort): Programmer {
-  const transport = new FlashTransport(port, false);
+  const transport = new FlashTransport(port);
   const loader = new ESPLoader({
     transport,
     baudrate: 115200,
@@ -116,10 +116,6 @@ export function serialProgrammer(port: SerialPort): Programmer {
     },
     digest: (offset, bytes) => loader.flashMd5sum(offset, bytes),
     restart: () => loader.after('hard_reset'),
-    async close() {
-      // connect() sets baudrate only after opening succeeds. A fatal USB error
-      // can null both streams while the port still needs to be closed.
-      if (transport.baudrate !== 0) await transport.disconnect();
-    },
+    close: () => transport.close(),
   };
 }

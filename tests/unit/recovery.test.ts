@@ -5,6 +5,7 @@ const hooks = vi.hoisted(() => ({
   open: vi.fn(),
   flash: vi.fn(),
   programmer: vi.fn(),
+  bundle: vi.fn(),
 }));
 vi.mock('../../installer/browser-transport', () => ({
   requestDevicePort: hooks.requestPort,
@@ -14,6 +15,7 @@ vi.mock('../../installer/flasher', () => ({
   flashBundle: hooks.flash,
   serialProgrammer: hooks.programmer,
 }));
+vi.mock('../../installer/release', () => ({ loadRelease: hooks.bundle }));
 import { RealService } from '../../installer/real-service';
 
 beforeEach(() => {
@@ -67,6 +69,25 @@ describe('bounded discovery', () => {
     mediaReviewed: true,
     hardwareQualified: true,
   } as const;
+  it('requires a reload before another USB owner after failed installation cleanup', async () => {
+    vi.useFakeTimers();
+    const port = new SimulatedTransport('success', true);
+    vi.spyOn(port, 'write').mockResolvedValue();
+    hooks.open.mockResolvedValue(port);
+    hooks.bundle.mockResolvedValue({});
+    hooks.flash.mockRejectedValue(new Error('USB communication failed'));
+    const service = new RealService(pin);
+    const connected = service.connect('install');
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(await connected).toEqual({ kind: 'new' });
+    await expect(service.install(true, () => {})).rejects.toThrow('USB communication failed');
+    await service.close();
+    for (const path of ['install', 'recovery'] as const)
+      await expect(service.connect(path)).rejects.toThrow('Reload this page');
+    expect(hooks.requestPort).toHaveBeenCalledOnce();
+    expect(hooks.open).toHaveBeenCalledOnce();
+    expect(hooks.flash).toHaveBeenCalledOnce();
+  });
   for (const path of ['install', 'recovery'] as const) {
     it(`bounds silent ${path} discovery and closes its transport`, async () => {
       vi.useFakeTimers();
