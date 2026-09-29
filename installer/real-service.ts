@@ -9,6 +9,7 @@ export class RealService implements InstallerService {
   private port?: SerialPort;
   private session?: ProvisioningSession;
   private newDeviceConfirmedPath = false;
+  private reloadRequired = false;
   onDisconnect?: () => void;
   constructor(private pin: ReleasePin | null) {
     this.installAvailable = pin !== null;
@@ -21,6 +22,8 @@ export class RealService implements InstallerService {
     return session;
   }
   async connect(path: Path): Promise<Connected> {
+    if (this.reloadRequired)
+      throw new Error('Reload this page before reconnecting after an interrupted installation.');
     if (path === 'install' && !this.pin) throw new Error('Installation release not available yet.');
     await this.close();
     this.port = await requestDevicePort();
@@ -64,7 +67,14 @@ export class RealService implements InstallerService {
     this.newDeviceConfirmedPath = false;
     const bundle = await loadRelease(this.pin);
     const { flashBundle, serialProgrammer } = await import('./flasher');
-    await flashBundle(serialProgrammer(this.port), bundle, true, progress);
+    try {
+      await flashBundle(serialProgrammer(this.port), bundle, true, progress);
+    } catch (error) {
+      // Timed-out driver cleanup may still be pending. Only a page reload can
+      // dispose that browser session before another serial owner is created.
+      this.reloadRequired = true;
+      throw error;
+    }
     // Read-only reconnect attempts are bounded; no flash or provisioning write retries.
     for (let attempt = 0; attempt < 6; attempt++) {
       await new Promise((resolve) => setTimeout(resolve, 2000));
