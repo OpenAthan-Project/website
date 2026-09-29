@@ -1,1 +1,9 @@
-{ "schema": 1, "release": null }
+{
+  "schema": 1,
+  "release": {
+    "tag": "v0.1.0",
+    "manifestSha256": "53b8c1ef870fbabcc36ed697c13491bf94623f81342402a7e0bdb26a6c7e9879",
+    "mediaReviewed": true,
+    "hardwareQualified": true
+  }
+}

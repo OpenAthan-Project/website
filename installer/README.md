@@ -2,7 +2,9 @@
 
 The `/install/` wizard supports two explicit paths: **Install a new device** and **Fix Wi-Fi or password**. Supported reference hardware is M5Stack AtomS3R C126 + Pyramid A167, with an unlocked ESP32-S3 and 8 MiB flash. USB setup targets desktop Chrome and Edge with Web Serial in a secure context. The documentation at `/docs/` remains available in other browsers.
 
-The current catalog has no release. Installation is disabled before the USB picker. Command-only recovery is implemented, but physical browser qualification remains pending. Review `/preview/installer/` on the development server to exercise the complete wizard safely. Its injected simulator transport cannot reach Web Serial or the flasher; its route and code are excluded from the static build. Both example addresses are clickable and open `/preview/device/` in a new tab, a clearly labelled local handoff preview. They never navigate to the example hostname or LAN IP. Actual device addresses open the reported local device URL. No firmware or recording fixtures are served.
+The catalog selects [v0.1.0](https://github.com/OpenAthan-Project/openathan/releases/tag/v0.1.0) for fresh installation. Its release notes record physical Chrome qualification, maintainer-reported Edge results and the [recording rights/attribution approval](https://github.com/OpenAthan-Project/openathan/blob/aa3410907f30c28682fbf496bd316fbc2fd5cabe/AUDIO-LICENSES.md). Recovery remains a separate command-only path.
+
+Review `/preview/installer/` on the development server to exercise the complete wizard without hardware. Its injected simulator transport cannot reach Web Serial or the flasher; its route and code are excluded from the static build. Both example addresses are clickable and open `/preview/device/` in a new tab, a clearly labelled local handoff preview. They never navigate to the example hostname or LAN IP. Actual device addresses open the reported local device URL. Synthetic firmware and recording fixtures are never served.
 
 ## Protocol and session ownership
 
@@ -28,24 +30,18 @@ The website imports exactly one reviewed, stable, published release from `OpenAt
 Current `catalog.json`:
 
 ```json
-{ "schema": 1, "release": null }
-```
-
-A later release-selection PR must provide a catalog entry of this shape:
-
-```json
 {
   "schema": 1,
   "release": {
-    "tag": "v1.0.0",
-    "manifestSha256": "<64 lowercase hexadecimal characters>",
+    "tag": "v0.1.0",
+    "manifestSha256": "53b8c1ef870fbabcc36ed697c13491bf94623f81342402a7e0bdb26a6c7e9879",
     "mediaReviewed": true,
     "hardwareQualified": true
   }
 }
 ```
 
-The approval fields record completed human review; they are not substitutes for it. That PR must link the recording rights/attribution review and physical qualification evidence. Keep this preview's catalog null until those prerequisites and firmware publication are complete.
+The approval fields record completed human review; they are not substitutes for it. A release-selection PR must link the recording rights/attribution review and physical qualification evidence. Setting `release` to `null` disables new installation before the USB picker while keeping recovery available. Select a release only after those reviews and firmware publication are complete.
 
 Run `npm run release:import` after selecting a release. The importer checks GitHub's published release identity, exact asset names/URLs, the tag's commit, byte limits and all SHA-256 values. It downloads only the selected manifest and its two binaries, verifies them, and writes ignored static files under `public/releases/<tag>/`. With a null catalog it performs no network request. Remove obsolete generated release directories when changing or clearing the pin; the build rejects extra binaries. CI imports and verifies the same pin before building. Browser downloads enforce byte limits while streaming (16 KiB for the manifest and each image’s declared size), independently of response headers; failed streams are cancelled before verification or flashing.
 
@@ -115,4 +111,4 @@ These simulations establish software behavior only. They do not establish USB re
 4. Recovery preservation checks for current settings, prayer-consumption history, shared audio and recovery capability, including interruptions and power cycles.
 5. Recording licensing/content/quality approval, firmware release qualification and a separately reviewed public deployment.
 
-Use the firmware repository's current hardware runbooks and fresh private backups for coordinated acceptance. Historical full-flash images can roll back prayer history and are not routine credential recovery. Keep diagnostics, credentials, recovery images and recordings outside this repository. This preview does not modify the current speaker.
+Use the firmware repository's current hardware runbooks and fresh private backups for coordinated acceptance. Historical full-flash images can roll back prayer history and are not routine credential recovery. Keep private diagnostics, credentials and recovery images outside this repository. Published recordings are imported only through the reviewed release manifest; never commit generated binaries.

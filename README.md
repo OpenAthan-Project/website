@@ -2,7 +2,7 @@
 
 A portable, static Astro + TypeScript website with an OpenAthan-owned USB installer and Wi-Fi/password recovery wizard.
 
-**Status: reviewable development preview.** No installation release is selected. The normal installer says “Installation release not available yet.” Public deployment, release publication, recording redistribution approval and physical USB qualification are separate milestones.
+**Selected installation release: [OpenAthan v0.1.0](https://github.com/OpenAthan-Project/openathan/releases/tag/v0.1.0).** The installer supports fresh installation on AtomS3R C126 + Pyramid A167 and Wi-Fi/password recovery for existing devices. The release notes record qualification results and recording attribution; the website imports only the exact reviewed manifest and images.
 
 ## Local preview
 
@@ -10,6 +10,7 @@ Use Node **24.19.0** (pinned in `.nvmrc`) and npm:
 
 ```sh
 npm ci
+npm run release:import
 npm run dev -- --host 127.0.0.1
 ```
 
@@ -58,7 +59,7 @@ Prayer settings and activation happen on the device's own unique local address. 
 ```text
 site/          Astro pages, layouts, styles and public documentation
 installer/     Framework-independent protocols, session owner and wizard
-installer/catalog.json  Explicit release pin; currently null
+installer/catalog.json  Explicit reviewed release pin
 public/releases/        Generated, ignored imports of reviewed releases
 tools/         Release import and static-output checks
 tests/         Protocol, release, transport and browser simulation tests
