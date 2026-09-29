@@ -37,7 +37,7 @@ async function saveWifi(page: Page) {
   await page.getByRole('button', { name: 'Save Wi-Fi', exact: true }).click();
 }
 
-test('normal installer gates fresh installs before requesting USB access', async ({ page }) => {
+test('published installation requires an explicit USB request', async ({ page }) => {
   let requests = 0;
   await page.exposeFunction('recordUsbRequest', () => {
     requests++;
@@ -46,18 +46,25 @@ test('normal installer gates fresh installs before requesting USB access', async
     Object.defineProperty(navigator, 'serial', {
       configurable: true,
       value: {
-        requestPort: () =>
-          (window as unknown as { recordUsbRequest: () => void }).recordUsbRequest(),
+        requestPort: async () => {
+          await (window as unknown as { recordUsbRequest: () => Promise<void> }).recordUsbRequest();
+          throw new DOMException('No device selected', 'NotFoundError');
+        },
       },
     });
   });
   await page.goto('/install/');
-  await expect(
-    page.getByText('Installation release not available yet.', { exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Installation unavailable' })).toBeDisabled();
+  const install = page.getByRole('button', { name: 'Install a new device', exact: true });
+  await expect(install).toBeEnabled();
   await expect(page.getByRole('button', { name: 'Choose USB device' })).toHaveCount(0);
   expect(requests).toBe(0);
+  await install.click();
+  await expect(page.getByRole('heading', { name: 'Connect your device' })).toBeVisible();
+  expect(requests).toBe(0);
+  await page.getByRole('button', { name: 'Choose USB device' }).click();
+  await expect(page.getByRole('status')).toContainText('No device selected.');
+  expect(requests).toBe(1);
+  await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
 });
 
 test('full new-device simulator completes with clickable local handoff previews', async ({
