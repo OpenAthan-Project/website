@@ -14,8 +14,8 @@
     "test": "vitest run",
     "test:browser": "playwright test",
     "release:import": "node --experimental-strip-types tools/import-release.ts",
-    "format": "prettier --write \"installer/**/*.{ts,json,md}\" \"site/**/*.{astro,css}\" \"tools/*.{mjs,ts}\" \"tests/**/*.ts\" \"*.{json,mjs,ts}\" README.md .github/workflows/website.yml",
-    "format:check": "prettier --check \"installer/**/*.{ts,json,md}\" \"site/**/*.{astro,css}\" \"tools/*.{mjs,ts}\" \"tests/**/*.ts\" \"*.{json,mjs,ts}\" README.md .github/workflows/website.yml"
+    "format": "prettier --write \"installer/**/*.{ts,json,md}\" \"site/**/*.{astro,css,ts}\" \"tools/*.{mjs,ts}\" \"tests/**/*.ts\" \"*.{json,mjs,ts}\" README.md .github/workflows/website.yml",
+    "format:check": "prettier --check \"installer/**/*.{ts,json,md}\" \"site/**/*.{astro,css,ts}\" \"tools/*.{mjs,ts}\" \"tests/**/*.ts\" \"*.{json,mjs,ts}\" README.md .github/workflows/website.yml"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",

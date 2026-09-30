@@ -94,6 +94,70 @@ button:disabled,
   background: var(--panel);
   border-color: var(--field-border);
 }
+
+.location-helper {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(250px, 0.8fr);
+  gap: 36px;
+  align-items: start;
+  padding-bottom: 36px;
+}
+.location-main > p:first-child {
+  max-width: 68ch;
+}
+.location-aside {
+  background: var(--panel);
+  padding: 24px;
+}
+.location-aside p:last-child {
+  margin-bottom: 0;
+}
+.location-helper .feedback {
+  max-width: 760px;
+}
+.location-helper .feedback.error {
+  background: var(--error-bg, #fff0ec);
+  color: var(--error-text, #8a3426);
+}
+.location-helper #location-result {
+  border-top: 1px solid var(--line);
+  margin-top: 32px;
+  padding-top: 28px;
+}
+.location-source {
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.location-values {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.4fr) minmax(0, 1fr);
+  gap: 10px 16px;
+  align-items: center;
+  max-width: 760px;
+}
+.location-values label {
+  margin: 0;
+}
+.location-values input {
+  font-variant-numeric: tabular-nums;
+}
+.location-manual {
+  margin-top: 24px;
+}
+@media (max-width: 700px) {
+  .location-helper {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .location-values {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .location-values label:not(:first-child) {
+    margin-top: 10px;
+  }
+}
 :focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 4px;

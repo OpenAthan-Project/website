@@ -20,6 +20,7 @@ Open `http://127.0.0.1:4321/`:
 | ------------------------ | ------------------------------------------------------ |
 | `/`                      | Everyday features and an introduction to OpenAthan     |
 | `/install/`              | Release-gated installation and command-only recovery   |
+| `/location/`             | Optional location suggestion for the device settings   |
 | `/docs/`                 | Documentation, contribution, issue and license links   |
 | `/docs/getting-started/` | Cable, browser and first-time setup instructions       |
 | `/docs/troubleshooting/` | Wi-Fi/password and connection troubleshooting          |
@@ -55,6 +56,8 @@ Use `npm run format` when editing the website or installer. Dependencies are ver
 [`OpenAthan-Project/openathan`](https://github.com/OpenAthan-Project/openathan) owns firmware, reusable product logic, hardware adapters and the device-local interface. It builds and publishes release artifacts. This repository never compiles firmware, selects an unreviewed latest release, or includes private recordings, recovery images or CI audio.
 
 Prayer settings and activation happen on the device's own unique local address. The speaker operates independently of this website and Home Assistant.
+
+The optional `/location/` helper asks for browser location after one Detect action and automatically tries GeoJS IP location if that fails. It sends proposed coordinates to the device only through a versioned URL fragment; the user reviews the suggestion and timetable before saving locally. It does not call a device settings API.
 
 ```text
 site/          Astro pages, layouts, styles and public documentation
