@@ -1,0 +1,64 @@
+---
+import Layout from '../../layouts/Layout.astro';
+---
+
+<Layout
+  title="Find your location"
+  description="Find coordinates for your OpenAthan speaker, then review them on its local settings page."
+>
+  <section class="page-heading wrap">
+    <h1>Find your location</h1>
+    <p>Use your phone or computer to suggest a location for your speaker.</p>
+  </section>
+  <div class="wrap location-helper">
+    <div class="location-main">
+      <p>
+        Your browser may ask to use its precise location. If that fails or you decline, we
+        automatically ask GeoJS for an approximate location based on your public IP address. GeoJS
+        receives that IP address. Check the result before using it for prayer times.
+      </p>
+      <button id="find-location" class="button" type="button">Find location</button>
+      <p id="location-status" class="feedback" role="status" aria-live="polite">
+        Nothing has been sent to GeoJS yet.
+      </p>
+
+      <section id="location-result" hidden aria-labelledby="location-result-title">
+        <h2 id="location-result-title">Review the suggestion</h2>
+        <p id="location-source" class="location-source"></p>
+        <p id="location-accuracy" class="muted"></p>
+        <p id="location-caution" class="notice" hidden></p>
+        <div class="location-values">
+          <label for="location-latitude">Latitude</label>
+          <input id="location-latitude" type="text" readonly />
+          <label for="location-longitude">Longitude</label>
+          <input id="location-longitude" type="text" readonly />
+          <label for="location-timezone">Suggested timezone</label>
+          <input id="location-timezone" type="text" readonly />
+        </div>
+        <p class="small muted">
+          Check the coordinates and timezone against the speaker’s location.
+        </p>
+        <div class="actions">
+          <a id="use-location" class="button" href="#" hidden>Review on device</a>
+          <button id="copy-location" class="button secondary" type="button">Copy values</button>
+        </div>
+      </section>
+
+      <p id="manual-location" class="location-manual" hidden>
+        Location detection is unavailable. Enter your coordinates and timezone manually on your
+        device’s settings page.
+      </p>
+      <a id="return-device" href="#" hidden>Return to device settings</a>
+    </div>
+    <aside class="location-aside">
+      <h2>Your speaker stays independent</h2>
+      <p>
+        This page suggests values only. Your device calculates prayer times and saves settings
+        locally after you review them. Manual setup still works without this page.
+      </p>
+    </aside>
+  </div>
+</Layout>
+<script>
+  import '../../location-page';
+</script>
