@@ -36,6 +36,29 @@ test('precise browser location returns a reviewable proposal without an IP reque
   expect(new URLSearchParams(returnUrl.hash.slice(1)).get('latitude')).toBe('44.4113861');
 });
 
+test('device return survives refresh and rejects invalid saved or incoming addresses', async ({
+  page,
+}) => {
+  const returnLink = page.getByRole('link', { name: 'Return to device settings' });
+  await page.goto(`/location/${helperHash}`);
+  await page.reload();
+  await expect(returnLink).toHaveAttribute('href', device);
+  expect(new URL(page.url()).hash).toBe('');
+
+  await page.evaluate(() =>
+    history.replaceState({ openAthanDeviceReturnUrl: 'https://example.com/' }, '', location.href),
+  );
+  await page.reload();
+  await expect(returnLink).toBeHidden();
+
+  await page.goto(`/location/#v=1&device=${encodeURIComponent(device)}`);
+  await page.reload();
+  await expect(returnLink).toHaveAttribute('href', device);
+  await page.goto('/location/#v=1&device=https%3A%2F%2Fexample.com%2F');
+  await page.reload();
+  await expect(returnLink).toBeHidden();
+});
+
 test('permission denial automatically falls back to a labelled IP estimate', async ({ page }) => {
   let ipCalls = 0;
   await page.addInitScript(() => {

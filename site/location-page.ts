@@ -1,5 +1,6 @@
 import {
   browserSuggestion,
+  deviceReturnUrl,
   ipSuggestion,
   locationHandoffUrl,
   returnAddressFromHash,
@@ -13,10 +14,20 @@ const result = get<HTMLElement>('location-result');
 const manual = get<HTMLParagraphElement>('manual-location');
 const returnLink = get<HTMLAnchorElement>('return-device');
 const useLink = get<HTMLAnchorElement>('use-location');
-const device = returnAddressFromHash(window.location.hash);
+const incomingHash = window.location.hash;
+const savedAddress: unknown = history.state?.openAthanDeviceReturnUrl;
+const device = incomingHash
+  ? returnAddressFromHash(incomingHash)
+  : typeof savedAddress === 'string'
+    ? deviceReturnUrl(savedAddress)
+    : null;
 
-if (window.location.hash)
-  history.replaceState(null, '', window.location.pathname + window.location.search);
+if (incomingHash)
+  history.replaceState(
+    device ? { openAthanDeviceReturnUrl: device.href } : null,
+    '',
+    window.location.pathname + window.location.search,
+  );
 if (device) {
   returnLink.href = device.href;
   returnLink.hidden = false;
