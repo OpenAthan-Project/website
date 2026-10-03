@@ -1,6 +1,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
-import { checkedManifest, parsePin, verifyBundle } from '../installer/release.ts';
+import { checkedManifest, verifyBundle } from '../installer/release.ts';
+import { readSelection, metadata, parseMetadata } from './release-selection.ts';
 
 const root = resolve(import.meta.dirname, '..');
 const dist = resolve(root, 'dist');
@@ -35,7 +36,19 @@ for (const path of output.filter((name) => name.endsWith('.html'))) {
       throw new Error(`Broken local link: ${href}`);
   }
 }
-const pin = parsePin(JSON.parse(await readFile(resolve(root, 'installer/catalog.json'), 'utf8')));
+const selection = await readSelection(root);
+const pin = selection.release;
+const served = parseMetadata(JSON.parse(await readFile(resolve(dist, 'release.json'), 'utf8')));
+if (JSON.stringify(served) !== JSON.stringify(metadata(selection)))
+  throw new Error('Static metadata differs from the selected release.');
+const installer = await readFile(resolve(dist, 'install/index.html'), 'utf8');
+const attribute = installer.match(/data-release-selection="([^"]*)"/)?.[1];
+const decoded = attribute
+  ?.replace(/&quot;/g, '"')
+  .replace(/&#(?:39|x27);/g, "'")
+  .replace(/&amp;/g, '&');
+if (!decoded || JSON.stringify(JSON.parse(decoded)) !== JSON.stringify(selection))
+  throw new Error('Installer selection differs from the selected release.');
 const binaries = output.filter((path) => path.endsWith('.bin'));
 if (!pin && binaries.length)
   throw new Error(

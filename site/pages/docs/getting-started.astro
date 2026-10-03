@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import CableDiagram from '../../components/CableDiagram.astro';
+import { siteSelection } from '../../release-selection';
+const { release } = await siteSelection();
 ---
 
 <Layout
@@ -14,10 +16,23 @@ import CableDiagram from '../../components/CableDiagram.astro';
       </p>
     </div><div class="docs-body">
       <aside class="notice">
-        <strong>OpenAthan v0.1.0 is available.</strong><p>
-          Use <a href="/install/">USB setup</a> to install OpenAthan on the supported hardware. Already
-          have OpenAthan installed? Choose <strong>Fix Wi-Fi or password</strong> to recover access while
-          keeping your prayer settings and playback history.
+        <strong
+          >{
+            release
+              ? `OpenAthan ${release.tag} is available.`
+              : 'New installation is temporarily unavailable.'
+          }</strong
+        ><p>
+          {
+            release && (
+              <>
+                Use <a href="/install/">USB setup</a> to install OpenAthan on the supported
+                hardware.{' '}
+              </>
+            )
+          }
+          Already have OpenAthan installed? Choose <strong>Fix Wi-Fi or password</strong> to recover
+          access while keeping your prayer settings and playback history.
         </p>
       </aside><h2>What you’ll need</h2><p>
         Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
@@ -68,7 +83,42 @@ import CableDiagram from '../../components/CableDiagram.astro';
         build needs internet access to set its clock after a restart, before it can play the Athan.
         To open its settings, connect your phone or computer to the same home Wi-Fi. Keep the
         settings page on your trusted home network; do not make it accessible from the internet.
-      </p><div class="actions">
+      </p>
+      <h2 id="firmware-updates">Update your firmware</h2>
+      <p>
+        Open your speaker’s settings on the same home Wi-Fi and sign in. In <strong>Firmware</strong
+        >, choose <strong>Check for updates</strong>, read the release notes, then choose <strong
+          >Install update</strong
+        >. The update waits until playback finishes and the next announcement is at least 15 minutes
+        away. Keep the speaker powered while it updates and reconnects.
+      </p>
+      <p>
+        Compatible device-page updates preserve your Wi-Fi, device password, prayer settings,
+        playback history, light preferences and stored recordings. New recordings in a fresh-install
+        release do not replace the recordings on an existing speaker.
+      </p>
+      <p>
+        On v0.2.0, update checks may fail with “Could not check for updates”. Getting the fix
+        requires a preserving USB application update. If Firmware is missing or the device reports
+        an incompatible bootloader, a preserving USB transition is also required. Follow the
+        <a
+          href="https://github.com/OpenAthan-Project/openathan/blob/v0.2.1/docs/development/firmware-upgrades.md#startup-recovery-and-existing-devices"
+          >preserving upgrade guide</a
+        >
+        or <a href="https://github.com/OpenAthan-Project/openathan/issues">ask for firmware help</a
+        >. Do not use a new installation to update an existing speaker: it erases saved data.
+      </p>
+      {
+        release && (
+          <p>
+            <a href={`https://github.com/OpenAthan-Project/openathan/releases/tag/${release.tag}`}>
+              Read the current release notes
+            </a>
+            .
+          </p>
+        )
+      }
+      <div class="actions">
         <a class="button" href="/install/">Open device setup</a><a href="/docs/troubleshooting/"
           >Troubleshooting</a
         >
