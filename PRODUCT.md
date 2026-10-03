@@ -24,7 +24,8 @@ The public website explains the project, provides documentation and performs sup
 
 ## Capabilities and Constraints
 
-- First-time public installation is not available yet. Preserve the existing release gate.
+- Public fresh installation is available for the selected approved stable reference release. Preserve artifact verification, publication approval and explicit erase confirmation.
+- The website adopts stable latest after validation, with manual pin/disable policies for rollback. This never installs updates on existing speakers; owners use the authenticated device page or a preserving USB transition.
 - Recovery is separate from new installation and preserves prayer settings and history.
 - Keep hardware model numbers and connection diagrams in setup documentation rather than homepage focal areas.
 - Preserve existing routes, anchors, protocol behavior and simulator isolation.
@@ -39,7 +40,7 @@ The visual identity uses a community bulletin composition, a white canvas, charc
 
 ## Evidence on Hand
 
-The homepage, documentation and isolated installer simulator contain the current product explanations and task guidance. Project source and contribution links exist for OpenAthan firmware and website repositories. Public first-time installation is unavailable. Do not invent releases, testimonials, community statistics or photographs of a finished product.
+The deployed homepage, setup/update documentation, `/release.json` and browser installer share one verified release selection. Firmware release notes and source-bound validation reports document public releases and their limits. The isolated development simulator validates interface behavior without hardware and is excluded from production. Do not invent testimonials, community statistics or photographs of a finished product.
 
 ## Product Principles
 
