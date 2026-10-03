@@ -1,13 +1,15 @@
 ---
 interface Props {
   demo?: boolean;
+  catalog?: unknown;
 }
-const { demo = false } = Astro.props;
+const { demo = false, catalog } = Astro.props;
 ---
 
 <div
   class="installer-shell"
   data-real-installer={!demo || undefined}
+  data-release-selection={!demo ? JSON.stringify(catalog) : undefined}
   data-demo-installer={demo || undefined}
 >
   <section class="installer-panel" aria-label="Device setup">

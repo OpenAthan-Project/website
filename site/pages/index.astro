@@ -1,5 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import { siteSelection } from '../release-selection';
+const { release } = await siteSelection();
 ---
 
 <Layout title="An open-source Athan speaker">
@@ -15,7 +17,13 @@ import Layout from '../layouts/Layout.astro';
             stroke="white"
             stroke-width="3"
             stroke-linecap="round"></path></svg
-        ><strong>OpenAthan v0.1.0 is available for AtomS3R C126 + Pyramid A167.</strong>
+        ><strong
+          >{
+            release
+              ? `OpenAthan ${release.tag} is available for AtomS3R C126 + Pyramid A167.`
+              : 'USB recovery is available. New installation is temporarily unavailable.'
+          }</strong
+        >
       </aside><div class="actions">
         <a class="button" href="/docs/getting-started/">Getting started</a><a
           class="text-link"

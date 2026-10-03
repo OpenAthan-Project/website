@@ -1,6 +1,8 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import InstallerShell from '../../components/InstallerShell.astro';
+import { siteSelection } from '../../release-selection';
+const selection = await siteSelection();
 ---
 
 <Layout
@@ -13,7 +15,7 @@ import InstallerShell from '../../components/InstallerShell.astro';
     </p>
   </section>
   <div class="wrap">
-    <InstallerShell /><div class="under-installer">
+    <InstallerShell catalog={selection} /><div class="under-installer">
       <span>AtomS3R C126 + Pyramid A167</span><span>USB setup: desktop Chrome or Edge</span><a
         href="/docs/troubleshooting/">Connection trouble?</a
       >

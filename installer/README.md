@@ -2,7 +2,7 @@
 
 The `/install/` wizard supports two explicit paths: **Install a new device** and **Fix Wi-Fi or password**. Supported reference hardware is M5Stack AtomS3R C126 + Pyramid A167, with an unlocked ESP32-S3 and 8 MiB flash. USB setup targets desktop Chrome and Edge with Web Serial in a secure context. The documentation at `/docs/` remains available in other browsers.
 
-The catalog selects [v0.1.0](https://github.com/OpenAthan-Project/openathan/releases/tag/v0.1.0) for fresh installation. Its release notes record physical Chrome qualification, maintainer-reported Edge results and the [recording rights/attribution approval](https://github.com/OpenAthan-Project/openathan/blob/aa3410907f30c28682fbf496bd316fbc2fd5cabe/AUDIO-LICENSES.md). Recovery remains a separate command-only path.
+The website adopts the firmware repository’s latest approved stable release after verification and website tests. The committed pin is a local-preview default and a manual rollback option, not a version label that needs changing for every release. Recovery remains a separate command-only path.
 
 Review `/preview/installer/` on the development server to exercise the complete wizard without hardware. Its injected simulator transport cannot reach Web Serial or the flasher; its route and code are excluded from the static build. Both example addresses are clickable and open `/preview/device/` in a new tab, a clearly labelled local handoff preview. They never navigate to the example hostname or LAN IP. Actual device addresses open the reported local device URL. Synthetic firmware and recording fixtures are never served.
 
@@ -21,29 +21,21 @@ The implementation follows the firmware [provisioning handoff](https://github.co
 
 Credentials are held only in temporary browser memory, removed from forms after submission and never logged, stored, added to URLs or sent to analytics. JavaScript strings cannot be guaranteed to be physically zeroed; transmitted byte buffers are cleared after writing. Avoid browser tracing with real credentials. The site opens only validated device-reported local links chosen by the user; it does not call the device's HTTP API across origins.
 
-Recovery never imports or invokes the flashing adapter, erase operations or settings/history commands. Unrecognized firmware receives troubleshooting guidance. Recognized OpenAthan firmware on the installation path is directed to recovery, including when its status is unreadable. A failed recognition probe is not permission to erase: new installation requires a separate explicit hardware/full-erasure confirmation. Existing-device upgrades are outside this version.
+Recovery never imports or invokes the flashing adapter, erase operations or settings/history commands. Unrecognized firmware receives troubleshooting guidance. Recognized OpenAthan firmware on the installation path is directed to recovery, including when its status is unreadable. A failed recognition probe is not permission to erase: new installation requires a separate explicit hardware/full-erasure confirmation. Existing-device upgrades happen on the authenticated device page or through a preserving USB transition, not this browser installer. See the [owner guidance](https://openathan.com/docs/getting-started/#firmware-updates).
 
-## Reviewed release import
+## Approved release discovery and import
 
-The website imports exactly one reviewed, stable, published release from `OpenAthan-Project/openathan`. It does not use `latest`, build firmware, accept local binary uploads or fetch user-provided manifest URLs.
+The website consumes stable published releases only from `OpenAthan-Project/openathan`. It never builds firmware, accepts local binary uploads or fetches user-provided manifest URLs.
 
-Current `catalog.json`:
+`catalog.json` retains schema 1 with an optional `automatic` boolean (omitted means `false`). With automatic mode enabled, publishing a qualified release as GitHub’s **latest** authorizes website adoption. Maintainers must finish media rights/content review, appropriate physical qualification and publication approval first. Generated `mediaReviewed` and `hardwareQualified` fields record that publication policy; software checks cannot establish those human approvals or new physical results.
 
-```json
-{
-  "schema": 1,
-  "release": {
-    "tag": "v0.1.0",
-    "manifestSha256": "53b8c1ef870fbabcc36ed697c13491bf94623f81342402a7e0bdb26a6c7e9879",
-    "mediaReviewed": true,
-    "hardwareQualified": true
-  }
-}
-```
+The committed release remains a verified manual pin. Set `automatic` to `false` to hold or roll back to it through a reviewed PR. Set `release` to `null` to disable fresh installation before the USB picker; null takes precedence over automatic discovery and keeps recovery available. Automatic mode must remain off for a persistent manual rollback.
 
-The approval fields record completed human review; they are not substitutes for it. A release-selection PR must link the recording rights/attribution review and physical qualification evidence. Setting `release` to `null` disables new installation before the USB picker while keeping recovery available. Select a release only after those reviews and firmware publication are complete.
+`npm run release:import` discovers a selection once, verifies the published identity, exact asset names/URLs, source commit, bounded sizes, hardware/layout and hashes, then imports only its manifest and two binaries under ignored `public/releases/<tag>/`. Old generated imports are removed only after the candidate verifies; null removes all generated firmware imports without querying the firmware service. CI first runs `release:select`, then `release:import -- --snapshot` to retain its frozen selection.
 
-Run `npm run release:import` after selecting a release. The importer checks GitHub's published release identity, exact asset names/URLs, the tag's commit, byte limits and all SHA-256 values. It downloads only the selected manifest and its two binaries, verifies them, and writes ignored static files under `public/releases/<tag>/`. With a null catalog it performs no network request. Remove obsolete generated release directories when changing or clearing the pin; the build rejects extra binaries. CI imports and verifies the same pin before building. Browser downloads enforce byte limits while streaming (16 KiB for the manifest and each image’s declared size), independently of response headers; failed streams are cancelled before verification or flashing.
+The ignored `build/release-selection.json` supplies the importer, public labels, release links, installer and static integrity checker. A production build requires a snapshot matching the current policy. Local development without a snapshot uses the committed pin; it does not discover latest in the browser. `/release.json` is a read-only static interface with schema 1, the website commit, and either `release: null` or `release: { tag, manifestSha256 }`. It contains no credentials or device information.
+
+The browser independently verifies this served selection’s manifest and binaries. Streaming limits remain 16 KiB for the manifest and each image’s declared size; failed streams are cancelled before verification or flashing. See [deployment instructions](../deployment/README.md) for scheduling, tested-artifact deployment, failure handling and rollback.
 
 ### Version-1 manifest contract
 
@@ -103,12 +95,12 @@ The flashing transport releases its output lock even when a USB write rejects. I
 
 Unit tests exercise Python-compatible framing, fragmentation, checksums, malformed data, timeouts, command serialization, uncertain writes and release rejection. Fake-programmer tests require confirmation, compatible hardware and successful flash readback before completion. Recovery tests assert that the flasher is never called. Browser tests cover complete simulated installation/recovery, denied/busy ports, disconnects, wrong Wi-Fi credentials, password validation, storage faults, uncertain acknowledgements, unsupported browsers, focus and narrow layouts.
 
-These simulations establish software behavior only. They do not establish USB reliability, bootloader entry, physical writes, power-cycle behavior, audible playback or durable preservation. Before enabling an installation release or publicly launching, explicitly coordinate testing on reference hardware and complete at least:
+These simulations establish software behavior only. They do not establish USB reliability, bootloader entry, physical writes, power-cycle behavior, audible playback or durable preservation. Release maintainers must retain source-bound physical qualification evidence for the applicable behaviors below. Reuse accepted evidence where applicable, state untested changes, and coordinate new hardware testing when required; automatic website adoption does not repeat or establish these results:
 
 1. Fresh installation in desktop Chrome and Edge, both images verified, followed by actual device-hosted setup and activation.
 2. Interrupted-flash recovery, failed downloads/verification, wrong-device rejection and supported bootloader/reconnect behavior.
 3. Network scan/manual/hidden-network entry, incorrect credentials, lost acknowledgements, device-password creation/reset and storage-fault handling.
 4. Recovery preservation checks for current settings, prayer-consumption history, shared audio and recovery capability, including interruptions and power cycles.
-5. Recording licensing/content/quality approval, firmware release qualification and a separately reviewed public deployment.
+5. Recording licensing/content/quality approval, firmware release qualification and approved stable publication. Website adoption follows the reviewed automatic-release policy.
 
 Use the firmware repository's current hardware runbooks and fresh private backups for coordinated acceptance. Historical full-flash images can roll back prayer history and are not routine credential recovery. Keep private diagnostics, credentials and recovery images outside this repository. Published recordings are imported only through the reviewed release manifest; never commit generated binaries.

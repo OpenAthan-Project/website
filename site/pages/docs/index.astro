@@ -1,5 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { siteSelection } from '../../release-selection';
+const { release } = await siteSelection();
 ---
 
 <Layout
@@ -17,9 +19,33 @@ import Layout from '../../layouts/Layout.astro';
         </div>
         <div class="docs-body">
           <aside class="notice">
-            <strong>OpenAthan v0.1.0 is available.</strong>
-            <p>Install on AtomS3R C126 + Pyramid A167, or recover an existing device over USB.</p>
+            <strong
+              >{
+                release
+                  ? `OpenAthan ${release.tag} is available.`
+                  : 'New installation is temporarily unavailable.'
+              }</strong
+            >
+            <p>
+              {
+                release
+                  ? 'Install on AtomS3R C126 + Pyramid A167, or recover an existing device over USB.'
+                  : 'Recover an existing device over USB.'
+              }
+            </p>
+            {
+              release && (
+                <p>
+                  <a
+                    href={`https://github.com/OpenAthan-Project/openathan/releases/tag/${release.tag}`}
+                  >
+                    Release notes
+                  </a>
+                </p>
+              )
+            }
           </aside>
+          <p><a href="/docs/getting-started/#firmware-updates">Update an existing speaker</a></p>
           <div class="docs-cards">
             <a class="docs-card" href="/docs/getting-started/"
               ><strong id="getting-started">Getting started</strong><span
