@@ -165,7 +165,7 @@ The palette combines restrained slate blue with neutral charcoal and warm, purpo
 
 ### Secondary
 
-- **Warm amber** (`warning-bg` and `warning-text`) identifies development availability, caution and uncertain outcomes. Notice paragraphs use ordinary reading text.
+- **Warm amber** (`warning-bg` and `warning-text`) identifies release availability, caution and uncertain outcomes. Notice paragraphs use ordinary reading text.
 - **Muted red** (`error-bg` and `error-text`) identifies error feedback. Always include an explanatory message; color alone does not explain a result.
 
 ### Neutral

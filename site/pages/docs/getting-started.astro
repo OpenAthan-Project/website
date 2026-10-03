@@ -36,8 +36,8 @@ const { release } = await siteSelection();
         </p>
       </aside><h2>What you’ll need</h2><p>
         Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
-        and a <a href="https://docs.m5stack.com/en/atom/Echo_Pyramid">Pyramid A167</a> speaker base separately.
-        M5Stack calls the A167 “Echo Pyramid”; OpenAthan also refers to it as Voice Pyramid. These instructions
+        and a <a href="https://docs.m5stack.com/en/atom/Voice_Pyramid">Voice Pyramid A167</a> speaker
+        base separately. A167 has also been called “Echo Pyramid”; check the SKU when buying. These instructions
         and the browser installer currently support only this combination of parts.
       </p><p>
         You will need a computer with desktop Chrome or Edge, a USB-C <strong>data</strong> cable, and
@@ -73,11 +73,15 @@ const { release } = await siteSelection();
         address. If the hostname does not work, try its displayed IP address.
       </p><p>
         Sign in, enter your location and timezone, choose a calculation method, and review the
-        prayer times. If you need coordinates, open the optional <a href="/location/"
-          >location helper</a
-        >, then copy its suggested coordinates into the device’s settings and check the timezone.
-        Select <strong>Finish setup</strong> to enable the Athan. If the clock has not synchronized yet,
-        Athan playback will wait.
+        prayer times. On current firmware, choose <strong>Find my location</strong> in the device’s settings
+        to open the optional <a href="/location/">location helper</a>. Review its suggestion, choose <strong
+          >Review on device</strong
+        >, then check the coordinates and timezone and choose
+        <strong>Preview schedule</strong>. A returned suggestion needs a ready timetable before
+        saving; if the clock has not synchronized, wait and preview again. Manual entry is always
+        available. On earlier firmware, copy the helper’s values into the settings yourself. Select <strong
+          >Finish setup</strong
+        > to enable the Athan. If the clock has not synchronized yet, Athan playback will wait.
       </p><h2>Everyday use</h2><p>
         Your speaker calculates prayer times and plays recordings stored on the device. The current
         build needs internet access to set its clock after a restart, before it can play the Athan.

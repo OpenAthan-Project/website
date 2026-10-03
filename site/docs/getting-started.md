@@ -1,9 +1,22 @@
 # Getting started
 
-The reviewable website preview includes [setup instructions](../pages/docs/getting-started.astro), [troubleshooting instructions](../pages/docs/troubleshooting.astro) and a [browser installer](../../installer/README.md). Run it locally using the [development instructions](../../README.md).
+The published [setup instructions](https://openathan.com/docs/getting-started/),
+[firmware update guidance](https://openathan.com/docs/getting-started/#firmware-updates)
+and [troubleshooting](https://openathan.com/docs/troubleshooting/) are maintained
+in the [Astro setup page](../pages/docs/getting-started.astro) and
+[troubleshooting page](../pages/docs/troubleshooting.astro). This Markdown file
+is a source guide, not a second rendered setup page.
 
-No installation release is selected. New-device installation remains unavailable until a published firmware release, approved shared audio and physical browser qualification are reviewed. The development simulator lets reviewers explore the complete flow without connecting hardware.
+The [browser installer](../../installer/README.md) consumes a verified selection
+of the firmware repository's approved stable latest release. It supports fresh
+installation and settings/history-preserving Wi-Fi/password recovery. Fresh
+installation erases saved data; existing-device firmware upgrades use the
+device page or a preserving USB transition. Publication, physical qualification
+and software checks remain distinct evidence.
 
 The supported reference build uses AtomS3R C126 + Pyramid A167. Connect only the Atom USB-C data cable to the computer for installation/setup, then disconnect it and use only the Pyramid bottom power cable for normal operation. Complete prayer settings and activation on the device's returned unique hostname, using its IP fallback if needed.
 
-The website consumes firmware releases; it never compiles them. No public deployment or speaker modification is part of this preview milestone.
+The website never compiles firmware or automatically updates connected speakers.
+Use the [development instructions](../../README.md) for local preview. The
+development simulator lets reviewers explore the flow without hardware and is
+excluded from the production build.
