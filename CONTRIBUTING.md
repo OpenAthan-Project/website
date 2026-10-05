@@ -2,6 +2,26 @@
 
 OpenAthan is intended for ordinary users, including people with no embedded-development experience. Website and installer contributions should make installation and documentation clearer, safer, and more accessible.
 
+## Local development
+
+See the [README](README.md#local-preview) for the pinned Node version, preview commands, and public routes, and [validation and build](README.md#validation-and-build) for the available checks.
+
+### Development simulators
+
+`/preview/installer/` exercises installation and recovery success and failure flows without a speaker, firmware files, or hardware transport. Use made-up credentials. `/preview/device/` previews the local handoff opened by simulated device links. The simulator routes and implementation are excluded from the production static build.
+
+The development browser suite (`npm run test:browser`) includes simulator tests. The built-site suite (`npm run test:browser:built`) excludes them. Browser simulation does not replace physical installation, interruption, and preservation validation; see the [installer contract](installer/README.md).
+
+### Development server
+
+Astro can run its development server in the background when launched by a coding agent. Use `npm run dev -- --host 127.0.0.1 --ignore-lock` for a foreground process, as the browser-test runner does. Use `npm run dev -- --stop` to stop an Astro-managed background server.
+
+### Redirects and device handoff
+
+The former `/guides/setup/` and `/guides/recovery/` addresses redirect to `/docs/getting-started/` and `/docs/troubleshooting/`. These ordinary HTML pages use an immediate meta refresh, a canonical URL, and a fallback link, so they work on static hosting without server redirect rules or JavaScript.
+
+The optional `/location/` helper asks for browser location after one Detect action and automatically tries GeoJS IP location if that fails. It sends proposed coordinates to the device through a versioned URL fragment. The user reviews the suggestion and timetable before saving locally; the helper does not call a device settings API.
+
 ## Engineering principles
 
 - Keep the generated site deployable as an ordinary static artifact.
