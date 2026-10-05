@@ -1,12 +1,24 @@
 # OpenAthan Website
 
-A portable, static Astro + TypeScript website with an OpenAthan-owned USB installer and Wi-Fi/password recovery wizard.
+The website and USB installer for OpenAthan, a standalone speaker that automatically plays the Athan at prayer times.
 
-**Installation release: the latest approved stable OpenAthan release.** The website checks every 30 minutes and deploys only after artifact verification and website tests pass. The installer supports fresh installation on AtomS3R C126 + Pyramid A167 and Wi-Fi/password recovery for existing devices. [Existing owners update from the device page](https://openathan.com/docs/getting-started/#firmware-updates), or use the preserving USB transition described there. Fresh installation erases saved data.
+Visit [openathan.com](https://openathan.com) for supported hardware, installation, setup, and recovery instructions.
+
+- [Install OpenAthan](https://openathan.com/install/)
+- [Getting started and supported hardware](https://openathan.com/docs/getting-started/)
+- [Troubleshooting and recovery](https://openathan.com/docs/troubleshooting/)
+
+## Installation and updates
+
+The browser installer supports fresh installation on **AtomS3R C126 + Pyramid A167** and Wi-Fi/password recovery for existing devices. **Fresh installation erases saved data.** Existing owners should [update from the device page or follow the preserving USB transition](https://openathan.com/docs/getting-started/#firmware-updates).
+
+The installer uses the latest approved stable OpenAthan release. The website is scheduled to check for releases twice hourly and deploys only after artifact verification and website tests pass. See the [deployment guide](deployment/README.md) for timing limitations, release selection, and rollback.
+
+Prayer settings and activation happen on the device's own local page. The speaker operates independently of this website and Home Assistant. The optional [location helper](https://openathan.com/location/) uses browser location with a GeoJS IP-location fallback; users review the suggestion before saving it on the device.
 
 ## Local preview
 
-Use Node **24.19.0** (pinned in `.nvmrc`) and npm:
+The website uses Astro and TypeScript. Use Node **24.19.0** (pinned in `.nvmrc`) and npm:
 
 ```sh
 npm ci
@@ -16,24 +28,16 @@ npm run dev -- --host 127.0.0.1
 
 Open `http://127.0.0.1:4321/`:
 
-| Route                    | Purpose                                                |
-| ------------------------ | ------------------------------------------------------ |
-| `/`                      | Everyday features and an introduction to OpenAthan     |
-| `/install/`              | Release-gated installation and command-only recovery   |
-| `/location/`             | Optional location suggestion for the device settings   |
-| `/docs/`                 | Documentation, contribution, issue and license links   |
-| `/docs/getting-started/` | Cable, browser and first-time setup instructions       |
-| `/docs/troubleshooting/` | Wi-Fi/password and connection troubleshooting          |
-| `/preview/installer/`    | Development-only simulator, with no hardware transport |
-| `/preview/device/`       | Local handoff preview opened by simulated device links |
+| Route                    | Purpose                                               |
+| ------------------------ | ----------------------------------------------------- |
+| `/`                      | Introduction to OpenAthan                             |
+| `/install/`              | USB installation and Wi-Fi/password recovery          |
+| `/location/`             | Optional location suggestion for the device settings  |
+| `/docs/`                 | Documentation, contribution, issue, and license links |
+| `/docs/getting-started/` | Hardware, setup, and firmware update instructions     |
+| `/docs/troubleshooting/` | Connection troubleshooting and recovery               |
 
-The former `/guides/setup/` and `/guides/recovery/` addresses redirect to `/docs/getting-started/` and `/docs/troubleshooting/`. These are ordinary HTML pages with an immediate meta refresh, a canonical URL and a fallback link; they work on static hosting without server redirect rules or JavaScript.
-
-The homepage introduces automatic Athan playback, phone settings, and stored recordings in plain language, with a link to the parts and setup instructions. Getting started lists the AtomS3R C126 + Pyramid A167 hardware targeted by the browser installer and current setup/recovery and firmware update instructions, includes the original SVG cable diagram, and explains the need for internet time synchronization after a restart. `/docs/getting-started/#other-hardware` describes the hardware-independent design goal and the development path for additional hardware, with links to the firmware architecture and scheduler reuse documentation. The slate-blue design uses a text-only wordmark, a compact project introduction and visible contribution links. Navigation and project links remain available on narrow screens. Only links that open a new tab use the ↗ indicator, with an accessible description.
-
-Use made-up credentials in the simulator. It exercises complete success and failure flows without a speaker or firmware files. Its route and implementation are excluded from the production static build.
-
-Astro can run its development server in the background when launched by a coding agent. Pass `--ignore-lock` for a foreground process, as the browser-test runner does. Use `npm run dev -- --stop` to stop an Astro-managed background server.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development simulators, server behavior, and engineering expectations, and [DESIGN.md](DESIGN.md) for the visual system.
 
 ## Validation and build
 
@@ -48,29 +52,25 @@ npm run test:browser
 npm run test:browser:built
 ```
 
-`dist/` contains ordinary static assets. `npm run preview` serves that build locally. After validation passes on `main`, GitHub Actions publishes the exact tested `dist/` to GitHub Pages at `openathan.com`; pull requests only validate. Scheduled polls skip full validation when the release and website commit are already deployed. The built-site browser suite excludes development simulator tests; the development suite still exercises them. See [deployment/README.md](deployment/README.md) for domain and HTTPS checks. The build checks local links, release-file integrity and simulator exclusion. Browser tests cover Chromium, desktop WebKit and a narrow WebKit viewport. Browser simulation is not physical USB qualification; Chrome/Edge installation, interruption and preservation acceptance remain required before an installation release.
+Use `npm run format` when editing the website or installer. The build checks local links, release-file integrity, and simulator exclusion. Browser tests cover Chromium, desktop WebKit, and a narrow WebKit viewport. Browser simulation does not establish physical USB qualification; see the [installer contract](installer/README.md) for hardware validation requirements.
 
-Use `npm run format` when editing the website or installer. Dependencies are version-pinned with a lockfile. The esptool-js adapter loads only after a confirmed new installation with a reviewed release. Astro telemetry is disabled by the project CLI wrapper. The site has no analytics, account service or application backend. Mukta Malar fonts are hosted locally with their SIL Open Font License. See [DESIGN.md](DESIGN.md) for the visual system.
+`dist/` contains portable static assets; `npm run preview` serves that build locally. After validation passes on `main`, GitHub Actions publishes the exact tested build to GitHub Pages at `openathan.com`. Pull requests only validate. See the [deployment guide](deployment/README.md) for deployment and domain checks.
 
 ## Repository boundary
 
-[`OpenAthan-Project/openathan`](https://github.com/OpenAthan-Project/openathan) owns firmware, reusable product logic, hardware adapters and the device-local interface. It builds and publishes release artifacts. This repository never compiles firmware or includes private recordings, recovery images or CI audio.
-
-Prayer settings and activation happen on the device's own unique local address. The speaker operates independently of this website and Home Assistant.
-
-The optional `/location/` helper asks for browser location after one Detect action and automatically tries GeoJS IP location if that fails. It sends proposed coordinates to the device only through a versioned URL fragment; the user reviews the suggestion and timetable before saving locally. It does not call a device settings API.
+This repository owns the public website, documentation, and browser installer. [`OpenAthan-Project/openathan`](https://github.com/OpenAthan-Project/openathan) owns firmware, reusable product logic, hardware adapters, and the device-local interface. It builds and publishes the release artifacts consumed here.
 
 ```text
-site/          Astro pages, layouts, styles and public documentation
-installer/     Framework-independent protocols, session owner and wizard
+site/                   Astro pages, layouts, styles, and public documentation
+installer/              Installer protocols and wizard
 installer/catalog.json  Automatic-release policy and manual rollback pin
 public/releases/        Generated, ignored imports of approved releases
-tools/         Release discovery, import and static-output checks
-tests/         Protocol, release, transport and browser simulation tests
-deployment/    Deployment, schedule and rollback instructions
+tools/                  Release discovery, import, and static-output checks
+tests/                  Protocol, release, transport, and browser tests
+deployment/             Deployment, schedule, and rollback instructions
 ```
 
-See [installer/README.md](installer/README.md) for the release contract, safety boundaries and launch prerequisites, and [CONTRIBUTING.md](CONTRIBUTING.md) before making changes.
+This repository never compiles firmware or includes private recordings, recovery images, or CI audio. The site has no analytics, account service, or application backend. Dependencies are pinned with a lockfile, Astro telemetry is disabled by the project CLI wrapper, and fonts are hosted locally.
 
 ## Licensing
 
