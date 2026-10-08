@@ -191,6 +191,60 @@ async function expectHandoff(page: Page, links = true) {
     );
   } else await expect(page.locator('.device-links a')).toHaveCount(0);
 }
+async function expectCredentialHandoff(
+  page: Page,
+  credentials: { missingWifi: boolean; missingPassword: boolean },
+) {
+  const needsRecovery = credentials.missingWifi || credentials.missingPassword;
+  await expectHandoff(page, !needsRecovery);
+  const panel = page.locator('[data-panel]');
+  if (needsRecovery) {
+    await expect(panel.getByText(/Sign in as admin with the password you chose/)).toHaveCount(0);
+    await expect(
+      panel.getByText('Let the speaker start and complete its startup checks.', { exact: true }),
+    ).toBeVisible();
+    await expect(
+      panel.getByText(/unplug the Pyramid’s bottom power cable before connecting/),
+    ).toBeVisible();
+    await expect(
+      panel.getByText(/Select Back to connection, reconnect, then choose Check for updates/),
+    ).toBeVisible();
+    await expect(
+      panel.getByText(
+        /Follow any remaining update instructions before changing Wi-Fi or creating a device password/,
+      ),
+    ).toBeVisible();
+    await expect(
+      panel.getByText(/After recovery, unplug Atom USB and return to Pyramid bottom-only power/),
+    ).toBeVisible();
+    await expect(panel.getByText(/A device address was not returned/)).toHaveCount(0);
+  } else {
+    await expect(panel.getByText(/Sign in as admin with the password you chose/)).toBeVisible();
+    await expect(panel.getByText(/Wait for it to reconnect, then open its settings/)).toBeVisible();
+    await expect(panel.getByText(/Follow any remaining update instructions/)).toHaveCount(0);
+  }
+  if (credentials.missingPassword)
+    await expect(
+      panel.getByText('Your device password still needs to be created through USB setup.', {
+        exact: true,
+      }),
+    ).toBeVisible();
+  else
+    await expect(panel.getByText(/Your device password still needs to be created/)).toHaveCount(0);
+  if (credentials.missingWifi)
+    await expect(
+      panel.getByText(
+        /The speaker may reconnect using its saved Wi-Fi settings. If it stays offline/,
+      ),
+    ).toBeVisible();
+  else
+    await expect(
+      panel.getByText(/The speaker may reconnect using its saved Wi-Fi settings/),
+    ).toHaveCount(0);
+  await expect(panel.locator('form')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Update written and verified' })).toBeFocused();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+}
 async function expectOperations(page: Page, update: number, close: number, firmware = 0) {
   expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toEqual({
     connect: 1,
@@ -266,19 +320,40 @@ for (const credentials of [
   { name: 'missing password', missingWifi: false, missingPassword: true },
   { name: 'both missing', missingWifi: true, missingPassword: true },
 ]) {
-  for (const cleanup of [undefined, 'reject'] as const) {
-    test(`reconciled awaiting_power prioritizes handoff with credentials ${credentials.name} and cleanup ${cleanup ?? 'resolved'}`, async ({
-      page,
-    }) => {
-      await injectHandoffService(page, { awaitingPower: true, ...credentials, cleanup });
-      await expectBlockedRecovery(page, 'Finish power handoff');
-      await page.getByRole('button', { name: 'Finish power handoff' }).click();
-      await expectHandoff(page, !credentials.missingWifi);
-      if (cleanup === 'reject') await expect(page.getByRole('status')).toHaveText(cleanupNotice);
-      await page.evaluate(() => window.usbHandoffFixture.disconnect());
-      await expectHandoff(page, !credentials.missingWifi);
-      await expectOperations(page, 0, 1);
-    });
+  for (const awaitingPower of [false, true]) {
+    for (const cleanup of [undefined, 'reject'] as const) {
+      test(`${awaitingPower ? 'reconciled awaiting_power' : 'completed transfer'} prioritizes handoff with credentials ${credentials.name} and cleanup ${cleanup ?? 'resolved'}`, async ({
+        page,
+      }, testInfo) => {
+        await injectHandoffService(page, { awaitingPower, ...credentials, cleanup });
+        if (awaitingPower) {
+          await expectBlockedRecovery(page, 'Finish power handoff');
+          await page.getByRole('button', { name: 'Finish power handoff' }).click();
+        } else await transferUpdate(page);
+        await expectCredentialHandoff(page, credentials);
+        if (cleanup === 'reject') await expect(page.getByRole('status')).toHaveText(cleanupNotice);
+        await page.evaluate(() => window.usbHandoffFixture.disconnect());
+        await expectCredentialHandoff(page, credentials);
+        await expectOperations(page, awaitingPower ? 0 : 1, 1);
+        const capture = process.env.OPENATHAN_REVIEW_DIR;
+        if (
+          capture &&
+          awaitingPower &&
+          credentials.missingPassword &&
+          cleanup === 'reject' &&
+          testInfo.project.name !== 'webkit'
+        ) {
+          await mkdir(capture, { recursive: true });
+          await page.screenshot({
+            path: resolve(
+              capture,
+              `handoff-${credentials.name.replaceAll(' ', '-')}-${testInfo.project.name}.png`,
+            ),
+            fullPage: true,
+          });
+        }
+      });
+    }
   }
 }
 
