@@ -9,8 +9,8 @@ const escape = (value: string) =>
     (character) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!,
   );
-const button = (label: string, action: string, secondary = false) =>
-  `<button class="button ${secondary ? 'secondary' : ''}" type="button" data-action="${action}">${label}</button>`;
+const button = (label: string, action: string, secondary = false, disabled = false) =>
+  `<button class="button ${secondary ? 'secondary' : ''}" type="button" data-action="${action}" ${disabled ? 'disabled' : ''}>${label}</button>`;
 
 /** Shared presentation only. The service is injected by separate real/demo entrypoints. */
 export function mountInstaller(
@@ -32,6 +32,7 @@ export function mountInstaller(
   let operation: 'wifi' | 'password' | 'update' | 'none' = 'none';
   let notice = '',
     mutationBlocked = false,
+    recoveryBlocked = false,
     initialized = false;
   const notify = (text: string, error = false) => {
     message.textContent = text;
@@ -56,6 +57,7 @@ export function mountInstaller(
     updateWritten = false;
     path = 'recovery';
     mutationBlocked = false;
+    recoveryBlocked = false;
     notify('');
     const unavailable =
       '<div class="notice"><strong>New installation is unavailable.</strong><p>You can still connect an existing OpenAthan to open its settings or fix Wi-Fi and its device password.</p></div>';
@@ -128,23 +130,38 @@ export function mountInstaller(
     if (storageFault()) return;
     const wifiMissing = status?.wifi !== '4',
       passwordMissing = status?.password === 'absent';
-    const row = (title: string, detail: string, label: string, action: string) =>
-      `<div class="task-row"><div><h3>${title}</h3><p class="small muted">${detail}</p></div>${button(label, action, true)}</div>`;
+    const row = (title: string, detail: string, label = '', action = '', disabled = false) =>
+      `<div class="task-row"><div><h3>${title}</h3><p class="small muted">${detail}</p></div>${action ? button(label, action, true, disabled) : ''}</div>`;
     const firmwareText =
       upgradeCheck?.state === 'available'
         ? `${escape(upgradeCheck.offer.version)} is available.`
         : ((upgradeCheck && 'detail' in upgradeCheck ? upgradeCheck.detail : undefined) ??
           'Check for a compatible firmware update.');
+    const resolution = upgradeCheck?.state === 'busy' ? upgradeCheck.action : undefined;
+    const primary = recoveryBlocked
+      ? upgradeCheck?.state === 'failed'
+        ? button('Reconnect and check', 'start')
+        : resolution === 'power'
+          ? button('Finish power handoff', 'update-handoff')
+          : resolution === 'discard'
+            ? button('Discard incomplete transfer', 'discard-update')
+            : button('Check update status', 'check-update')
+      : wifiMissing
+        ? button('Connect Wi-Fi', 'wifi-screen')
+        : passwordMissing
+          ? button('Create device password', 'password-screen')
+          : button('Continue to device settings', 'finish');
     render(
       'Your OpenAthan is connected',
       `<p class="device-name">${escape(status?.hostname ?? '')}</p><p>${wifiMissing ? 'Wi-Fi is not connected.' : 'Wi-Fi is connected.'} ${passwordMissing ? 'A device password is needed.' : 'Your device password is set.'}</p>
       <p class="small muted">Compatible firmware updates preserve settings, prayer history and recordings. Recovery changes only the Wi-Fi or password you choose.</p>
-      <div class="actions">${wifiMissing ? button('Connect Wi-Fi', 'wifi-screen') : passwordMissing ? button('Create device password', 'password-screen') : button('Continue to device settings', 'finish')}${wifiMissing ? button('Refresh status', 'refresh-status', true) : ''}</div>
-      ${row('Firmware', firmwareText, upgradeCheck?.state === 'available' ? 'Review update' : upgradeCheck?.action === 'power' ? 'Finish power handoff' : upgradeCheck?.action === 'discard' ? 'Discard incomplete transfer' : 'Check for updates', upgradeCheck?.state === 'available' ? 'review-update' : upgradeCheck?.action === 'power' ? 'update-handoff' : upgradeCheck?.action === 'discard' ? 'discard-update' : 'check-update')}
-      <details class="recovery-disclosure" ${wifiMissing || passwordMissing ? 'open' : ''}><summary>Wi-Fi and password recovery</summary><div class="recovery-tasks">
-      ${!wifiMissing ? row('Wi-Fi', 'Connect to a different home network.', 'Change Wi-Fi', 'wifi-screen') : ''}
-      ${!passwordMissing || wifiMissing ? row('Device password', 'Recover access to your speaker’s settings.', passwordMissing ? 'Create device password' : 'Reset device password', 'password-screen') : ''}
-      ${!wifiMissing ? row('Connection status', 'Read the speaker’s latest connection status.', 'Refresh status', 'refresh-status') : ''}</div></details>
+      <div class="actions">${primary}${!recoveryBlocked && wifiMissing ? button('Refresh status', 'refresh-status', true) : ''}</div>
+      ${recoveryBlocked ? row('Firmware', firmwareText) : row('Firmware', firmwareText, upgradeCheck?.state === 'available' ? 'Review update' : 'Check for updates', upgradeCheck?.state === 'available' ? 'review-update' : 'check-update')}
+      ${recoveryBlocked ? '<p class="small muted">Wi-Fi and password recovery must wait until the pending USB update is resolved. Check update status again after the device starts.</p>' : ''}
+      <details class="recovery-disclosure" ${!recoveryBlocked && (wifiMissing || passwordMissing) ? 'open' : ''}><summary>Wi-Fi and password recovery</summary><div class="recovery-tasks">
+      ${recoveryBlocked || !wifiMissing ? row('Wi-Fi', 'Connect to a different home network.', wifiMissing ? 'Connect Wi-Fi' : 'Change Wi-Fi', 'wifi-screen', recoveryBlocked) : ''}
+      ${recoveryBlocked || !passwordMissing || wifiMissing ? row('Device password', 'Recover access to your speaker’s settings.', passwordMissing ? 'Create device password' : 'Reset device password', 'password-screen', recoveryBlocked) : ''}
+      ${recoveryBlocked || !wifiMissing ? row('Connection status', 'Read the speaker’s latest connection status.', 'Refresh status', 'refresh-status') : ''}</div></details>
       <div class="actions quiet-actions">${button('Disconnect', 'start', true)}<a href="/docs/troubleshooting/">Connection help</a></div>`,
       1,
     );
@@ -156,11 +173,13 @@ export function mountInstaller(
       1,
     );
     upgradeCheck = await service.checkUpdate();
+    // Provisioning status and unreadable INFO cannot release known USB ownership.
+    if (upgradeCheck.recoveryBlocked !== undefined) recoveryBlocked = upgradeCheck.recoveryBlocked;
     offered = upgradeCheck.state === 'available' ? upgradeCheck.offer : undefined;
     recoveryMenu();
   }
   function reviewUpdate() {
-    if (!offered || mutationBlocked) return;
+    if (!offered || mutationBlocked || recoveryBlocked) return;
     render(
       'Review firmware update',
       `<p>Install <strong>${escape(offered.version)}</strong> over USB.</p><p>Your Wi-Fi, device password, prayer settings, playback history and recordings stay on the speaker. The current application is retained for startup rollback.</p><p><a href="${escape(offered.notes)}" target="_blank" rel="noopener noreferrer">Read the release notes</a></p><p>Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.</p><div class="actions">${button('Install update', 'update')}${button('Back', 'recovery', true)}</div>`,
@@ -169,6 +188,7 @@ export function mountInstaller(
   }
   function wifiScreen() {
     if (storageFault()) return;
+    if (blockRecovery()) return;
     render(
       'Connect to your Wi-Fi',
       `<p>Choose your home’s 2.4 GHz network, or enter its name. Your computer and phone will need to be on the same home network.</p><div data-networks></div><form data-form="wifi" autocomplete="off"><div class="field-heading"><label for="ssid">Network name</label>${button('Find networks', 'scan', true)}</div><input id="ssid" name="ssid" required autocomplete="off" autocapitalize="none" spellcheck="false" /><label for="wifi-password">Wi-Fi password</label><input id="wifi-password" name="password" type="password" required autocomplete="off" aria-describedby="wifi-password-help" /><p id="wifi-password-help" class="field-help">Use your router’s Wi-Fi password. A 64-character key must contain only 0–9 and A–F (upper or lower case).</p><p class="field-help">WPA2/WPA3 personal networks. Guest portals and enterprise sign-ins are not supported.</p><div class="actions"><button class="button" type="submit">Save Wi-Fi</button>${button('Back', installed || path === 'recovery' ? 'recovery' : 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div></form>`,
@@ -177,11 +197,18 @@ export function mountInstaller(
   }
   function passwordScreen() {
     if (storageFault()) return;
+    if (blockRecovery()) return;
     render(
       status?.password === 'ready' ? 'Choose a new device password' : 'Create a device password',
       `<p>This protects the settings page on your home network. You’ll sign in as <strong>admin</strong>.</p><form data-form="password" autocomplete="off"><label for="device-password">Device password</label><input id="device-password" name="password" type="password" required minlength="12" maxlength="128" autocomplete="off" aria-describedby="password-help" /><p id="password-help" class="field-help">12–128 characters. Use English letters, numbers, spaces or punctuation. Choose a long, unique passphrase.</p><label for="confirm-password">Repeat password</label><input id="confirm-password" name="confirmation" type="password" required autocomplete="off" /><div class="actions"><button type="submit" class="button">Save device password</button>${button('Back', path === 'recovery' ? 'recovery' : 'wifi-screen', true)}</div></form><p class="small muted">${status?.password === 'ready' ? 'Resetting signs out existing sessions. Your prayer settings are preserved.' : 'Remember this password. You’ll enter it on the device’s settings page.'}</p>`,
       2,
     );
+  }
+  function blockRecovery(): boolean {
+    if (!recoveryBlocked) return false;
+    recoveryMenu();
+    notify('Resolve the pending USB update before changing Wi-Fi or the device password.');
+    return true;
   }
   function renderHandoff(device: DeviceStatus) {
     const urls = device.urls;
@@ -196,6 +223,7 @@ export function mountInstaller(
     );
   }
   async function finish() {
+    if (!updateWritten && blockRecovery()) return;
     // A verified boot selection already requires power handoff. Credential
     // readback must not hide that instruction or imply the transfer failed.
     if ((!updateWritten && !(await readCurrentStatus())) || !status) return;
@@ -376,7 +404,9 @@ export function mountInstaller(
           notify(
             status?.wifi === '4'
               ? 'Wi-Fi is connected.'
-              : 'Wi-Fi is still not connected. Wait a moment and refresh again, or choose Change Wi-Fi.',
+              : recoveryBlocked
+                ? 'Wi-Fi is still not connected. Resolve the pending USB update before changing Wi-Fi.'
+                : 'Wi-Fi is still not connected. Wait a moment and refresh again, or choose Change Wi-Fi.',
           );
         }
       } else if (action === 'recovery') recoveryMenu();
@@ -386,13 +416,29 @@ export function mountInstaller(
       else if (action === 'check-update') await checkUpdate();
       else if (action === 'review-update') reviewUpdate();
       else if (action === 'update-handoff') {
+        if (mutationBlocked || upgradeCheck?.state !== 'busy' || upgradeCheck.action !== 'power')
+          return;
         updateWritten = true;
         await finish();
       } else if (action === 'discard-update') {
+        if (mutationBlocked || upgradeCheck?.state !== 'busy' || upgradeCheck.action !== 'discard')
+          return;
         operation = 'update';
-        await service.discardUpdate();
+        try {
+          await service.discardUpdate();
+        } catch (error) {
+          if (!(error instanceof UncertainOutcome))
+            render(
+              'Update needs attention',
+              '<p>The incomplete transfer could not be discarded. Reconnect and read firmware status before another attempt.</p>' +
+                button('Reconnect and check', 'start') +
+                '<p><a href="/docs/troubleshooting/">Update help</a></p>',
+              1,
+            );
+          throw error;
+        }
         await checkUpdate();
-      } else if (action === 'update' && offered && !mutationBlocked) {
+      } else if (action === 'update' && offered && !mutationBlocked && !recoveryBlocked) {
         operation = 'update';
         const selected = offered;
         render(
@@ -420,6 +466,7 @@ export function mountInstaller(
         updateWritten = true;
         await finish();
       } else if (action === 'scan') {
+        if (mutationBlocked || blockRecovery()) return;
         const networks = await service.scan();
         const container = panel.querySelector<HTMLElement>('[data-networks]')!;
         container.innerHTML = networks.length
@@ -432,6 +479,7 @@ export function mountInstaller(
   root.addEventListener('submit', (event) => {
     event.preventDefault();
     if (busy || mutationBlocked) return;
+    if (blockRecovery()) return;
     const form = event.target as HTMLFormElement;
     const kind = form.dataset.form;
     const ssid = form.querySelector<HTMLInputElement>('[name="ssid"]')?.value ?? '';

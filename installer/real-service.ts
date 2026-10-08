@@ -110,7 +110,7 @@ export class RealService implements InstallerService {
   }
   async discardUpdate() {
     const info = await this.firmware();
-    if (info.state !== 'usb_interrupted')
+    if (info.state !== 'usb_interrupted' || info.boot !== 'confirmed')
       throw new Error('Read update status before discarding an incomplete transfer.');
     const [reply] = await this.current().command(true, UPGRADE.abort, ['interrupted'], {
       mutation: true,
@@ -132,6 +132,7 @@ export class RealService implements InstallerService {
       if (error instanceof DeviceError && error.code === 2)
         return {
           state: 'unsupported',
+          recoveryBlocked: false,
           detail:
             'This firmware needs an initial Wi-Fi or maintainer update before USB updates are supported.',
         };
@@ -140,9 +141,17 @@ export class RealService implements InstallerService {
         detail: 'Firmware status could not be read. Reconnect and check again.',
       };
     }
-    if (!info.supported)
+    const recoveryBlocked = [
+      'usb_descriptor',
+      'usb_receiving',
+      'usb_interrupted',
+      'usb_selection_uncertain',
+      'awaiting_power',
+    ].includes(info.state);
+    if (!info.supported && !recoveryBlocked)
       return {
         state: 'unsupported',
+        recoveryBlocked,
         detail: 'This speaker needs a maintainer bootloader transition before preserving updates.',
       };
     if (
@@ -151,10 +160,11 @@ export class RealService implements InstallerService {
     )
       return {
         state: 'busy',
+        recoveryBlocked,
         action:
           info.state === 'awaiting_power'
             ? 'power'
-            : info.state === 'usb_interrupted'
+            : info.state === 'usb_interrupted' && info.boot === 'confirmed'
               ? 'discard'
               : undefined,
         detail:
@@ -165,6 +175,7 @@ export class RealService implements InstallerService {
     if (!this.usbUpdateEnabled || !this.pin)
       return {
         state: 'disabled',
+        recoveryBlocked,
         detail:
           'USB updating is awaiting physical qualification. Use firmware updates on the device’s settings page.',
       };
@@ -173,13 +184,15 @@ export class RealService implements InstallerService {
       if (!newerVersion(bundle.offer.version, info.version))
         return {
           state: 'current',
+          recoveryBlocked,
           detail: `Firmware ${info.version} is current for this website’s selected release.`,
         };
       this.updateBundle = bundle;
-      return { state: 'available', offer: bundle.offer };
+      return { state: 'available', offer: bundle.offer, recoveryBlocked };
     } catch {
       return {
         state: 'failed',
+        recoveryBlocked,
         detail: 'The selected update could not be verified. Installed firmware has not changed.',
       };
     }

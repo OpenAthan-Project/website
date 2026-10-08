@@ -184,10 +184,15 @@ export class SimulatorService implements InstallerService {
   }
   async checkUpdate(): Promise<UpgradeCheck> {
     if (this.scenario === 'update-current')
-      return { state: 'current', detail: 'The simulated firmware is current.' };
+      return {
+        state: 'current',
+        detail: 'The simulated firmware is current.',
+        recoveryBlocked: false,
+      };
     if (['update-available', 'update-failed', 'update-uncertain'].includes(this.scenario))
       return {
         state: 'available',
+        recoveryBlocked: false,
         offer: {
           version: 'v0.5.0',
           commit: 'b'.repeat(40),
@@ -198,6 +203,7 @@ export class SimulatorService implements InstallerService {
       };
     return {
       state: 'unsupported',
+      recoveryBlocked: false,
       detail:
         'This simulated firmware needs an initial Wi-Fi or maintainer update before USB updates are supported.',
     };

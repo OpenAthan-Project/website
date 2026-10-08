@@ -29,13 +29,17 @@ export interface UpgradeBundle {
   descriptor: Uint8Array;
   application: Uint8Array;
 }
-export type UpgradeCheck =
+export type UpgradeCheck = (
   | { state: 'available'; offer: UpgradeOffer }
   | {
       state: 'current' | 'unsupported' | 'disabled' | 'busy' | 'failed';
       detail: string;
       action?: 'power' | 'discard';
-    };
+    }
+) & {
+  /** USB ownership from firmware INFO; omitted when that read failed. */
+  recoveryBlocked?: boolean;
+};
 export const UPGRADE = {
   info: 0x10,
   begin: 0x11,

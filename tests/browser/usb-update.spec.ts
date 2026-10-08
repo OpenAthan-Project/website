@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { DeviceStatus } from '../../installer/protocol';
 import type { InstallerService } from '../../installer/service';
-import type { UpgradeOffer } from '../../installer/upgrade';
+import type { UpgradeCheck, UpgradeOffer } from '../../installer/upgrade';
 
 interface HandoffOptions {
   cleanup?: 'reject' | 'pending';
@@ -11,6 +11,11 @@ interface HandoffOptions {
   queuedDisconnect?: boolean;
   awaitingPower?: boolean;
   missingCredentials?: boolean;
+  missingWifi?: boolean;
+  missingPassword?: boolean;
+  checks?: UpgradeCheck[];
+  discard?: 'success' | 'failed' | 'uncertain';
+  deferCheck?: boolean;
 }
 declare global {
   interface Window {
@@ -22,6 +27,7 @@ declare global {
         close: number;
         status: number;
         firmware: number;
+        discardUpdate: number;
       };
       unexpectedOperations: string[];
       disconnect(): void;
@@ -49,22 +55,29 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
     const previous = document.querySelector<HTMLElement>('[data-demo-installer]')!;
     const root = previous.cloneNode(true) as HTMLElement;
     previous.replaceWith(root);
-    const counts = { connect: 0, checkUpdate: 0, update: 0, close: 0, status: 0, firmware: 0 };
+    const counts = {
+      connect: 0,
+      checkUpdate: 0,
+      update: 0,
+      close: 0,
+      status: 0,
+      firmware: 0,
+      discardUpdate: 0,
+    };
     const unexpectedOperations: string[] = [];
     const unexpected = async (operation: string): Promise<never> => {
       unexpectedOperations.push(operation);
       throw new Error(`Unexpected ${operation} operation`);
     };
+    const missingWifi = options.missingWifi || options.missingCredentials;
     const status: DeviceStatus = {
-      wifi: options.missingCredentials ? '2' : '4',
-      password: options.missingCredentials ? 'absent' : 'ready',
+      wifi: missingWifi ? '2' : '4',
+      password: options.missingPassword || options.missingCredentials ? 'absent' : 'ready',
       setup: 'active',
       passwordRevision: 1,
       hostname: 'openathan-test.local',
       storage: 'ready',
-      urls: options.missingCredentials
-        ? []
-        : ['http://openathan-test.local/', 'http://192.168.1.50/'],
+      urls: missingWifi ? [] : ['http://openathan-test.local/', 'http://192.168.1.50/'],
     };
     const offer: UpgradeOffer = {
       version: 'v0.5.0',
@@ -85,9 +98,16 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       },
       async checkUpdate() {
         counts.checkUpdate++;
+        if (options.checks?.length)
+          return options.checks[Math.min(counts.checkUpdate - 1, options.checks.length - 1)]!;
         return options.awaitingPower
-          ? { state: 'busy', action: 'power', detail: 'A verified update awaits speaker power.' }
-          : { state: 'available', offer };
+          ? {
+              state: 'busy',
+              action: 'power',
+              recoveryBlocked: true,
+              detail: 'A verified update awaits speaker power.',
+            }
+          : { state: 'available', offer, recoveryBlocked: false };
       },
       async update(_offer, progress) {
         counts.update++;
@@ -119,13 +139,18 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
           supported: true,
           state: 'awaiting_power',
           boot: 'confirmed',
-          result: 'none',
+          result: '',
           offered: offer.version,
           received: offer.bytes,
         };
       },
       install: () => unexpected('install'),
-      discardUpdate: () => unexpected('discardUpdate'),
+      async discardUpdate() {
+        if (!options.discard) return unexpected('discardUpdate');
+        counts.discardUpdate++;
+        if (options.discard === 'failed') throw new Error('The discard was rejected.');
+        if (options.discard === 'uncertain') throw new UncertainOutcome();
+      },
       scan: () => unexpected('scan'),
       wifi: () => unexpected('wifi'),
       password: () => unexpected('password'),
@@ -140,7 +165,7 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
     mountInstaller(root, service);
   }, options);
   await page.getByRole('button', { name: 'Choose USB device' }).click();
-  await page.getByRole('button', { name: 'Check for updates' }).click();
+  if (!options.deferCheck) await page.getByRole('button', { name: 'Check for updates' }).click();
 }
 
 async function transferUpdate(page: Page) {
@@ -174,6 +199,7 @@ async function expectOperations(page: Page, update: number, close: number, firmw
     close,
     status: 0,
     firmware,
+    discardUpdate: 0,
   });
   expect(await page.evaluate(() => window.usbHandoffFixture.unexpectedOperations)).toEqual([]);
 }
@@ -234,20 +260,346 @@ test('a disconnect queued before verification cannot overwrite the verified hand
   await expectOperations(page, 1, 1);
 });
 
-for (const missingCredentials of [false, true]) {
+for (const credentials of [
+  { name: 'ready', missingWifi: false, missingPassword: false },
+  { name: 'missing Wi-Fi', missingWifi: true, missingPassword: false },
+  { name: 'missing password', missingWifi: false, missingPassword: true },
+  { name: 'both missing', missingWifi: true, missingPassword: true },
+]) {
   for (const cleanup of [undefined, 'reject'] as const) {
-    test(`reconciled awaiting_power retains handoff with credentials ${missingCredentials ? 'missing' : 'ready'} and cleanup ${cleanup ?? 'resolved'}`, async ({
+    test(`reconciled awaiting_power prioritizes handoff with credentials ${credentials.name} and cleanup ${cleanup ?? 'resolved'}`, async ({
       page,
     }) => {
-      await injectHandoffService(page, { awaitingPower: true, missingCredentials, cleanup });
+      await injectHandoffService(page, { awaitingPower: true, ...credentials, cleanup });
+      await expectBlockedRecovery(page, 'Finish power handoff');
       await page.getByRole('button', { name: 'Finish power handoff' }).click();
-      await expectHandoff(page, !missingCredentials);
+      await expectHandoff(page, !credentials.missingWifi);
       if (cleanup === 'reject') await expect(page.getByRole('status')).toHaveText(cleanupNotice);
       await page.evaluate(() => window.usbHandoffFixture.disconnect());
-      await expectHandoff(page, !missingCredentials);
+      await expectHandoff(page, !credentials.missingWifi);
       await expectOperations(page, 0, 1);
     });
   }
+}
+
+async function expectBlockedRecovery(page: Page, primary: string) {
+  await expect(page.locator('[data-panel] .button:not(.secondary)')).toHaveCount(1);
+  await expect(page.locator('[data-panel] .button:not(.secondary)')).toHaveText(primary);
+  await expect(page.getByRole('button', { name: primary, exact: true })).toHaveCount(1);
+  await expect(
+    page
+      .locator('.task-row')
+      .filter({ has: page.getByRole('heading', { name: 'Firmware', exact: true }) })
+      .getByRole('button'),
+  ).toHaveCount(0);
+  await expect(page.getByText(/Wi-Fi and password recovery must wait/)).toBeVisible();
+  const recovery = page.locator('.recovery-disclosure');
+  await expect(recovery).not.toHaveAttribute('open');
+  await recovery.locator('summary').press('Enter');
+  await expect(recovery.getByRole('button', { name: /^(Connect|Change) Wi-Fi$/ })).toBeDisabled();
+  await expect(
+    recovery.getByRole('button', { name: /^(Create|Reset) device password$/ }),
+  ).toBeDisabled();
+  await expect(recovery.getByRole('button', { name: 'Refresh status', exact: true })).toBeEnabled();
+}
+
+async function dispatchAction(page: Page, action: string) {
+  await page.evaluate((action) => {
+    const control = document.createElement('button');
+    control.dataset.action = action;
+    document.querySelector('[data-demo-installer]')!.append(control);
+    control.click();
+    control.remove();
+  }, action);
+  await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute('aria-busy', 'true');
+}
+
+for (const state of [
+  'usb_descriptor',
+  'usb_receiving',
+  'usb_selection_uncertain',
+  'usb_interrupted before startup confirmation',
+]) {
+  test(`${state} prioritizes read-only update status over recovery`, async ({ page }) => {
+    await injectHandoffService(page, {
+      missingCredentials: true,
+      checks: [{ state: 'busy', recoveryBlocked: true, detail: `Pending ${state}.` }],
+    });
+    await expectBlockedRecovery(page, 'Check update status');
+    await expect(page.getByRole('button', { name: 'Discard incomplete transfer' })).toHaveCount(0);
+    await expectOperations(page, 0, 0);
+  });
+}
+
+test('connection alone keeps recovery available without a firmware check', async ({ page }) => {
+  await injectHandoffService(page, {
+    awaitingPower: true,
+    missingCredentials: true,
+    deferCheck: true,
+  });
+  await expect(page.locator('[data-panel] .button:not(.secondary)')).toHaveText('Connect Wi-Fi');
+  await expect(page.locator('.recovery-disclosure')).toHaveAttribute('open', '');
+  expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+    connect: 1,
+    checkUpdate: 0,
+    firmware: 0,
+    status: 0,
+  });
+  await page.getByRole('button', { name: 'Check for updates' }).click();
+  await expectBlockedRecovery(page, 'Finish power handoff');
+});
+
+test('returning to connection resets USB ownership for the next connection', async ({ page }) => {
+  await injectHandoffService(page, {
+    missingCredentials: true,
+    checks: [
+      { state: 'busy', recoveryBlocked: true, detail: 'USB transfer in progress.' },
+      { state: 'failed', detail: 'Firmware INFO is unavailable on this connection.' },
+    ],
+  });
+  await expectBlockedRecovery(page, 'Check update status');
+  await page.getByRole('button', { name: 'Disconnect', exact: true }).click();
+  await page.getByRole('button', { name: 'Choose USB device' }).click();
+  await page.getByRole('button', { name: 'Check for updates' }).click();
+  await expect(page.locator('[data-panel] .button:not(.secondary)')).toHaveText('Connect Wi-Fi');
+  await expect(page.getByRole('button', { name: 'Create device password' })).toBeEnabled();
+  expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+    connect: 2,
+    checkUpdate: 2,
+    close: 1,
+  });
+});
+
+test('healthy provisioning refresh cannot release known USB ownership or allow forged recovery handlers', async ({
+  page,
+}) => {
+  await injectHandoffService(page, { awaitingPower: true });
+  await expectBlockedRecovery(page, 'Finish power handoff');
+  await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
+  await expectBlockedRecovery(page, 'Finish power handoff');
+  // Dispatch stale/forged events to exercise handlers independently of disabled buttons.
+  for (const action of ['wifi-screen', 'password-screen', 'scan', 'finish']) {
+    await dispatchAction(page, action);
+    await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeVisible();
+    await expect(page.locator('[data-panel] form')).toHaveCount(0);
+  }
+  for (const kind of ['wifi', 'password']) {
+    await page.evaluate((kind) => {
+      const root = document.querySelector('[data-demo-installer]')!;
+      const form = document.createElement('form');
+      form.dataset.form = kind;
+      form.innerHTML =
+        '<input name="ssid" value="Home"><input name="password" type="password" value="test recovery password"><input name="confirmation" type="password" value="test recovery password">';
+      root.append(form);
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      form.remove();
+    }, kind);
+    await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute('aria-busy', 'true');
+  }
+  expect(await page.evaluate(() => window.usbHandoffFixture.unexpectedOperations)).toEqual([]);
+  expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+    status: 1,
+    checkUpdate: 1,
+    close: 0,
+    update: 0,
+  });
+});
+
+test('failed INFO retains known ownership, replaces resolution with reconnect, and fresh INFO clears it', async ({
+  page,
+}) => {
+  await injectHandoffService(page, {
+    missingCredentials: true,
+    checks: [
+      { state: 'busy', recoveryBlocked: true, detail: 'USB transfer in progress.' },
+      { state: 'failed', detail: 'Firmware status could not be read. Reconnect and check again.' },
+      {
+        state: 'disabled',
+        recoveryBlocked: false,
+        detail: 'USB updates are awaiting physical qualification.',
+      },
+    ],
+  });
+  await page.getByRole('button', { name: 'Check update status', exact: true }).click();
+  await expectBlockedRecovery(page, 'Reconnect and check');
+  await page.getByRole('button', { name: 'Refresh status', exact: true }).click();
+  await expectBlockedRecovery(page, 'Reconnect and check');
+  // A later successful INFO result is the only authority that can clear the lock.
+  await dispatchAction(page, 'check-update');
+  await expect(page.locator('[data-panel] .button:not(.secondary)')).toHaveText('Connect Wi-Fi');
+  await expect(page.getByRole('button', { name: 'Create device password' })).toBeEnabled();
+  expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+    checkUpdate: 3,
+    status: 1,
+    close: 0,
+  });
+});
+
+for (const action of ['power', 'discard'] as const) {
+  test(`failed INFO removes stale ${action} resolution without unlocking recovery`, async ({
+    page,
+  }) => {
+    await injectHandoffService(page, {
+      checks: [
+        { state: 'busy', action, recoveryBlocked: true, detail: 'A USB update needs resolution.' },
+        {
+          state: 'failed',
+          detail: 'Firmware status could not be read. Reconnect and check again.',
+        },
+      ],
+    });
+    await dispatchAction(page, 'check-update');
+    await expectBlockedRecovery(page, 'Reconnect and check');
+    await dispatchAction(page, action === 'power' ? 'update-handoff' : 'discard-update');
+    await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeVisible();
+    expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+      close: 0,
+      discardUpdate: 0,
+      update: 0,
+      checkUpdate: 2,
+    });
+    expect(await page.evaluate(() => window.usbHandoffFixture.unexpectedOperations)).toEqual([]);
+  });
+}
+
+test('successful discard cannot unlock recovery when its fresh INFO read fails', async ({
+  page,
+}) => {
+  await injectHandoffService(page, {
+    missingCredentials: true,
+    discard: 'success',
+    checks: [
+      {
+        state: 'busy',
+        action: 'discard',
+        recoveryBlocked: true,
+        detail: 'An incomplete transfer can be discarded.',
+      },
+      { state: 'failed', detail: 'Firmware status could not be read. Reconnect and check again.' },
+    ],
+  });
+  await page.getByRole('button', { name: 'Discard incomplete transfer' }).click();
+  await expectBlockedRecovery(page, 'Reconnect and check');
+  expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+    checkUpdate: 2,
+    discardUpdate: 1,
+  });
+});
+
+test('successful discard reads fresh INFO and restores missing-credential recovery', async ({
+  page,
+}) => {
+  await injectHandoffService(page, {
+    missingCredentials: true,
+    discard: 'success',
+    checks: [
+      {
+        state: 'busy',
+        action: 'discard',
+        recoveryBlocked: true,
+        detail: 'An incomplete transfer can be discarded.',
+      },
+      {
+        state: 'disabled',
+        recoveryBlocked: false,
+        detail: 'USB updates are awaiting physical qualification.',
+      },
+    ],
+  });
+  await expectBlockedRecovery(page, 'Discard incomplete transfer');
+  await page.getByRole('button', { name: 'Discard incomplete transfer' }).click();
+  await expect(page.locator('[data-panel] .button:not(.secondary)')).toHaveText('Connect Wi-Fi');
+  await expect(page.locator('.recovery-disclosure')).toHaveAttribute('open', '');
+  await expect(page.getByRole('button', { name: 'Create device password' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Connect Wi-Fi', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Find networks' })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'Save Wi-Fi' })).toBeEnabled();
+  expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+    checkUpdate: 2,
+    discardUpdate: 1,
+    close: 0,
+  });
+  expect(await page.evaluate(() => window.usbHandoffFixture.unexpectedOperations)).toEqual([]);
+});
+
+for (const discard of ['failed', 'uncertain'] as const) {
+  test(`${discard} discard retains reconnect guidance without retry or unlocked recovery`, async ({
+    page,
+  }) => {
+    await injectHandoffService(page, {
+      discard,
+      checks: [
+        {
+          state: 'busy',
+          action: 'discard',
+          recoveryBlocked: true,
+          detail: 'An incomplete transfer can be discarded.',
+        },
+      ],
+    });
+    await page.getByRole('button', { name: 'Discard incomplete transfer' }).click();
+    await expect(
+      page.getByRole('heading', {
+        name: discard === 'failed' ? 'Update needs attention' : 'Check before trying again',
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: /Reconnect and check|Disconnect and start again/ }),
+    ).toHaveCount(1);
+    await expect(page.getByRole('button', { name: /^(Change|Connect) Wi-Fi$/ })).toHaveCount(0);
+    expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+      discardUpdate: 1,
+      checkUpdate: 1,
+      close: 0,
+      update: 0,
+    });
+  });
+}
+
+for (const check of [
+  {
+    state: 'unsupported',
+    recoveryBlocked: false,
+    detail: 'Legacy firmware needs an initial Wi-Fi update.',
+  },
+  { state: 'busy', recoveryBlocked: false, detail: 'Ordinary startup checks are pending.' },
+  { state: 'busy', recoveryBlocked: false, detail: 'A network update is downloading.' },
+  { state: 'failed', detail: 'Firmware INFO is unavailable.' },
+] satisfies UpgradeCheck[]) {
+  test(`${check.detail} does not establish USB ownership`, async ({ page }) => {
+    await injectHandoffService(page, { missingCredentials: true, checks: [check] });
+    await expect(page.locator('[data-panel] .button:not(.secondary)')).toHaveText('Connect Wi-Fi');
+    await expect(page.getByRole('button', { name: 'Create device password' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Connect Wi-Fi', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Save Wi-Fi' })).toBeEnabled();
+    await expectOperations(page, 0, 0);
+  });
+}
+
+for (const width of [1440, 390]) {
+  test(`blocked recovery keyboard behavior and layout at ${width}px`, async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width, height: 844 });
+    await injectHandoffService(page, { awaitingPower: true, missingCredentials: true });
+    await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeFocused();
+    await expectBlockedRecovery(page, 'Finish power handoff');
+    await expect(page.locator('.recovery-disclosure summary')).toBeFocused();
+    // WebKit's default tab mode skips buttons; Option-Tab visits all native controls.
+    await page.keyboard.press(testInfo.project.name === 'chromium' ? 'Tab' : 'Alt+Tab');
+    await expect(page.getByRole('button', { name: 'Refresh status', exact: true })).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    const capture = process.env.OPENATHAN_REVIEW_DIR;
+    if (capture && testInfo.project.name === 'chromium') {
+      await mkdir(capture, { recursive: true });
+      await page.screenshot({
+        path: resolve(capture, `blocked-recovery-${width}.png`),
+        fullPage: true,
+      });
+    }
+  });
 }
 
 for (const transfer of ['failed', 'uncertain'] as const) {
