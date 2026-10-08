@@ -183,6 +183,18 @@ export function mountInstaller(
       2,
     );
   }
+  function renderHandoff(device: DeviceStatus) {
+    const urls = device.urls;
+    render(
+      updateWritten
+        ? 'Update written and verified'
+        : path === 'install'
+          ? 'Ready for device setup'
+          : 'Continue on speaker power',
+      `<div class="success-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m9 16 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>${updateWritten ? 'The signed application was verified and selected. Switch to normal speaker power so it can start and complete its health checks.' : path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p><ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li><li>Wait for it to reconnect, then open its settings on the same home network.</li></ol>${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">Sign in as <strong>admin</strong> with the password you chose. ${path === 'install' && !updateWritten ? 'Review your location, timezone and timetable, then select <strong>Finish setup</strong>.' : updateWritten ? 'Check the firmware version and update result on the device’s settings page. Startup success is confirmed there; an interrupted connection alone cannot establish success or rollback.' : 'Continue with your saved prayer settings.'} Athan playback waits until the device has synchronized its clock.</p>${!urls.length ? '<p class="notice">A device address was not returned. Reconnect through USB setup to read it again.</p>' : ''}<div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
+      3,
+    );
+  }
   async function finish() {
     // A verified boot selection already requires power handoff. Credential
     // readback must not hide that instruction or imply the transfer failed.
@@ -196,17 +208,21 @@ export function mountInstaller(
       passwordScreen();
       return;
     }
-    await service.close();
-    const urls = status.urls;
-    render(
-      updateWritten
-        ? 'Update written and verified'
-        : path === 'install'
-          ? 'Ready for device setup'
-          : 'Continue on speaker power',
-      `<div class="success-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m9 16 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>${updateWritten ? 'The signed application was verified and selected. Switch to normal speaker power so it can start and complete its health checks.' : path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p><ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li><li>Wait for it to reconnect, then open its settings on the same home network.</li></ol>${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">Sign in as <strong>admin</strong> with the password you chose. ${path === 'install' && !updateWritten ? 'Review your location, timezone and timetable, then select <strong>Finish setup</strong>.' : updateWritten ? 'Check the firmware version and update result on the device’s settings page. Startup success is confirmed there; an interrupted connection alone cannot establish success or rollback.' : 'Continue with your saved prayer settings.'} Athan playback waits until the device has synchronized its clock.</p>${!urls.length ? '<p class="notice">A device address was not returned. Reconnect through USB setup to read it again.</p>' : ''}<div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
-      3,
-    );
+    if (updateWritten) {
+      // Verification has completed; cleanup and queued disconnects cannot undo it.
+      notice = '';
+      renderHandoff(status);
+      try {
+        await service.close();
+      } catch {
+        notify(
+          'The browser could not close the USB connection. Unplug the Atom’s USB cable and follow the power steps below.',
+        );
+      }
+    } else {
+      await service.close();
+      renderHandoff(status);
+    }
   }
   async function attempt(action: () => Promise<void>) {
     if (busy) return;
@@ -267,7 +283,7 @@ export function mountInstaller(
       busy = false;
       root.removeAttribute('aria-busy');
       if (notice) {
-        if (!handledUncertain) {
+        if (!handledUncertain && !updateWritten) {
           render(
             'Connection lost',
             '<p>Your device is no longer connected.</p>' + button('Start again', 'start'),
@@ -280,6 +296,10 @@ export function mountInstaller(
     }
   }
   service.onDisconnect = () => {
+    if (updateWritten) {
+      notice = '';
+      return;
+    }
     mutationBlocked = true;
     notice = 'The device disconnected. Reconnect the USB data cable and start again.';
     if (!busy) {
@@ -386,8 +406,6 @@ export function mountInstaller(
             panel.querySelector('[data-progress]')!.textContent =
               `${percent}% · ${percent === 100 ? 'Verifying…' : 'Writing application…'}`;
           });
-          updateWritten = true;
-          await finish();
         } catch (error) {
           if (!(error instanceof UncertainOutcome))
             render(
@@ -399,6 +417,8 @@ export function mountInstaller(
             );
           throw error;
         }
+        updateWritten = true;
+        await finish();
       } else if (action === 'scan') {
         const networks = await service.scan();
         const container = panel.querySelector<HTMLElement>('[data-networks]')!;
