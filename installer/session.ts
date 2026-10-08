@@ -100,8 +100,9 @@ export class ProvisioningSession {
   private receive(frame: Frame): void {
     const chunk = this.chunkPending;
     if (chunk && frame.extension) {
-      if (frame.type === 2 && frame.payload[0]) {
-        this.fail(new DeviceError(frame.payload[0]));
+      if (frame.type === 2) {
+        if (frame.payload.length !== 1) this.fail(new UncertainOutcome());
+        else if (frame.payload[0]) this.fail(new DeviceError(frame.payload[0]));
         return;
       }
       if (frame.type === 6) {

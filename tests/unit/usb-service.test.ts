@@ -38,6 +38,7 @@ class Port implements ByteTransport {
   supported = true;
   infoFailure?: 'malformed' | 'rejected';
   discardReply: 'success' | 'rejected' | 'malformed' = 'success';
+  malformedChunkKind?: 0 | 1;
   constructor(
     public mode:
       | 'success'
@@ -59,6 +60,10 @@ class Port implements ByteTransport {
       this.bytes?.(encodeFrame(frame.extension, 4, rpcPayload(command, fields)));
     if (frame.type === 5) {
       this.chunks++;
+      if (frame.payload[8] === this.malformedChunkKind) {
+        this.bytes?.(encodeFrame(true, 2, new Uint8Array([255, 99])));
+        return;
+      }
       const ack = frame.payload.slice(0, 13),
         view = new DataView(ack.buffer);
       view.setUint32(9, view.getUint32(9, true) + frame.payload.length - 13, true);
@@ -152,6 +157,31 @@ it('streams only the reviewed signed application and confirms handoff without fl
   expect(hooks.flash).not.toHaveBeenCalled();
   await service.close();
 });
+it.each([0, 1] as const)(
+  'stops a malformed chunk error in transfer kind %i before further update writes',
+  async (kind) => {
+    const port = new Port();
+    port.malformedChunkKind = kind;
+    hooks.open.mockResolvedValue(port);
+    const service = new RealService(pin, true);
+    await service.connect();
+    await service.checkUpdate();
+    await expect(service.update(offer, () => {})).rejects.toBeInstanceOf(UncertainOutcome);
+    expect(port.chunks).toBe(kind === 0 ? 1 : 2);
+    expect(port.commands.filter((command) => command === UPGRADE.verify)).toHaveLength(kind);
+    expect(port.commands).not.toContain(UPGRADE.finish);
+    expect(port.selected).toBe(false);
+    const before = port.commands.length;
+    await expect(service.password('test device password')).rejects.toThrow('Reconnect');
+    await expect(service.wifi('Test network', 'test wifi password')).rejects.toThrow('Reconnect');
+    expect(port.commands).toHaveLength(before);
+    expect((await service.status()).wifi).toBe('4');
+    expect((await service.firmware()).state).toBe('idle');
+    expect(port.chunks).toBe(kind === 0 ? 1 : 2);
+    expect(hooks.flash).not.toHaveBeenCalled();
+    await service.close();
+  },
+);
 it.each(['selection-error', 'bad-readback', 'bad-begin'] as const)(
   'blocks writes after %s and permits status reconciliation',
   async (mode) => {

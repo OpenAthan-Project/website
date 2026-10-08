@@ -8,8 +8,13 @@ import {
   parseFirmware,
   chunkPayload,
 } from '../../installer/upgrade';
-import { ProvisioningSession, UncertainOutcome, type ByteTransport } from '../../installer/session';
-import { encodeFrame } from '../../installer/protocol';
+import {
+  ProvisioningSession,
+  DeviceError,
+  UncertainOutcome,
+  type ByteTransport,
+} from '../../installer/session';
+import { encodeFrame, rpcPayload } from '../../installer/protocol';
 
 async function signed() {
   const { manifest } = await fixture();
@@ -116,6 +121,107 @@ describe('signed USB upgrade contract', () => {
     const read = session.command(true, 0x10, [], { timeoutMs: 10 });
     receive(encodeFrame(true, 2, new Uint8Array([2])));
     await expect(read).rejects.toThrow('support');
+    await session.close();
+  });
+  for (const kind of [0, 1]) {
+    it.each([
+      ['extra error byte', [255, 99]],
+      ['empty error', []],
+      ['extra error-clear byte', [0, 99]],
+    ] as const)(
+      `locks writes after a malformed %s response to chunk kind ${kind}`,
+      async (_name, payload) => {
+        let receive!: (bytes: Uint8Array) => void;
+        let writes = 0;
+        const transport: ByteTransport = {
+          listen(fn) {
+            receive = fn;
+            return () => {};
+          },
+          async close() {},
+          async write() {
+            writes++;
+          },
+        };
+        const session = new ProvisioningSession(transport, 1000);
+        const transfer = session.writeChunk('0123456789abcdef', kind, 0, new Uint8Array([42]));
+        const rejected = expect(transfer).rejects.toBeInstanceOf(UncertainOutcome);
+        receive(encodeFrame(true, 2, new Uint8Array(payload)));
+        expect(session.uncertain).toBe(true);
+        await rejected;
+        // A delayed acknowledgement cannot clear the uncertainty lock.
+        const ack = chunkPayload('0123456789abcdef', kind, 1, new Uint8Array([42])).slice(0, 13);
+        receive(encodeFrame(true, 6, ack));
+        await expect(
+          session.writeChunk('0123456789abcdef', kind, 1, new Uint8Array([43])),
+        ).rejects.toThrow('Reconnect');
+        await expect(session.wifi('Test network', 'test wifi password')).rejects.toThrow(
+          'Reconnect',
+        );
+        await expect(session.password('test device password')).rejects.toThrow('Reconnect');
+        expect(writes).toBe(1);
+        const status = session.status();
+        receive(
+          encodeFrame(
+            true,
+            4,
+            rpcPayload(1, ['1', '4', 'ready', 'active', '2', 'openathan-test.local', 'ready']),
+          ),
+        );
+        expect((await status).wifi).toBe('4');
+        expect(session.uncertain).toBe(true);
+        expect(writes).toBe(2);
+        await session.close();
+      },
+    );
+  }
+  it.each([1, 2, 255])(
+    'retains valid one-byte chunk error %i as a definite rejection',
+    async (code) => {
+      let receive!: (bytes: Uint8Array) => void;
+      const transport: ByteTransport = {
+        listen(fn) {
+          receive = fn;
+          return () => {};
+        },
+        async close() {},
+        async write() {},
+      };
+      const session = new ProvisioningSession(transport, 1000);
+      const transfer = session.writeChunk('0123456789abcdef', 1, 0, new Uint8Array([42]));
+      const rejected = expect(transfer).rejects.toBeInstanceOf(DeviceError);
+      receive(encodeFrame(true, 2, new Uint8Array([code])));
+      await rejected;
+      expect(session.uncertain).toBe(false);
+      await session.close();
+    },
+  );
+  it('waits through a one-byte error clear for the exact chunk acknowledgement', async () => {
+    let receive!: (bytes: Uint8Array) => void;
+    let writes = 0;
+    const transport: ByteTransport = {
+      listen(fn) {
+        receive = fn;
+        return () => {};
+      },
+      async close() {},
+      async write() {
+        writes++;
+      },
+    };
+    const session = new ProvisioningSession(transport, 1000);
+    let settled = false;
+    const transfer = session.writeChunk('0123456789abcdef', 1, 0, new Uint8Array([42])).then(() => {
+      settled = true;
+    });
+    receive(encodeFrame(true, 2, new Uint8Array([0])));
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    const ack = chunkPayload('0123456789abcdef', 1, 1, new Uint8Array([42])).slice(0, 13);
+    receive(encodeFrame(true, 6, ack));
+    await transfer;
+    expect(session.uncertain).toBe(false);
+    expect(writes).toBe(1);
     await session.close();
   });
   it('rejects oversized chunks and zero transaction tokens before transport', () => {
