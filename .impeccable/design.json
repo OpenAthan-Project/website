@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-27T23:44:35.712408Z",
+  "generatedAt": "2026-10-08T00:06:48.945959Z",
   "title": "Design System: OpenAthan",
   "extensions": {
     "colorMeta": {
@@ -261,7 +261,7 @@
       "name": "Primary action",
       "kind": "button",
       "description": "The main action in the current task.",
-      "html": "<button class=\"ds-primary\" type=\"button\">Open recovery</button>",
+      "html": "<button class=\"ds-primary\" type=\"button\">Choose USB device</button>",
       "css": ".ds-primary { font-family: 'Mukta Malar', sans-serif; display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 30px; border: 1px solid var(--accent, #355e83); border-radius: 4px; background: var(--accent, #355e83); color: var(--paper, #ffffff); font-size: 1.35rem; font-weight: 700; line-height: 1.35; text-decoration: none; text-align: center; cursor: pointer; } .ds-primary:hover:not(:disabled) { background: var(--accent-hover, #254764); border-color: var(--accent-hover, #254764); color: var(--paper, #ffffff); } .ds-primary:focus-visible { outline: 3px solid var(--accent, #355e83); outline-offset: 4px; } @media (max-width: 600px) { .ds-primary { font-size: 1.15rem; padding-inline: 22px; } }",
       "refersTo": "button-primary"
     },
@@ -308,7 +308,7 @@
       "name": "Availability notice",
       "kind": "custom",
       "description": "An amber notice that explains availability or a caution.",
-      "html": "<aside class=\"ds-notice\"><strong>Installation release not available yet.</strong><p>First-time installation will open when a tested firmware release and approved recordings are ready.</p></aside>",
+      "html": "<aside class=\"ds-notice\"><strong>New installation is unavailable.</strong><p>You can still connect an existing OpenAthan to open its settings or fix Wi-Fi and its device password.</p></aside>",
       "css": ".ds-notice { font-family: 'Mukta Malar', sans-serif; margin: 20px 0; padding: 16px 20px; border-radius: 4px; background: var(--warning-bg, #fff5e6); color: var(--warning-text, #805719); font-size: 20px; line-height: 1.45; } .ds-notice strong { font-weight: 700; } .ds-notice p { margin: 4px 0 0; color: var(--text, #38434f); } @media (max-width: 600px) { .ds-notice { font-size: 18px; } }",
       "refersTo": "notice"
     },
@@ -323,7 +323,7 @@
       "name": "Uncertain feedback",
       "kind": "custom",
       "description": "A polite status message explaining that the result needs checking.",
-      "html": "<div class=\"ds-uncertain\" role=\"status\" aria-live=\"polite\" aria-atomic=\"true\">The device\u2019s current status could not be confirmed. Reconnect through recovery to check it before making another change.</div>",
+      "html": "<div class=\"ds-uncertain\" role=\"status\" aria-live=\"polite\" aria-atomic=\"true\">The device\u2019s current status could not be confirmed. Reconnect through USB setup to check it before making another change.</div>",
       "css": ".ds-uncertain { font-family: 'Mukta Malar', sans-serif; margin: 20px 0; padding: 14px 18px; border-radius: 4px; background: var(--warning-bg, #fff5e6); color: var(--warning-text, #805719); font-size: 20px; line-height: 1.45; overflow-wrap: anywhere; } @media (max-width: 600px) { .ds-uncertain { font-size: 18px; } }",
       "refersTo": "feedback-uncertain"
     },

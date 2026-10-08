@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-test('published installation requires an explicit USB request', async ({ page, request }) => {
+test('USB setup requires an explicit connection request', async ({ page }) => {
   let requests = 0;
   await page.exposeFunction('recordUsbRequest', () => {
     requests++;
@@ -17,17 +17,8 @@ test('published installation requires an explicit USB request', async ({ page, r
     });
   });
   await page.goto('/install/');
-  const install = page.getByRole('button', {
-    name: /^(Install a new device|Installation unavailable)$/,
-  });
-  const served = await (await request.get('/release.json')).json();
-  if (served.release) await expect(install).toBeEnabled();
-  else await expect(install).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Choose USB device' })).toHaveCount(0);
-  expect(requests).toBe(0);
-  if (served.release) await install.click();
-  else await page.getByRole('button', { name: 'Open recovery', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Connect your device' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Connect speaker' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Choose USB device' })).toBeEnabled();
   expect(requests).toBe(0);
   await page.getByRole('button', { name: 'Choose USB device' }).click();
   await expect(page.getByRole('status')).toContainText('No device selected.');

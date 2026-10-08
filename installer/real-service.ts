@@ -1,15 +1,16 @@
 import { BrowserTransport, requestDevicePort } from './browser-transport';
 import { ProvisioningSession } from './session';
 import { loadRelease, type ReleasePin } from './release';
-import type { InstallerService, Path, Connected } from './service';
+import type { InstallerService, Connected } from './service';
 
 export class RealService implements InstallerService {
   readonly simulated = false;
   readonly installAvailable: boolean;
   private port?: SerialPort;
   private session?: ProvisioningSession;
-  private newDeviceConfirmedPath = false;
+  private installationCandidate = false;
   private reloadRequired = false;
+  private connectionLost = false;
   onDisconnect?: () => void;
   constructor(private pin: ReleasePin | null) {
     this.installAvailable = pin !== null;
@@ -17,14 +18,18 @@ export class RealService implements InstallerService {
   private async open(): Promise<ProvisioningSession> {
     if (!this.port) throw new Error('Choose the USB device first.');
     const session = new ProvisioningSession(await BrowserTransport.open(this.port));
-    session.onDisconnect = () => this.onDisconnect?.();
+    this.connectionLost = false;
+    session.onDisconnect = () => {
+      this.connectionLost = true;
+      this.installationCandidate = false;
+      this.onDisconnect?.();
+    };
     this.session = session;
     return session;
   }
-  async connect(path: Path): Promise<Connected> {
+  async connect(): Promise<Connected> {
     if (this.reloadRequired)
       throw new Error('Reload this page before reconnecting after an interrupted installation.');
-    if (path === 'install' && !this.pin) throw new Error('Installation release not available yet.');
     await this.close();
     this.port = await requestDevicePort();
     const session = await this.open();
@@ -42,29 +47,29 @@ export class RealService implements InstallerService {
       if (remaining <= 0) throw new Error('Device discovery timed out.');
       const status = await session.status(remaining);
       recognized = true;
-      this.newDeviceConfirmedPath = false;
+      this.installationCandidate = false;
       return { kind: 'existing', status };
     } catch {
-      if (recognized || path === 'recovery') {
+      if (recognized || this.connectionLost) {
         await this.close();
         throw new Error(
-          recognized
-            ? 'OpenAthan was recognized, but its status could not be read. Reconnect and use recovery; do not reinstall.'
-            : 'OpenAthan firmware was not recognized. Check the cable, close other USB tools and reconnect. Recovery will not install or erase firmware.',
+          this.connectionLost
+            ? 'Device disconnected. Reconnect the USB data cable.'
+            : 'OpenAthan was recognized, but its status could not be read. Reconnect your speaker; do not reinstall.',
         );
       }
       // Detection failure is not installation authorization. The next screen requires
       // a separate explicit confirmation that this hardware may be fully replaced.
       await session.close();
       this.session = undefined;
-      this.newDeviceConfirmedPath = true;
-      return { kind: 'new' };
+      this.installationCandidate = this.installAvailable;
+      return { kind: 'unrecognized' };
     }
   }
   async install(confirmed: boolean, progress: (percent: number) => void) {
-    if (!confirmed || !this.newDeviceConfirmedPath || !this.port || !this.pin || this.session)
+    if (!confirmed || !this.installationCandidate || !this.port || !this.pin || this.session)
       throw new Error('A confirmed new-device connection is required.');
-    this.newDeviceConfirmedPath = false;
+    this.installationCandidate = false;
     const bundle = await loadRelease(this.pin);
     const { flashBundle, serialProgrammer } = await import('./flasher');
     try {
@@ -87,7 +92,7 @@ export class RealService implements InstallerService {
       }
     }
     throw new Error(
-      'Installation was verified, but setup could not reconnect. Reconnect the cable and choose Fix Wi-Fi or password. Do not reinstall.',
+      'Installation was verified, but setup could not reconnect. Reconnect through USB setup to check the speaker. Do not reinstall.',
     );
   }
   private current() {
@@ -113,7 +118,7 @@ export class RealService implements InstallerService {
   }
   async close() {
     this.port = undefined;
-    this.newDeviceConfirmedPath = false;
+    this.installationCandidate = false;
     await this.releaseSession();
   }
 }

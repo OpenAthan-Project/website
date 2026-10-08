@@ -3,7 +3,6 @@ import { fakeSerialDevice } from './fixtures/serial-device';
 
 async function connect(page: Page) {
   await page.goto('/install/');
-  await page.getByRole('button', { name: 'Open recovery', exact: true }).click();
   await page.getByRole('button', { name: 'Choose USB device' }).click();
   await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeVisible();
 }
@@ -138,7 +137,9 @@ for (const action of ['Refresh status', 'Open device settings']) {
         status,
       ]);
       await page.getByRole('button', { name: /Disconnect/ }).press('Enter');
-      await expect(page.getByRole('button', { name: 'Open recovery', exact: true })).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Choose USB device', exact: true }),
+      ).toBeVisible();
       expect(await page.evaluate(() => window.recoveryDevice.closes)).toBe(1);
     });
   }
@@ -199,7 +200,9 @@ for (const [name, fields] of [
     await page
       .getByRole('button', { name: 'Disconnect and start again', exact: true })
       .press('Enter');
-    await expect(page.getByRole('button', { name: 'Open recovery', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Choose USB device', exact: true }),
+    ).toBeVisible();
     expect(await page.evaluate(() => window.recoveryDevice.closes)).toBe(1);
   });
 }
@@ -290,5 +293,50 @@ for (const state of ['offline', 'password-absent'] as const) {
       status,
     ]);
     expect(await page.evaluate(() => window.recoveryDevice.closes)).toBe(0);
+  });
+}
+
+for (const discovery of ['existing', 'unrecognized', 'unreadable', 'status-only'] as const) {
+  test(`connection remains available without a release for ${discovery} firmware`, async ({
+    page,
+  }) => {
+    await fakeSerialDevice(page, discovery === 'existing' ? {} : { discovery });
+    await page.route('**/install/', async (route) => {
+      const response = await route.fetch();
+      const body = (await response.text()).replace(
+        /data-release-selection="[^"]*"/,
+        'data-release-selection="{&quot;schema&quot;:1,&quot;release&quot;:null}"',
+      );
+      await route.fulfill({ response, body });
+    });
+    await page.goto('/install/');
+    await expect(page.getByRole('button', { name: 'Choose USB device' })).toBeEnabled();
+    await expect(page.getByText('New installation is unavailable.', { exact: true })).toBeVisible();
+    expect((await page.evaluate(() => window.recoveryDevice)).opens).toBe(0);
+    await page.getByRole('button', { name: 'Choose USB device' }).click();
+    if (discovery === 'existing' || discovery === 'status-only') {
+      await expect(
+        page.getByRole('heading', { name: 'Your OpenAthan is connected' }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Open device settings', exact: true }),
+      ).toBeVisible();
+    } else if (discovery === 'unrecognized') {
+      await expect(
+        page.getByRole('heading', { name: 'New installation is unavailable' }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('button', { name: 'Retry connection', exact: true }),
+      ).toBeVisible();
+    } else {
+      await expect(page.getByRole('status')).toContainText(
+        'recognized, but its status could not be read',
+      );
+    }
+    await expect(page.getByLabel(/I have an AtomS3R/)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(
+      0,
+    );
+    expect((await page.evaluate(() => window.recoveryDevice)).requests).toEqual([identify, status]);
   });
 }

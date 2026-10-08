@@ -31,8 +31,8 @@ const { release } = await siteSelection();
               </>
             )
           }
-          Already have OpenAthan installed? Choose <strong>Fix Wi-Fi or password</strong> to recover
-          access while keeping your prayer settings and playback history.
+          Already have OpenAthan installed? Connect through USB setup to open its settings or recover
+          Wi-Fi and password access while keeping your prayer settings and playback history.
         </p>
       </aside><h2>What you’ll need</h2><p>
         Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
@@ -50,16 +50,28 @@ const { release } = await siteSelection();
       </p><p>
         Close other serial tools and browser tabs using the device. On <a href="/install/"
           >the installer page</a
-        >, choose your path and select the USB JTAG/serial device when prompted.
-      </p><h2>2. Install, or recover an existing device</h2><p>
-        A new installation replaces the device’s existing firmware and data. It is not a
-        settings-preserving update. If OpenAthan is already installed, choose <strong
-          >Fix Wi-Fi or password</strong
-        >. Recovery preserves your prayer settings and playback history.
+        >, select <strong>Choose USB device</strong>, then select the USB JTAG/serial device when
+        prompted.
+      </p><h2>2. Check the connected speaker</h2><p>
+        The website checks for OpenAthan before showing your next steps. An existing OpenAthan opens
+        its settings and recovery options. Choose <strong>Open device settings</strong>,
+        <strong>Change Wi-Fi</strong>, or create/reset its device password as needed. Recovery
+        preserves your prayer settings and playback history.
+      </p><p>
+        If OpenAthan is not recognized and a release is available, the website shows installation
+        confirmation. Detection alone does not prove the device is new or empty. If you expected an
+        existing OpenAthan, retry the connection or follow <a href="/docs/troubleshooting/"
+          >troubleshooting</a
+        >. Continue with a new installation only on supported hardware you intend to erase: confirm
+        the hardware and full erasure, then select <strong>Install OpenAthan</strong>. Installation
+        replaces existing firmware and saved data; it is not a preserving update.
+      </p><p>
+        If OpenAthan is recognized but its status cannot be read, reconnect and troubleshoot.
+        Installation is blocked to protect the existing device.
       </p><h2>3. Save Wi-Fi and a device password</h2><p>
-        Select your home network or enter its name for a hidden network, then enter its Wi-Fi
-        password. Next, create a separate, long device password. Your browser sends these
-        credentials directly over USB; the website does not store them.
+        After a new installation, select your home network or enter its name for a hidden network,
+        then enter its Wi-Fi password. Next, create a separate, long device password. Your browser
+        sends these credentials directly over USB; the website does not store them.
       </p><p>
         Remember the device password. You will use the username <strong>admin</strong> to sign into the
         device’s settings.

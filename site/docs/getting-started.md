@@ -20,3 +20,5 @@ The website never compiles firmware or automatically updates connected speakers.
 Use the [development instructions](../../README.md) for local preview. The
 development simulator lets reviewers explore the flow without hardware and is
 excluded from the production build.
+
+USB setup has one connection entry. Choose the USB device, then read-only discovery opens existing-speaker controls or installation confirmation. An unrecognized result is not proof of a blank device. Installation requires explicit hardware and full-erasure confirmation; recognized OpenAthan with unreadable status receives troubleshooting, never installation.

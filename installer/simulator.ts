@@ -1,9 +1,11 @@
 /** Deliberately has no dependency on Web Serial, release files or the flasher. */
 import { decodeFields, encodeFrame, FrameDecoder, rpcPayload } from './protocol';
 import { ProvisioningSession, type ByteTransport } from './session';
-import type { Connected, InstallerService, Path } from './service';
+import type { Connected, InstallerService } from './service';
 export const scenarios = [
   'success',
+  'new-device',
+  'unreadable',
   'denied',
   'busy',
   'unknown',
@@ -121,7 +123,7 @@ export class SimulatorService implements InstallerService {
   readonly simulated = true;
   readonly installAvailable = true;
   private session?: ProvisioningSession;
-  private path?: Path;
+  private installationCandidate = false;
   onDisconnect?: () => void;
   constructor(private scenario: Scenario = 'success') {}
   private open(existing: boolean) {
@@ -129,19 +131,28 @@ export class SimulatorService implements InstallerService {
     this.session.onDisconnect = () => this.onDisconnect?.();
     return this.session;
   }
-  async connect(path: Path): Promise<Connected> {
+  async connect(): Promise<Connected> {
     await this.close();
-    this.path = path;
     if (this.scenario === 'denied') throw new DOMException('Permission dismissed', 'NotFoundError');
     if (this.scenario === 'busy') throw new DOMException('Port busy', 'InvalidStateError');
-    if (path === 'install') return { kind: 'new' };
+    if (['new-device', 'unknown', 'flash-failed'].includes(this.scenario)) {
+      this.installationCandidate = true;
+      return { kind: 'unrecognized' };
+    }
     const session = this.open(true);
     await session.identify();
+    if (this.scenario === 'unreadable') {
+      await this.close();
+      throw new Error(
+        'OpenAthan was recognized, but its status could not be read. Reconnect your speaker; do not reinstall.',
+      );
+    }
     return { kind: 'existing', status: await session.status() };
   }
   async install(confirmed: boolean, progress: (percent: number) => void) {
-    if (!confirmed || this.path !== 'install')
+    if (!confirmed || !this.installationCandidate)
       throw new Error('Confirm the simulated installation first.');
+    this.installationCandidate = false;
     for (const percent of [15, 40, 75, 100]) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       progress(percent);
@@ -169,6 +180,7 @@ export class SimulatorService implements InstallerService {
     return this.current().password(password);
   }
   async close() {
+    this.installationCandidate = false;
     const session = this.session;
     this.session = undefined;
     await session?.close();
