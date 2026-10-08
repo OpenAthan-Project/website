@@ -8,7 +8,10 @@ if (root) {
   try {
     mountInstaller(
       root,
-      new RealService(parsePin(JSON.parse(root.dataset.releaseSelection ?? 'null'))),
+      new RealService(
+        parsePin(JSON.parse(root.dataset.releaseSelection ?? 'null')),
+        JSON.parse(root.dataset.releaseSelection ?? 'null')?.usbUpdateEnabled === true,
+      ),
       usbSupport(),
     );
   } catch {

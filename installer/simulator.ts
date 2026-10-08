@@ -1,6 +1,7 @@
 /** Deliberately has no dependency on Web Serial, release files or the flasher. */
 import { decodeFields, encodeFrame, FrameDecoder, rpcPayload } from './protocol';
 import { ProvisioningSession, type ByteTransport } from './session';
+import type { FirmwareInfo, UpgradeCheck, UpgradeOffer } from './upgrade';
 import type { Connected, InstallerService } from './service';
 export const scenarios = [
   'success',
@@ -15,6 +16,11 @@ export const scenarios = [
   'lost-wifi-ack',
   'lost-password-ack',
   'flash-failed',
+  'update-available',
+  'update-current',
+  'update-unsupported',
+  'update-failed',
+  'update-uncertain',
 ] as const;
 export type Scenario = (typeof scenarios)[number];
 
@@ -162,6 +168,55 @@ export class SimulatorService implements InstallerService {
         );
     }
     return this.open(false).status();
+  }
+  async discardUpdate() {}
+  async firmware(): Promise<FirmwareInfo> {
+    return {
+      version: 'v0.4.0',
+      commit: 'a'.repeat(40),
+      supported: true,
+      state: 'idle',
+      boot: 'confirmed',
+      result: '',
+      offered: '',
+      received: 0,
+    };
+  }
+  async checkUpdate(): Promise<UpgradeCheck> {
+    if (this.scenario === 'update-current')
+      return {
+        state: 'current',
+        detail: 'The simulated firmware is current.',
+        recoveryBlocked: false,
+      };
+    if (['update-available', 'update-failed', 'update-uncertain'].includes(this.scenario))
+      return {
+        state: 'available',
+        recoveryBlocked: false,
+        offer: {
+          version: 'v0.5.0',
+          commit: 'b'.repeat(40),
+          bytes: 256,
+          sha256: '0'.repeat(64),
+          notes: 'https://github.com/OpenAthan-Project/openathan/releases',
+        },
+      };
+    return {
+      state: 'unsupported',
+      recoveryBlocked: false,
+      detail:
+        'This simulated firmware needs an initial Wi-Fi or maintainer update before USB updates are supported.',
+    };
+  }
+  async update(_offer: UpgradeOffer, progress: (percent: number) => void) {
+    for (const n of [15, 40, 75, 100]) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      progress(n);
+      if (n === 40 && this.scenario === 'update-failed')
+        throw new Error('Simulated update rejected; reconnect and check.');
+      if (n === 75 && this.scenario === 'update-uncertain')
+        throw new (await import('./session')).UncertainOutcome();
+    }
   }
   private current() {
     if (!this.session) throw new Error('Connect the simulated device first.');

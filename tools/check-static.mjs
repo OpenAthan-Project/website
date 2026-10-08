@@ -1,6 +1,7 @@
 import { readFile, readdir, stat } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { checkedManifest, verifyBundle } from '../installer/release.ts';
+import { verifyDescriptor, verifyApplication } from '../installer/upgrade.ts';
 import { readSelection, metadata, parseMetadata } from './release-selection.ts';
 
 const root = resolve(import.meta.dirname, '..');
@@ -64,7 +65,24 @@ if (pin) {
   for (const part of manifest.parts)
     inputs.set(part.file, new Uint8Array(await readFile(join(directory, part.file))));
   await verifyBundle(manifest, inputs);
-  if (binaries.length !== manifest.parts.length)
+  const otaPath = join(directory, 'firmware.ota.bin');
+  const descriptorPath = join(directory, 'upgrade.json');
+  const hasOta = output.includes(otaPath),
+    hasDescriptor = output.includes(descriptorPath);
+  if (hasOta !== hasDescriptor || (selection.usbUpdateEnabled && !hasOta))
+    throw new Error('Selected USB update artifacts are incomplete.');
+  if (hasOta) {
+    const offer = await verifyDescriptor(new Uint8Array(await readFile(descriptorPath)), manifest);
+    const application = new Uint8Array(await readFile(otaPath));
+    await verifyApplication(offer, application);
+    const factory = inputs.get(manifest.parts.find((part) => part.role === 'factory').file);
+    if (
+      factory.length !== 0x10000 + application.length ||
+      !application.every((byte, i) => byte === factory[0x10000 + i])
+    )
+      throw new Error('USB application differs from the verified factory image.');
+  }
+  if (binaries.length !== manifest.parts.length + Number(hasOta))
     throw new Error('Unexpected release binaries in static output.');
 }
 console.log(

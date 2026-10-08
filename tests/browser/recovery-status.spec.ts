@@ -8,11 +8,15 @@ async function connect(page: Page) {
 }
 async function save(page: Page, kind: 'wifi' | 'password') {
   if (kind === 'wifi') {
+    if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+      await page.locator('.recovery-disclosure summary').click();
     await page.getByRole('button', { name: 'Change Wi-Fi' }).click();
     await page.getByLabel('Network name', { exact: true }).fill('Test network');
     await page.getByLabel('Wi-Fi password', { exact: true }).fill('made-up wifi password');
     await page.getByRole('button', { name: 'Save Wi-Fi', exact: true }).click();
   } else {
+    if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+      await page.locator('.recovery-disclosure summary').click();
     await page.getByRole('button', { name: 'Reset device password' }).click();
     await page.getByLabel('Device password', { exact: true }).fill('made-up device password');
     await page.getByLabel('Repeat password').fill('made-up device password');
@@ -53,6 +57,7 @@ for (const kind of ['wifi', 'password'] as const) {
         await expect(page.getByRole('status')).toContainText('storage is unavailable');
         await expect(page.locator('input[type="password"]').first()).toHaveValue('');
         await page.getByRole('button', { name: 'Back', exact: true }).click();
+        await page.locator('.recovery-disclosure summary').click();
         await expect(page.getByRole('button', { name: 'Change Wi-Fi' })).toBeEnabled();
         await expect(page.getByRole('button', { name: 'Reset device password' })).toBeEnabled();
       }
@@ -86,18 +91,28 @@ test('recovery refreshes Wi-Fi and device links without reopening USB or writing
 }) => {
   await fakeSerialDevice(page, { offline: true });
   await connect(page);
-  await expect(page.getByRole('button', { name: 'Open device settings', exact: true })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole('button', { name: 'Continue to device settings', exact: true }),
+  ).toHaveCount(0);
+  if (
+    !(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))) &&
+    !(await page.getByRole('button', { name: 'Refresh status', exact: true }).isVisible())
+  )
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Refresh status', exact: true }).press('Enter');
   await expect(page.getByRole('status')).toContainText('Wi-Fi is still not connected');
   await page.evaluate(() => {
     window.recoveryDevice.wifi = '4';
   });
+  if (
+    !(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))) &&
+    !(await page.getByRole('button', { name: 'Refresh status', exact: true }).isVisible())
+  )
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Refresh status', exact: true }).press('Enter');
   await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeFocused();
-  await page.getByRole('button', { name: 'Open device settings', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Ready for device setup' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue to device settings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Continue on speaker power' })).toBeVisible();
   await expect(page.getByRole('link', { name: /Open device settings/ })).toHaveAttribute(
     'href',
     'http://openathan-test.local/',
@@ -115,7 +130,7 @@ test('recovery refreshes Wi-Fi and device links without reopening USB or writing
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-for (const action of ['Refresh status', 'Open device settings']) {
+for (const action of ['Refresh status', 'Continue to device settings']) {
   for (const fault of ['storage', 'password', 'setup', 'unreadable'] as const) {
     test(`${action} blocks changes when current ${fault} status is unsafe`, async ({ page }) => {
       await fakeSerialDevice(page);
@@ -124,6 +139,7 @@ for (const action of ['Refresh status', 'Open device settings']) {
         if (fault === 'unreadable') window.recoveryDevice.unreadable = true;
         else window.recoveryDevice[fault] = fault === 'setup' ? 'storage_fault' : 'fault';
       }, fault);
+      if (action === 'Refresh status') await page.locator('.recovery-disclosure summary').click();
       await page.getByRole('button', { name: action, exact: true }).press('Enter');
       await expect(
         page.getByRole('heading', {
@@ -150,6 +166,8 @@ test('invalid Wi-Fi keys stay in the browser and corrected input can be submitte
 }) => {
   await fakeSerialDevice(page, { save: { reply: 'error255', status: 'healthy' } });
   await connect(page);
+  if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Change Wi-Fi' }).click();
   await page.getByLabel('Network name', { exact: true }).fill('Test network');
   for (const password of ['x'.repeat(64), 'é'.repeat(32)]) {
@@ -274,7 +292,9 @@ for (const state of ['offline', 'password-absent'] as const) {
       if (state === 'offline') window.recoveryDevice.wifi = '2';
       else window.recoveryDevice.password = 'absent';
     }, state);
-    await page.getByRole('button', { name: 'Open device settings', exact: true }).press('Enter');
+    await page
+      .getByRole('button', { name: 'Continue to device settings', exact: true })
+      .press('Enter');
     await expect(
       page.getByRole('heading', {
         name: state === 'offline' ? 'Connect to your Wi-Fi' : 'Create a device password',
@@ -319,14 +339,14 @@ for (const discovery of ['existing', 'unrecognized', 'unreadable', 'status-only'
         page.getByRole('heading', { name: 'Your OpenAthan is connected' }),
       ).toBeVisible();
       await expect(
-        page.getByRole('button', { name: 'Open device settings', exact: true }),
+        page.getByRole('button', { name: 'Continue to device settings', exact: true }),
       ).toBeVisible();
     } else if (discovery === 'unrecognized') {
       await expect(
         page.getByRole('heading', { name: 'New installation is unavailable' }),
       ).toBeVisible();
       await expect(
-        page.getByRole('button', { name: 'Retry connection', exact: true }),
+        page.getByRole('button', { name: 'Back to connection', exact: true }),
       ).toBeVisible();
     } else {
       await expect(page.getByRole('status')).toContainText(

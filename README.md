@@ -12,6 +12,8 @@ Visit [openathan.com](https://openathan.com) for supported hardware, installatio
 
 Connect once through USB setup: the website checks the speaker and shows existing-device controls or installation confirmation. The browser installer supports fresh installation on **AtomS3R C126 + Pyramid A167** and Wi-Fi/password recovery for existing devices. **Fresh installation erases saved data.** Existing owners should [update from the device page or follow the preserving USB transition](https://openathan.com/docs/getting-started/#firmware-updates).
 
+Existing speakers show one main task, a firmware status row and expandable Wi-Fi/password recovery. A separate signed application-only USB updater is implemented for new firmware that explicitly supports it. Its public activation flag remains **off** pending physical qualification and publication of a capable release. Existing releases continue to use the device page or maintainer transition.
+
 The installer uses the latest approved stable OpenAthan release. The website is scheduled to check for releases twice hourly and deploys only after artifact verification and website tests pass. See the [deployment guide](deployment/README.md) for timing limitations, release selection, and rollback.
 
 Prayer settings and activation happen on the device's own local page. The speaker operates independently of this website and Home Assistant. The optional [location helper](https://openathan.com/location/) uses browser location with a GeoJS IP-location fallback; users review the suggestion before saving it on the device.

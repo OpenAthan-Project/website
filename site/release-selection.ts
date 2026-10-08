@@ -12,6 +12,9 @@ export async function siteSelection(): Promise<Selection> {
     return {
       schema: 1,
       automatic: policy.automatic,
+      ...(policy.usbUpdateEnabled === undefined
+        ? {}
+        : { usbUpdateEnabled: policy.usbUpdateEnabled }),
       policySha256,
       websiteCommit: execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(),
       release: policy.pin,

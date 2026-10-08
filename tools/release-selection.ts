@@ -7,10 +7,12 @@ export const FIRMWARE_API = 'https://api.github.com/repos/OpenAthan-Project/open
 export const WEBSITE_API = 'https://api.github.com/repos/OpenAthan-Project/website';
 export const DEPLOYED_METADATA = 'https://openathan.com/release.json';
 export interface Policy {
+  usbUpdateEnabled?: boolean;
   automatic: boolean;
   pin: ReleasePin | null;
 }
 export interface Selection {
+  usbUpdateEnabled?: boolean;
   schema: 1;
   automatic: boolean;
   policySha256: string;
@@ -27,12 +29,20 @@ export function parsePolicy(value: unknown): Policy {
   const automatic = (value as { automatic?: unknown }).automatic;
   if (automatic !== undefined && typeof automatic !== 'boolean')
     throw new Error('Invalid automatic release policy.');
-  return { automatic: automatic === true, pin };
+  const usbUpdateEnabled = (value as { usbUpdateEnabled?: unknown }).usbUpdateEnabled;
+  if (usbUpdateEnabled !== undefined && typeof usbUpdateEnabled !== 'boolean')
+    throw new Error('Invalid USB update policy.');
+  return {
+    automatic: automatic === true,
+    pin,
+    ...(usbUpdateEnabled === undefined ? {} : { usbUpdateEnabled }),
+  };
 }
 export function parseSelection(value: unknown): Selection {
   const pin = parsePin(value);
   const s = value as Selection;
   if (
+    (s.usbUpdateEnabled !== undefined && typeof s.usbUpdateEnabled !== 'boolean') ||
     typeof s.automatic !== 'boolean' ||
     typeof s.policySha256 !== 'string' ||
     !/^[a-f0-9]{64}$/.test(s.policySha256) ||
@@ -237,6 +247,7 @@ export async function readSelection(root = process.cwd()): Promise<Selection> {
   const { policy, policySha256 } = await readPolicy(root);
   if (
     selection.policySha256 !== policySha256 ||
+    selection.usbUpdateEnabled !== policy.usbUpdateEnabled ||
     selection.automatic !== policy.automatic ||
     (!policy.automatic && !sameRelease(selection.release, policy.pin)) ||
     (!policy.pin && selection.release)

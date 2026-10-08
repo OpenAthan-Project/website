@@ -29,6 +29,7 @@ if (process.argv.includes('--freshness')) {
   const selection = parseSelection({
     schema: 1,
     automatic: policy.automatic,
+    ...(policy.usbUpdateEnabled === undefined ? {} : { usbUpdateEnabled: policy.usbUpdateEnabled }),
     policySha256,
     websiteCommit,
     release: await resolveRelease(policy),
