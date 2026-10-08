@@ -927,3 +927,60 @@ progress {
   background: var(--panel);
   border-color: var(--field-border);
 }
+
+/* USB task hierarchy follows the approved summary and native recovery disclosure. */
+.task-row {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+}
+.task-row h3 {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+}
+.task-row p {
+  margin: 0;
+}
+.task-row .button,
+.field-heading .button {
+  font-size: 1rem;
+  padding: 8px 16px;
+  flex-shrink: 0;
+}
+.recovery-disclosure {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin: 12px 0 20px;
+}
+.recovery-disclosure summary {
+  padding: 18px 0;
+  font-weight: 700;
+  cursor: pointer;
+}
+.recovery-tasks {
+  padding-bottom: 12px;
+}
+.field-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
+.quiet-actions .button {
+  font-size: 1rem;
+  padding: 8px 16px;
+}
+@media (max-width: 600px) {
+  .task-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .field-heading {
+    flex-wrap: wrap;
+  }
+}

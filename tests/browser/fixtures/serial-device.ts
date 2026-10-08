@@ -93,6 +93,8 @@ export async function fakeSerialDevice(
                 'ESP32-S3',
                 'openathan-test.local',
               ]);
+            } else if (extension && command === 0x10) {
+              frame(true, 2, new Uint8Array([2]));
             } else if (extension && command === 1) {
               reply(
                 true,

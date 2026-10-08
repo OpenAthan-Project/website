@@ -8,6 +8,8 @@ import {
   type DeviceStatus,
   type Frame,
 } from './protocol';
+import { encodeFrame } from './protocol';
+import { parseFirmware, UPGRADE, chunkPayload } from './upgrade';
 
 /** A byte stream; implementations must never log payloads, which can contain passwords. */
 export interface ByteTransport {
@@ -51,6 +53,12 @@ interface Pending {
 export class ProvisioningSession {
   private decoder = new FrameDecoder();
   private pending?: Pending;
+  private chunkPending?: {
+    expected: Uint8Array;
+    resolve: () => void;
+    reject: (error: Error) => void;
+    timer: ReturnType<typeof setTimeout>;
+  };
   private stopped = false;
   private readonly unlisten: () => void;
   /** Set after any uncertain write; no further mutation until the session is reopened. */
@@ -67,7 +75,7 @@ export class ProvisioningSession {
       () => {
         this.stopped = true;
         this.fail(
-          this.pending?.mutation
+          this.pending?.mutation || this.chunkPending
             ? new UncertainOutcome()
             : new Error('Device disconnected. Reconnect the USB data cable.'),
         );
@@ -76,14 +84,40 @@ export class ProvisioningSession {
     );
   }
   private fail(error: Error): void {
+    const chunk = this.chunkPending;
+    if (chunk) {
+      clearTimeout(chunk.timer);
+      this.chunkPending = undefined;
+      chunk.reject(error);
+    }
     const pending = this.pending;
-    if (!pending) return;
     if (error instanceof UncertainOutcome) this.uncertain = true;
+    if (!pending) return;
     clearTimeout(pending.timer);
     this.pending = undefined;
     pending.reject(error);
   }
   private receive(frame: Frame): void {
+    const chunk = this.chunkPending;
+    if (chunk && frame.extension) {
+      if (frame.type === 2 && frame.payload[0]) {
+        this.fail(new DeviceError(frame.payload[0]));
+        return;
+      }
+      if (frame.type === 6) {
+        if (
+          frame.payload.length !== 13 ||
+          !frame.payload.every((b, i) => b === chunk.expected[i])
+        ) {
+          this.fail(new UncertainOutcome());
+          return;
+        }
+        clearTimeout(chunk.timer);
+        this.chunkPending = undefined;
+        chunk.resolve();
+        return;
+      }
+    }
     const pending = this.pending;
     if (!pending || frame.extension !== pending.extension) return;
     if (frame.type === 2 && frame.payload.length === 1 && frame.payload[0]) {
@@ -118,7 +152,8 @@ export class ProvisioningSession {
     options: { scan?: boolean; mutation?: boolean; timeoutMs?: number } = {},
   ): Promise<string[][]> {
     if (this.stopped) throw new Error('Connect the device first.');
-    if (this.pending) throw new Error('Another device action is still running.');
+    if (this.pending || this.chunkPending)
+      throw new Error('Another device action is still running.');
     if (options.mutation && this.uncertain)
       throw new Error('Reconnect and check status before another change.');
     const packet = encodeRequest(extension, command, fields);
@@ -152,6 +187,29 @@ export class ProvisioningSession {
                 ? new UncertainOutcome()
                 : new Error('USB connection failed. Reconnect the device.'),
             );
+        })
+        .finally(() => packet.fill(0));
+    });
+  }
+  async firmware() {
+    const [fields] = await this.command(true, UPGRADE.info, [], { timeoutMs: 5000 });
+    return parseFirmware(fields!);
+  }
+  async writeChunk(token: string, kind: number, offset: number, bytes: Uint8Array): Promise<void> {
+    if (this.stopped || this.uncertain || this.pending || this.chunkPending)
+      throw new Error('Reconnect and check before another update write.');
+    const payload = chunkPayload(token, kind, offset, bytes),
+      expected = payload.slice(0, 13);
+    new DataView(expected.buffer).setUint32(9, offset + bytes.length, true);
+    const packet = encodeFrame(true, 5, payload);
+    await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => this.fail(new UncertainOutcome()), this.timeout);
+      const pending = { expected, resolve, reject, timer };
+      this.chunkPending = pending;
+      void this.transport
+        .write(packet)
+        .catch(() => {
+          if (this.chunkPending === pending) this.fail(new UncertainOutcome());
         })
         .finally(() => packet.fill(0));
     });
@@ -211,7 +269,11 @@ export class ProvisioningSession {
   }
   async close(): Promise<void> {
     this.stopped = true;
-    this.fail(this.pending?.mutation ? new UncertainOutcome() : new Error('Connection closed.'));
+    this.fail(
+      this.pending?.mutation || this.chunkPending
+        ? new UncertainOutcome()
+        : new Error('Connection closed.'),
+    );
     this.unlisten();
     this.decoder.reset();
     await this.transport.close();

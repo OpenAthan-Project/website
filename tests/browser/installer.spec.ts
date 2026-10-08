@@ -83,16 +83,20 @@ test('recovery changes Wi-Fi and password without showing install or erase actio
   await connect(page);
   await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
+  if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Change Wi-Fi' }).click();
   await saveWifi(page);
   await expect(page.getByRole('status')).toHaveText('Wi-Fi saved.');
+  if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Reset device password' }).click();
   await page.getByLabel('Device password', { exact: true }).fill('another made-up password');
   await page.getByLabel('Repeat password').fill('another made-up password');
   await page.getByRole('button', { name: 'Save device password' }).click();
   await expect(page.getByRole('status')).toContainText('Device password saved.');
-  await page.getByRole('button', { name: 'Open device settings', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Ready for device setup' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue to device settings', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Continue on speaker power' })).toBeVisible();
 });
 
 for (const [scenario, message] of [
@@ -117,6 +121,8 @@ test('wrong Wi-Fi password shows retained credentials and clears entered secret'
 }) => {
   await demo(page, 'wifi-failed');
   await connect(page);
+  if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Change Wi-Fi' }).click();
   await saveWifi(page);
   await expect(page.getByRole('status')).toContainText('Previous saved credentials were retained');
@@ -125,6 +131,8 @@ test('wrong Wi-Fi password shows retained credentials and clears entered secret'
 test('disconnect leaves actionable guidance and no further mutation', async ({ page }) => {
   await demo(page, 'disconnect');
   await connect(page);
+  if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Change Wi-Fi' }).click();
   await page.getByRole('button', { name: 'Find networks' }).click();
   await expect(page.getByRole('status')).toContainText('device disconnected');
@@ -141,6 +149,8 @@ test('lost Wi-Fi acknowledgement remains unconfirmed despite connected status', 
 }) => {
   await demo(page, 'lost-wifi-ack');
   await connect(page);
+  if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Change Wi-Fi' }).click();
   await saveWifi(page);
   await expect(page.getByRole('heading', { name: 'Check before trying again' })).toBeVisible();
@@ -152,6 +162,8 @@ test('password validation and lost acknowledgement do not silently repeat writes
 }) => {
   await demo(page, 'lost-password-ack');
   await connect(page);
+  if (!(await page.locator('.recovery-disclosure').evaluate((el) => el.hasAttribute('open'))))
+    await page.locator('.recovery-disclosure summary').click();
   await page.getByRole('button', { name: 'Reset device password' }).click();
   await page.getByLabel('Device password', { exact: true }).fill('long demo password');
   await page.getByLabel('Repeat password').fill('mismatched password');
@@ -201,7 +213,7 @@ test('installer layout fits the viewport and moves focus with the step', async (
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-for (const action of ['Cancel', 'Retry connection']) {
+for (const action of ['Back to connection']) {
   test(`unrecognized firmware requires explicit erasure and supports ${action.toLowerCase()}`, async ({
     page,
   }) => {

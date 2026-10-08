@@ -3,7 +3,7 @@ const port = Number(process.env.OPENATHAN_BROWSER_TEST_PORT ?? 4321);
 const built = process.env.OPENATHAN_BROWSER_TEST_BUILT === '1';
 export default defineConfig({
   testDir: './tests/browser',
-  testIgnore: built ? ['**/installer.spec.ts'] : [],
+  testIgnore: built ? ['**/installer.spec.ts', '**/usb-update.spec.ts'] : [],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: 0,
