@@ -48,6 +48,14 @@ export const UPGRADE = {
   abort: 0x14,
 } as const;
 export const CHUNK_BYTES = 242;
+export class UpgradeDownloadTimeout extends Error {
+  constructor() {
+    super(
+      'The firmware download timed out. Check your internet connection and choose Check for updates again. Installed firmware has not changed.',
+    );
+    this.name = 'UpgradeDownloadTimeout';
+  }
+}
 // Matches openathan release/upgrade-public-key.pem. Rotation requires coordinated review.
 const PUBLIC_KEY =
   'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVwaZCDVSDHpSxg6B7l0MolCO54GMIWd8IwsVIXiHphmRuegj7AM2UHZyfwDFYwh3KChTzIOh1QvpjPZtfb8siw==';
@@ -213,32 +221,49 @@ export async function verifyApplication(
     throw new Error('Firmware image verification failed.');
 }
 async function bounded(url: string, maximum: number): Promise<Uint8Array> {
-  const response = await fetch(url, { credentials: 'omit', cache: 'no-store', redirect: 'error' });
-  if (!response.ok || !response.body) throw new Error('Could not load the approved update.');
-  const reader = response.body.getReader(),
-    chunks: Uint8Array[] = [];
-  let size = 0;
+  const controller = new AbortController();
+  // One deadline includes response headers and the entire body, regardless of progress.
+  const timer = setTimeout(() => controller.abort(new UpgradeDownloadTimeout()), 60_000);
+  let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
   try {
+    const response = await fetch(url, {
+      credentials: 'omit',
+      cache: 'no-store',
+      redirect: 'error',
+      signal: controller.signal,
+    });
+    if (!response.ok || !response.body) {
+      void response.body?.cancel().catch(() => undefined);
+      throw new Error('Could not load the approved update.');
+    }
+    reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let size = 0;
     while (true) {
       const { done, value } = await reader.read();
+      controller.signal.throwIfAborted();
       if (done) break;
       size += value.length;
       if (size > maximum) throw new Error('Oversized update download.');
       chunks.push(value);
     }
+    const out = new Uint8Array(size);
+    let at = 0;
+    for (const chunk of chunks) {
+      out.set(chunk, at);
+      at += chunk.length;
+    }
+    return out;
   } catch (error) {
-    await reader.cancel().catch(() => undefined);
+    // Cancellation closes the reader immediately; pending network cleanup must not
+    // prevent the installer from restoring recovery controls after a timeout.
+    void reader?.cancel().catch(() => undefined);
+    if (controller.signal.aborted) throw new UpgradeDownloadTimeout();
     throw error;
   } finally {
-    reader.releaseLock();
+    clearTimeout(timer);
+    reader?.releaseLock();
   }
-  const out = new Uint8Array(size);
-  let at = 0;
-  for (const chunk of chunks) {
-    out.set(chunk, at);
-    at += chunk.length;
-  }
-  return out;
 }
 export async function loadUpgrade(pin: ReleasePin): Promise<UpgradeBundle> {
   const base = `/releases/${pin.tag}/`;

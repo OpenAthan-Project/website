@@ -2,6 +2,7 @@ import { BrowserTransport, requestDevicePort } from './browser-transport';
 import { ProvisioningSession, DeviceError, UncertainOutcome } from './session';
 import {
   loadUpgrade,
+  UpgradeDownloadTimeout,
   newerVersion,
   UPGRADE,
   CHUNK_BYTES,
@@ -189,11 +190,14 @@ export class RealService implements InstallerService {
         };
       this.updateBundle = bundle;
       return { state: 'available', offer: bundle.offer, recoveryBlocked };
-    } catch {
+    } catch (error) {
       return {
         state: 'failed',
         recoveryBlocked,
-        detail: 'The selected update could not be verified. Installed firmware has not changed.',
+        detail:
+          error instanceof UpgradeDownloadTimeout
+            ? error.message
+            : 'The selected update could not be verified. Installed firmware has not changed.',
       };
     }
   }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import { fixture } from './fixtures/release';
 import {
@@ -7,6 +7,7 @@ import {
   newerVersion,
   parseFirmware,
   chunkPayload,
+  loadUpgrade,
 } from '../../installer/upgrade';
 import {
   ProvisioningSession,
@@ -15,6 +16,200 @@ import {
   type ByteTransport,
 } from '../../installer/session';
 import { encodeFrame, rpcPayload } from '../../installer/protocol';
+
+describe('USB update download deadlines', () => {
+  const pin = {
+    tag: 'v0.5.0',
+    manifestSha256: 'a'.repeat(64),
+    mediaReviewed: true,
+    hardwareQualified: true,
+  } as const;
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+  it('aborts a stalled response header once at 60 seconds without retrying', async () => {
+    vi.useFakeTimers();
+    let signal: AbortSignal | undefined;
+    const abort = vi.fn();
+    const fetcher = vi.fn((_url: string, options: RequestInit) => {
+      signal = options.signal ?? undefined;
+      return new Promise<Response>((_resolve, reject) => {
+        signal?.addEventListener(
+          'abort',
+          () => {
+            abort();
+            reject(signal!.reason);
+          },
+          { once: true },
+        );
+      });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const result = loadUpgrade(pin).catch((error: Error) => error);
+    await vi.advanceTimersByTimeAsync(59_999);
+    expect(signal?.aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(signal?.aborted).toBe(true);
+    expect(await result).toMatchObject({ name: 'UpgradeDownloadTimeout' });
+    expect(abort).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  for (const slow of [false, true]) {
+    it(`aborts a ${slow ? 'slow' : 'stalled'} body at the original deadline and releases its reader`, async () => {
+      vi.useFakeTimers();
+      let signal: AbortSignal | undefined;
+      let controller!: ReadableStreamDefaultController<Uint8Array>;
+      const body = new ReadableStream<Uint8Array>({
+        start(value) {
+          controller = value;
+          controller.enqueue(new Uint8Array([123]));
+        },
+      });
+      const abort = vi.fn();
+      const fetcher = vi.fn(async (_url: string, options: RequestInit) => {
+        signal = options.signal ?? undefined;
+        signal?.addEventListener(
+          'abort',
+          () => {
+            abort();
+            controller.error(signal!.reason);
+          },
+          { once: true },
+        );
+        return new Response(body);
+      });
+      vi.stubGlobal('fetch', fetcher);
+      const result = loadUpgrade(pin).catch((error: Error) => error);
+      await vi.advanceTimersByTimeAsync(20_000);
+      if (slow) controller.enqueue(new Uint8Array([32]));
+      await vi.advanceTimersByTimeAsync(20_000);
+      if (slow) controller.enqueue(new Uint8Array([32]));
+      await vi.advanceTimersByTimeAsync(19_999);
+      expect(signal?.aborted).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(signal?.aborted).toBe(true);
+      expect(await result).toMatchObject({ name: 'UpgradeDownloadTimeout' });
+      expect(body.locked).toBe(false);
+      expect(abort).toHaveBeenCalledTimes(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  }
+  it('starts a fresh deadline for the next asset after a slow successful download', async () => {
+    const f = await fixture();
+    vi.useFakeTimers();
+    const signals: AbortSignal[] = [];
+    let requested!: () => void;
+    const nextAsset = new Promise<void>((resolve) => {
+      requested = resolve;
+    });
+    const fetcher = vi.fn((_url: string, options: RequestInit) => {
+      const signal = options.signal!;
+      signals.push(signal);
+      if (signals.length === 1)
+        return new Promise<Response>((resolve) => {
+          setTimeout(() => resolve(new Response(f.bytes)), 59_000);
+        });
+      requested();
+      return new Promise<Response>((_resolve, reject) => {
+        signal.addEventListener('abort', () => reject(signal.reason), { once: true });
+      });
+    });
+    vi.stubGlobal('fetch', fetcher);
+    const result = loadUpgrade(f.pin).catch((error: Error) => error);
+    await vi.advanceTimersByTimeAsync(59_000);
+    await nextAsset;
+    expect(fetcher).toHaveBeenLastCalledWith('/releases/v0.1.0/upgrade.json', expect.anything());
+    expect(vi.getTimerCount()).toBe(1);
+    await vi.advanceTimersByTimeAsync(59_999);
+    expect(signals.every((signal) => !signal.aborted)).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(await result).toMatchObject({ name: 'UpgradeDownloadTimeout' });
+    expect(signals[0]!.aborted).toBe(false);
+    expect(signals[1]!.aborted).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+  it('clears deadlines and releases readers after completed downloads, retaining descriptor validation', async () => {
+    const f = await fixture();
+    vi.useFakeTimers();
+    const signals: AbortSignal[] = [];
+    const bodies = [f.bytes, new TextEncoder().encode('{}')].map(
+      (bytes) =>
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(bytes);
+            controller.close();
+          },
+        }),
+    );
+    const fetcher = vi.fn(async (_url: string, options: RequestInit) => {
+      signals.push(options.signal!);
+      return new Response(bodies[signals.length - 1]);
+    });
+    vi.stubGlobal('fetch', fetcher);
+    await expect(loadUpgrade(f.pin)).rejects.toThrow('Invalid update descriptor');
+    expect(bodies.every((body) => !body.locked)).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(signals.every((signal) => !signal.aborted)).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it('cancels an oversized body without waiting for stalled cleanup and releases its reader', async () => {
+    vi.useFakeTimers();
+    const cancel = vi.fn(() => new Promise<void>(() => {}));
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new Uint8Array(16_385));
+      },
+      cancel,
+    });
+    const fetcher = vi.fn(async () => new Response(body));
+    vi.stubGlobal('fetch', fetcher);
+    await expect(loadUpgrade(pin)).rejects.toThrow('Oversized update download');
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(body.locked).toBe(false);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it.each(['fetch failure', 'HTTP failure', 'missing body', 'body failure'] as const)(
+    'clears the deadline after %s without retrying',
+    async (failure) => {
+      vi.useFakeTimers();
+      let signal: AbortSignal | undefined;
+      let body: ReadableStream<Uint8Array> | undefined;
+      const cancel = vi.fn();
+      const fetcher = vi.fn(async (_url: string, options: RequestInit) => {
+        signal = options.signal ?? undefined;
+        if (failure === 'fetch failure') throw new Error('Network unavailable.');
+        if (failure === 'missing body') return new Response(null);
+        body = new ReadableStream<Uint8Array>({
+          start(controller) {
+            if (failure === 'body failure') controller.error(new Error('Stream failed.'));
+          },
+          cancel,
+        });
+        return new Response(body, { status: failure === 'HTTP failure' ? 503 : 200 });
+      });
+      vi.stubGlobal('fetch', fetcher);
+      await expect(loadUpgrade(pin)).rejects.toThrow(
+        failure === 'fetch failure'
+          ? 'Network unavailable'
+          : failure === 'body failure'
+            ? 'Stream failed'
+            : 'Could not load',
+      );
+      expect(body?.locked ?? false).toBe(false);
+      if (failure === 'HTTP failure') expect(cancel).toHaveBeenCalledTimes(1);
+      expect(vi.getTimerCount()).toBe(0);
+      await vi.advanceTimersByTimeAsync(60_000);
+      expect(signal?.aborted).toBe(false);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    },
+  );
+});
 
 async function signed() {
   const { manifest } = await fixture();

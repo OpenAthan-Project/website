@@ -16,6 +16,7 @@ interface HandoffOptions {
   checks?: UpgradeCheck[];
   discard?: 'success' | 'failed' | 'uncertain';
   deferCheck?: boolean;
+  downloadTimeout?: 'headers' | 'body';
 }
 declare global {
   interface Window {
@@ -30,6 +31,8 @@ declare global {
         discardUpdate: number;
       };
       unexpectedOperations: string[];
+      downloads: { requests: number; aborts: number };
+      downloadReaderLocked(): boolean;
       disconnect(): void;
       resolveCleanup(): void;
       rejectCleanup(): void;
@@ -65,6 +68,9 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       discardUpdate: 0,
     };
     const unexpectedOperations: string[] = [];
+    const downloads = { requests: 0, aborts: 0 };
+    let downloadBody: ReadableStream<Uint8Array> | undefined;
+    let checkDownload: (() => Promise<UpgradeCheck>) | undefined;
     const unexpected = async (operation: string): Promise<never> => {
       unexpectedOperations.push(operation);
       throw new Error(`Unexpected ${operation} operation`);
@@ -98,6 +104,7 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       },
       async checkUpdate() {
         counts.checkUpdate++;
+        if (checkDownload) return checkDownload();
         if (options.checks?.length)
           return options.checks[Math.min(counts.checkUpdate - 1, options.checks.length - 1)]!;
         return options.awaitingPower
@@ -155,9 +162,62 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       wifi: () => unexpected('wifi'),
       password: () => unexpected('password'),
     };
+    if (options.downloadTimeout) {
+      const servicePath = '/installer/real-service.ts';
+      const { RealService } = (await import(
+        servicePath
+      )) as typeof import('../../installer/real-service');
+      const checker = new RealService(
+        {
+          tag: 'v0.5.0',
+          manifestSha256: 'a'.repeat(64),
+          mediaReviewed: true,
+          hardwareQualified: true,
+        },
+        true,
+      );
+      // Exercise real download/error handling with read-only fake firmware INFO.
+      checker.firmware = async () => ({ ...(await service.firmware()), state: 'idle' });
+      checkDownload = () => checker.checkUpdate();
+      const originalFetch = window.fetch;
+      window.fetch = async (input, init) => {
+        if (String(input) !== '/releases/v0.5.0/manifest.json') return originalFetch(input, init);
+        downloads.requests++;
+        const signal = init?.signal;
+        if (options.downloadTimeout === 'headers')
+          return new Promise<Response>((_resolve, reject) => {
+            signal?.addEventListener(
+              'abort',
+              () => {
+                downloads.aborts++;
+                reject(signal.reason);
+              },
+              { once: true },
+            );
+          });
+        let controller!: ReadableStreamDefaultController<Uint8Array>;
+        downloadBody = new ReadableStream<Uint8Array>({
+          start(value) {
+            controller = value;
+            controller.enqueue(new Uint8Array([123]));
+          },
+        });
+        signal?.addEventListener(
+          'abort',
+          () => {
+            downloads.aborts++;
+            controller.error(signal.reason);
+          },
+          { once: true },
+        );
+        return new Response(downloadBody);
+      };
+    }
     window.usbHandoffFixture = {
       counts,
       unexpectedOperations,
+      downloads,
+      downloadReaderLocked: () => downloadBody?.locked ?? false,
       disconnect: () => service.onDisconnect?.(),
       resolveCleanup: () => resolveCleanup(),
       rejectCleanup: () => rejectCleanup(),
@@ -172,6 +232,73 @@ async function transferUpdate(page: Page) {
   await page.getByRole('button', { name: 'Review update' }).click();
   await page.getByRole('button', { name: 'Install update', exact: true }).click();
 }
+
+for (const downloadTimeout of ['headers', 'body'] as const) {
+  test(`a stalled download ${downloadTimeout} times out and restores recovery, disconnect and deliberate recheck`, async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await injectHandoffService(page, {
+      downloadTimeout,
+      deferCheck: true,
+      missingCredentials: true,
+    });
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await page.getByRole('button', { name: 'Check for updates' }).press('Enter');
+    await expect(page.getByRole('heading', { name: 'Checking firmware' })).toBeVisible();
+    await expect(page.locator('[data-demo-installer]')).toHaveAttribute('aria-busy', 'true');
+    if (downloadTimeout === 'body')
+      await expect
+        .poll(() => page.evaluate(() => window.usbHandoffFixture.downloadReaderLocked()))
+        .toBe(true);
+    await page.clock.fastForward(59_999);
+    await expect(page.locator('[data-demo-installer]')).toHaveAttribute('aria-busy', 'true');
+    expect(await page.evaluate(() => window.usbHandoffFixture.downloads)).toEqual({
+      requests: 1,
+      aborts: 0,
+    });
+    await page.clock.fastForward(1);
+    await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeVisible();
+    await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute('aria-busy', 'true');
+    await expect(
+      page.getByText(
+        'The firmware download timed out. Check your internet connection and choose Check for updates again. Installed firmware has not changed.',
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Disconnect', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Create device password' })).toBeEnabled();
+    expect(await page.evaluate(() => window.usbHandoffFixture.downloadReaderLocked())).toBe(false);
+    await page.getByRole('button', { name: 'Connect Wi-Fi', exact: true }).press('Enter');
+    await expect(page.getByRole('button', { name: 'Save Wi-Fi' })).toBeEnabled();
+    await page.getByRole('button', { name: 'Back', exact: true }).press('Enter');
+    await page.clock.fastForward(60_000);
+    expect(await page.evaluate(() => window.usbHandoffFixture.downloads)).toEqual({
+      requests: 1,
+      aborts: 1,
+    });
+    await page.getByRole('button', { name: 'Check for updates' }).press('Enter');
+    await expect(page.getByRole('heading', { name: 'Checking firmware' })).toBeVisible();
+    await page.clock.fastForward(60_000);
+    await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute('aria-busy', 'true');
+    expect(await page.evaluate(() => window.usbHandoffFixture.downloads)).toEqual({
+      requests: 2,
+      aborts: 2,
+    });
+    expect(await page.evaluate(() => window.usbHandoffFixture.counts)).toMatchObject({
+      connect: 1,
+      checkUpdate: 2,
+      update: 0,
+      close: 0,
+      firmware: 2,
+    });
+    expect(await page.evaluate(() => window.usbHandoffFixture.unexpectedOperations)).toEqual([]);
+    await page.getByRole('button', { name: 'Disconnect', exact: true }).press('Enter');
+    await expect(page.getByRole('heading', { name: 'Connect speaker', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => window.usbHandoffFixture.counts.close)).toBe(1);
+  });
+}
+
 async function expectHandoff(page: Page, links = true) {
   await expect(page.getByRole('heading', { name: 'Update written and verified' })).toBeVisible();
   await expect(page.getByText('Unplug the Atom’s USB cable.', { exact: true })).toBeVisible();

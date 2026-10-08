@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { decodeFields, encodeFrame, FrameDecoder, rpcPayload } from '../../installer/protocol';
 import type { ByteTransport } from '../../installer/session';
 import { UncertainOutcome } from '../../installer/session';
-import { UPGRADE } from '../../installer/upgrade';
+import { UPGRADE, UpgradeDownloadTimeout } from '../../installer/upgrade';
 const hooks = vi.hoisted(() => ({ open: vi.fn(), load: vi.fn(), flash: vi.fn() }));
 vi.mock('../../installer/browser-transport', () => ({
   requestDevicePort: async () => ({}),
@@ -298,6 +298,29 @@ it('retains successful INFO ownership metadata when release verification fails',
   const service = new RealService(pin, true);
   await service.connect();
   expect(await service.checkUpdate()).toMatchObject({ state: 'failed', recoveryBlocked: false });
+  await service.close();
+});
+
+it('reports a download timeout without mutation or retry and permits a deliberate fresh check', async () => {
+  const port = new Port();
+  hooks.open.mockResolvedValue(port);
+  hooks.load.mockRejectedValueOnce(new UpgradeDownloadTimeout());
+  const service = new RealService(pin, true);
+  await service.connect();
+  expect(await service.checkUpdate()).toEqual({
+    state: 'failed',
+    recoveryBlocked: false,
+    detail:
+      'The firmware download timed out. Check your internet connection and choose Check for updates again. Installed firmware has not changed.',
+  });
+  await expect(service.update(offer, () => {})).rejects.toThrow('review');
+  expect(hooks.load).toHaveBeenCalledTimes(1);
+  expect(port.commands).toEqual([3, 1, UPGRADE.info]);
+  expect(port.chunks).toBe(0);
+  expect(hooks.flash).not.toHaveBeenCalled();
+  expect(await service.checkUpdate()).toMatchObject({ state: 'available', recoveryBlocked: false });
+  expect(hooks.load).toHaveBeenCalledTimes(2);
+  expect(port.commands).toEqual([3, 1, UPGRADE.info, UPGRADE.info]);
   await service.close();
 });
 
