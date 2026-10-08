@@ -554,9 +554,6 @@ progress {
 .installer-panel {
   max-width: 880px;
 }
-.installer-shell[data-view='choices'] .installer-panel {
-  max-width: none;
-}
 .installer-context {
   border-bottom: 1px solid var(--line);
   padding-bottom: 22px;
@@ -581,34 +578,6 @@ progress {
 .step-title:focus-visible {
   outline: 3px solid var(--accent);
   outline-offset: 5px;
-}
-.path-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 36px;
-}
-.setup-path + .setup-path {
-  border-top: 1px solid var(--line);
-  padding-top: 28px;
-  margin-top: 30px;
-}
-.setup-path h3,
-.setup-help h3 {
-  font-size: 1.8rem;
-}
-.setup-help {
-  background: var(--panel);
-  padding: 24px;
-  align-self: start;
-}
-.setup-help ol {
-  padding-left: 24px;
-}
-.setup-help li {
-  margin-bottom: 14px;
-}
-.setup-help p:last-child {
-  margin-bottom: 0;
 }
 .feedback {
   padding: 14px 18px;
@@ -776,15 +745,11 @@ progress {
   .home-hardware p {
     font-size: 1.2rem;
   }
-  .docs-grid,
-  .path-grid {
+  .docs-grid {
     grid-template-columns: minmax(0, 1fr);
   }
   .docs-toc {
     display: none;
-  }
-  .setup-help {
-    margin-top: 8px;
   }
   .site-footer {
     flex-wrap: wrap;

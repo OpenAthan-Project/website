@@ -26,7 +26,7 @@ The public website explains the project, provides documentation and performs sup
 
 - Public fresh installation is available for the selected approved stable reference release. Preserve artifact verification, publication approval and explicit erase confirmation.
 - The website adopts stable latest after validation, with manual pin/disable policies for rollback. This never installs updates on existing speakers; owners use the authenticated device page or a preserving USB transition.
-- Recovery is separate from new installation and preserves prayer settings and history.
+- USB setup begins with one connection action, then checks the speaker. Existing-device controls and recovery preserve prayer settings and history. Unrecognized firmware requires explicit hardware/full-erasure confirmation for installation; recognized firmware with unreadable status cannot install.
 - Keep hardware model numbers and connection diagrams in setup documentation rather than homepage focal areas.
 - Preserve existing routes, anchors, protocol behavior and simulator isolation.
 - Firmware and the device-local UI belong in the firmware repository. The public website consumes published release artifacts and does not compile firmware.

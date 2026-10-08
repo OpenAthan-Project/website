@@ -20,9 +20,10 @@ import Layout from '../../layouts/Layout.astro';
         <li>Unplug the Pyramid’s bottom power cable.</li><li>
           Connect your computer to the Atom’s USB-C with a data cable.
         </li><li>
-          Open <a href="/install/">device setup</a> in desktop Chrome or Edge and choose <strong
-            >Fix Wi-Fi or password</strong
-          >.
+          Open <a href="/install/">USB setup</a> in desktop Chrome or Edge, select <strong
+            >Choose USB device</strong
+          >, and select the USB JTAG/serial device. The website checks the speaker and opens its
+          settings and recovery options.
         </li>
       </ol>
       <p>Then choose the change you need:</p>
@@ -31,6 +32,13 @@ import Layout from '../../layouts/Layout.astro';
           <a href="#reset-password">Reset your password</a>
         </li>
       </ul>
+      <h2>OpenAthan is not recognized</h2><p>
+        Detection does not prove the speaker is new or empty. If you expected an existing OpenAthan,
+        select <strong>Retry connection</strong>, check the data cable, close other serial tools,
+        and choose the USB device again. Do not confirm erasure to fix Wi-Fi or a password. If
+        OpenAthan is recognized but its status cannot be read, installation is blocked; reconnect
+        and check the speaker before making changes.
+      </p>
       <h2 id="change-wifi">Change Wi-Fi</h2>
       <p>
         Choose <strong>Change Wi-Fi</strong>. Select your network or enter its name, enter the Wi-Fi
@@ -96,15 +104,15 @@ import Layout from '../../layouts/Layout.astro';
       </p><h2>Installation was interrupted</h2><p>
         If USB disconnects during installation, unplug the cable, reload the installer page, then
         reconnect and deliberately start again. If it says the write was verified but setup could
-        not reconnect, use USB recovery rather than reinstalling. Do not restore an old full-flash
-        backup as routine recovery: it can restore old prayer history.
+        not reconnect, reconnect through USB setup to check the speaker; do not reinstall. Do not
+        restore an old full-flash backup as routine recovery: it can restore old prayer history.
       </p><p>
         The browser installer does not perform firmware upgrades on existing devices. Use the <a
           href="/docs/getting-started/#firmware-updates">firmware update instructions</a
         >
         for the device-page update path and preserving USB transitions.
       </p><div class="actions">
-        <a class="button" href="/install/">Open USB recovery</a><a href="/docs/getting-started/"
+        <a class="button" href="/install/">Connect speaker</a><a href="/docs/getting-started/"
           >Setup instructions</a
         >
       </div>

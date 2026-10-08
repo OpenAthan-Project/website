@@ -24,6 +24,7 @@ export async function fakeSerialDevice(
   page: Page,
   options: {
     offline?: boolean;
+    discovery?: 'unrecognized' | 'unreadable' | 'status-only';
     save?: {
       reply: 'error255' | 'acknowledged' | 'lost';
       status: StatusOutcome;
@@ -39,7 +40,7 @@ export async function fakeSerialDevice(
       setup: 'active',
       storage: 'ready',
       passwordRevision: 1,
-      unreadable: false,
+      unreadable: options.discovery === 'unreadable',
       requests: [],
       opens: 0,
       closes: 0,
@@ -84,12 +85,19 @@ export async function fakeSerialDevice(
             const command = bytes[9]!;
             device.requests.push({ extension, command });
             if (!extension && command === 3) {
-              reply(false, 3, ['OpenAthan', '1-dev', 'ESP32-S3', 'openathan-test.local']);
+              reply(false, 3, [
+                options.discovery === 'unrecognized' || options.discovery === 'status-only'
+                  ? 'Other firmware'
+                  : 'OpenAthan',
+                '1-dev',
+                'ESP32-S3',
+                'openathan-test.local',
+              ]);
             } else if (extension && command === 1) {
               reply(
                 true,
                 1,
-                device.unreadable
+                device.unreadable || options.discovery === 'unrecognized'
                   ? ['invalid status']
                   : [
                       '1',

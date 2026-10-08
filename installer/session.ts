@@ -159,9 +159,7 @@ export class ProvisioningSession {
   async identify(timeoutMs?: number): Promise<void> {
     const [fields] = await this.command(false, 3, [], { timeoutMs });
     if (fields?.length !== 4 || fields[0] !== 'OpenAthan' || fields[2] !== 'ESP32-S3') {
-      throw new Error(
-        'OpenAthan firmware was not recognized. Recovery cannot install or erase firmware.',
-      );
+      throw new Error('OpenAthan firmware was not recognized.');
     }
   }
   async status(timeoutMs?: number): Promise<DeviceStatus> {

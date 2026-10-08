@@ -32,7 +32,9 @@ const isInstaller = Astro.params.page === 'installer';
                     <label for="scenario">Preview scenario</label>
                     <select id="scenario">
                       <>
-                        <option value="success">Successful setup</option>
+                        <option value="success">Existing OpenAthan</option>
+                        <option value="new-device">New device installation</option>
+                        <option value="unreadable">OpenAthan status unreadable</option>
                         <option value="denied">No device selected</option>
                         <option value="busy">USB port busy</option>
                         <option value="unknown">Unrecognized firmware</option>
