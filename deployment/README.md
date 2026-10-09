@@ -6,6 +6,12 @@ Publishing a qualified firmware release as latest authorizes website adoption;
 no release-selection PR, extra credential or cross-repository trigger is needed.
 The website never compiles firmware or updates connected speakers.
 
+The USB update policy is enabled ahead of the next capable firmware release and
+is retained through scheduled release adoption. Owners on released firmware
+through v0.4.0 first need a Wi-Fi or maintainer update to gain USB support.
+Capable speakers require an explicit update check and confirmation before any
+USB transfer; publishing a release never installs it on connected speakers.
+
 ## Validation and deployment
 
 Every build freezes one release selection before importing artifacts. The importer,
