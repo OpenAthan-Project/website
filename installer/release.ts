@@ -1,10 +1,36 @@
 /** Versioned contract consumed from the firmware repository; no device access. */
 export const HARDWARE = 'atoms3r-c126-pyramid-a167';
+export const WAVESHARE = 'waveshare-esp32-s3-touch-lcd-1_85c-box-v2';
+export const HARDWARE_PROFILES = {
+  [HARDWARE]: { label: 'AtomS3R C126 + Pyramid A167', flashBytes: 0x800000, prefix: '' },
+  [WAVESHARE]: { label: 'Waveshare Box V2', flashBytes: 0x1000000, prefix: 'waveshare-box-v2.' },
+} as const;
+export type Hardware = keyof typeof HARDWARE_PROFILES;
+export function isHardware(value: unknown): value is Hardware {
+  return value === HARDWARE || value === WAVESHARE;
+}
+export function assetName(hardware: Hardware, name: string): string {
+  return name === 'athan-audio.bin' ? name : HARDWARE_PROFILES[hardware].prefix + name;
+}
+export type HardwareReleases = Partial<Record<Hardware, ReleasePin>>;
+export function parseHardwareReleases(value: unknown): HardwareReleases {
+  if (value === undefined) return {};
+  const releases = object(value),
+    result: HardwareReleases = {};
+  for (const [hardware, pin] of Object.entries(releases)) {
+    if (hardware !== WAVESHARE) throw new Error('Unsupported additional release hardware.');
+    const parsed = parsePin({ schema: 1, release: { ...object(pin), hardware } });
+    if (!parsed) throw new Error('Invalid hardware release.');
+    result[hardware] = parsed;
+  }
+  return result;
+}
 export const LAYOUT = 'dual-2m-audio-3_5m-v1';
 export const FLASH_BYTES = 0x800000;
 export const AUDIO_OFFSET = 0x410000;
 export const AUDIO_BYTES = 0x380000;
 export interface ReleasePin {
+  hardware?: Hardware;
   tag: string;
   manifestSha256: string;
   mediaReviewed: true;
@@ -22,7 +48,7 @@ export interface ReleaseManifest {
   repository: 'OpenAthan-Project/openathan';
   tag: string;
   commit: string;
-  hardware: typeof HARDWARE;
+  hardware: Hardware;
   chip: 'ESP32-S3';
   flashBytes: number;
   layout: typeof LAYOUT;
@@ -51,6 +77,7 @@ export function parsePin(value: unknown): ReleasePin | null {
     !tagPattern.test(pin.tag) ||
     typeof pin.manifestSha256 !== 'string' ||
     !digestPattern.test(pin.manifestSha256) ||
+    (pin.hardware !== undefined && !isHardware(pin.hardware)) ||
     pin.mediaReviewed !== true ||
     pin.hardwareQualified !== true
   )
@@ -67,9 +94,9 @@ export function parseManifest(value: unknown, pin: ReleasePin): ReleaseManifest 
     !tagPattern.test(pin.tag) ||
     typeof m.commit !== 'string' ||
     !/^[a-f0-9]{40}$/.test(m.commit) ||
-    m.hardware !== HARDWARE ||
+    m.hardware !== (pin.hardware ?? HARDWARE) ||
     m.chip !== 'ESP32-S3' ||
-    m.flashBytes !== FLASH_BYTES ||
+    m.flashBytes !== HARDWARE_PROFILES[pin.hardware ?? HARDWARE].flashBytes ||
     m.layout !== LAYOUT ||
     m.provisioningProtocol !== 1 ||
     media.redistributionApproved !== true ||
@@ -92,7 +119,7 @@ export function parseManifest(value: unknown, pin: ReleasePin): ReleaseManifest 
         !Number.isSafeInteger(p.bytes) ||
         Number(p.bytes) <= 0 ||
         Number(p.offset) < 0 ||
-        Number(p.offset) + Number(p.bytes) > FLASH_BYTES ||
+        Number(p.offset) + Number(p.bytes) > Number(m.flashBytes) ||
         typeof p.sha256 !== 'string' ||
         !digestPattern.test(p.sha256)
       )
@@ -130,7 +157,7 @@ export async function checkedManifest(
   return parseManifest(JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)), pin);
 }
 /** Check the real factory partition table and app header, not just manifest claims. */
-export function verifyFactory(bytes: Uint8Array): void {
+export function verifyFactory(bytes: Uint8Array, hardware: Hardware = HARDWARE): void {
   const expected = [
     ['nvs', 1, 2, 0x9000, 0x5000],
     ['otadata', 1, 0, 0xe000, 0x2000],
@@ -140,6 +167,8 @@ export function verifyFactory(bytes: Uint8Array): void {
   ];
   if (bytes.length < 0x10020 || bytes[0] !== 0xe9 || bytes[0x10000] !== 0xe9)
     throw new Error('Invalid factory image header.');
+  if (hardware === WAVESHARE && (bytes[3]! >> 4 !== 4 || bytes[0x10003]! >> 4 !== 4))
+    throw new Error('Factory flash capacity differs from hardware.');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (view.getUint16(12, true) !== 9 || view.getUint16(0x1000c, true) !== 9)
     throw new Error('Factory image is not for ESP32-S3.');
@@ -169,7 +198,7 @@ export async function verifyBundle(
     const bytes = inputs.get(metadata.file);
     if (!bytes || bytes.length !== metadata.bytes || (await sha256(bytes)) !== metadata.sha256)
       throw new Error(`Image verification failed: ${metadata.role}.`);
-    if (metadata.role === 'factory') verifyFactory(bytes);
+    if (metadata.role === 'factory') verifyFactory(bytes, manifest.hardware);
     parts.push({ metadata, bytes });
   }
   return { manifest, parts };
@@ -211,7 +240,10 @@ export async function loadRelease(
       reader.releaseLock();
     }
   };
-  const manifest = await checkedManifest(await get('manifest.json', 16_384), pin);
+  const manifest = await checkedManifest(
+    await get(assetName(pin.hardware ?? HARDWARE, 'manifest.json'), 16_384),
+    pin,
+  );
   const inputs = new Map<string, Uint8Array>();
   for (const part of manifest.parts) inputs.set(part.file, await get(part.file, part.bytes));
   return verifyBundle(manifest, inputs);

@@ -2,7 +2,9 @@
 import Layout from '../../layouts/Layout.astro';
 import CableDiagram from '../../components/CableDiagram.astro';
 import { siteSelection } from '../../release-selection';
-const { release } = await siteSelection();
+import { WAVESHARE } from '../../../installer/release';
+const { release, hardwareReleases } = await siteSelection();
+const waveshareRelease = hardwareReleases?.[WAVESHARE];
 ---
 
 <Layout
@@ -38,7 +40,9 @@ const { release } = await siteSelection();
         Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
         and a <a href="https://docs.m5stack.com/en/atom/Voice_Pyramid">Voice Pyramid A167</a> speaker
         base separately. A167 has also been called “Echo Pyramid”; check the SKU when buying. These instructions
-        and the browser installer currently support only this combination of parts.
+        describe this combination of parts. See the <a href="#waveshare-setup"
+          >Waveshare Box V2 instructions</a
+        > below for that model.
       </p><p>
         You will need a computer with desktop Chrome or Edge, a USB-C <strong>data</strong> cable, and
         a 2.4 GHz WPA2/WPA3 personal Wi-Fi network. A charging-only cable will not work for USB setup.
@@ -96,8 +100,8 @@ const { release } = await siteSelection();
         > to enable the Athan. If the clock has not synchronized yet, Athan playback will wait.
       </p><h2>Everyday use</h2><p>
         Your speaker calculates prayer times and plays recordings stored on the device. The current
-        build needs internet access to set its clock after a restart, before it can play the Athan.
-        To open its settings, connect your phone or computer to the same home Wi-Fi. Keep the
+        Atom build needs internet access to set its clock after a restart, before it can play the
+        Athan. To open its settings, connect your phone or computer to the same home Wi-Fi. Keep the
         settings page on your trusted home network; do not make it accessible from the internet.
       </p>
       <h2 id="firmware-updates">Update your firmware</h2>
@@ -153,7 +157,7 @@ const { release } = await siteSelection();
       <p>
         Additional hardware integrations require development and testing. The reusable core and
         ESPHome integration provide a starting point; broader support for optional peripherals is
-        still planned. The browser installer currently targets only our first reference build.
+        still planned. The browser installer offers qualified releases for supported boards.
       </p>
       <p>For implementation details, see:</p>
       <ul>
@@ -172,4 +176,32 @@ const { release } = await siteSelection();
       </ul>
     </div>
   </article>
+  <section class="docs wrap" aria-labelledby="waveshare-setup">
+    <div class="docs-body">
+      <h2 id="waveshare-setup">Waveshare Box V2</h2>
+      <p>
+        {
+          waveshareRelease
+            ? `OpenAthan ${waveshareRelease.tag} is available for this model.`
+            : 'Support is being prepared for v0.5.0 and becomes available after its qualified release is published.'
+        }
+        Use ESP32-S3-Touch-LCD-1.85C-BOX V2; V1 is not supported.
+      </p>
+      <p>
+        Connect its rear USB-C port using a USB data cable. Existing OpenAthan reports its hardware
+        automatically. For a new installation, choose Waveshare Box V2 and confirm that existing
+        firmware and saved data will be erased.
+      </p>
+      <p>
+        Save Wi-Fi and a device password, then open device settings to choose your location, prayer
+        settings and volume. The rear USB-C port also supplies normal power; RESET restarts the
+        device. Touch and microphones are not supported.
+      </p>
+      <p>
+        The onboard RTC restores previously synchronized time across powered restarts. First use
+        needs internet time. Retention after unplugging, battery behavior and clock drift remain
+        unqualified.
+      </p>
+    </div>
+  </section>
 </Layout>

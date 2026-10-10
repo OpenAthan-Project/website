@@ -22,3 +22,21 @@ development simulator lets reviewers explore the flow without hardware and is
 excluded from the production build.
 
 USB setup has one connection entry. Choose the USB device, then read-only discovery opens existing-speaker controls or installation confirmation. An unrecognized result is not proof of a blank device. Installation requires explicit hardware and full-erasure confirmation; recognized OpenAthan with unreadable status receives troubleshooting, never installation.
+
+## Waveshare Box V2
+
+Support is being prepared for v0.5.0. It becomes available in the browser installer
+when that qualified release is published. Use the **ESP32-S3-Touch-LCD-1.85C-BOX V2**;
+V1 is not supported. Connect a USB data cable to its rear USB-C port.
+
+The installer recognizes hardware already running compatible OpenAthan. For a
+new installation, select **Waveshare Box V2** and confirm erasure. Installation
+replaces existing firmware, Wi-Fi credentials, settings and prayer history.
+After installation, save Wi-Fi and a device password, open the device page and
+finish location, prayer settings and volume. Use the same rear USB-C port for
+normal power. BOOT stops playback, skips the next prayer or cancels that skip;
+use RESET to restart. Touch and microphone features are not part of this release.
+
+The RTC can retain synchronized time across powered restarts. The first boot
+still needs internet time. Battery retention, unplugged retention and drift
+have not been qualified.

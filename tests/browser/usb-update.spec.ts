@@ -894,6 +894,7 @@ test('post-install Back preserves installation and cannot return to erase confir
   await page.goto('/preview/installer/');
   await page.getByLabel('Preview scenario').selectOption('new-device');
   await page.getByRole('button', { name: 'Connect simulated device' }).click();
+  await page.getByLabel('Speaker model').selectOption('atoms3r-c126-pyramid-a167');
   await page.getByLabel(/I have an AtomS3R/).check();
   await page.getByRole('button', { name: 'Install OpenAthan', exact: true }).click();
   await page.getByRole('button', { name: 'Back', exact: true }).click();

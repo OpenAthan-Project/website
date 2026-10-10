@@ -2,7 +2,7 @@ import { ESPLoader } from 'esptool-js';
 import { md5 } from '@noble/hashes/legacy.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { FlashTransport } from './flash-transport';
-import { FLASH_BYTES, parseManifest, verifyBundle, type ReleaseBundle } from './release';
+import { HARDWARE_PROFILES, parseManifest, verifyBundle, type ReleaseBundle } from './release';
 
 export interface Programmer {
   inspect(): Promise<{ chip: string; flashBytes: number; secured: boolean }>;
@@ -22,6 +22,7 @@ export async function flashBundle(
   try {
     if (!confirmed) throw new Error('Confirm a new installation before continuing.');
     const manifest = parseManifest(input.manifest, {
+      hardware: input.manifest.hardware,
       tag: input.manifest.tag,
       manifestSha256: '0'.repeat(64),
       mediaReviewed: true,
@@ -32,9 +33,13 @@ export async function flashBundle(
       new Map(input.parts.map((part) => [part.metadata.file, part.bytes])),
     );
     const device = await programmer.inspect();
-    if (device.chip !== 'ESP32-S3' || device.flashBytes !== FLASH_BYTES || device.secured)
+    if (
+      device.chip !== 'ESP32-S3' ||
+      device.flashBytes !== HARDWARE_PROFILES[manifest.hardware].flashBytes ||
+      device.secured
+    )
       throw new Error(
-        'This device does not match the supported unlocked 8 MB ESP32-S3 hardware. Nothing was installed.',
+        'This device does not match the selected unlocked ESP32-S3 hardware. Nothing was installed.',
       );
     await programmer.write(bundle, progress);
     for (const part of bundle.parts) {
@@ -76,7 +81,7 @@ export function serialProgrammer(port: SerialPort): Programmer {
       const size = await loader.detectFlashSize();
       return {
         chip: loader.chip.CHIP_NAME,
-        flashBytes: size === '8MB' ? FLASH_BYTES : 0,
+        flashBytes: size === '8MB' ? 0x800000 : size === '16MB' ? 0x1000000 : 0,
         secured:
           loader.secureDownloadMode ||
           info.parsedFlags.SECURE_BOOT_EN ||

@@ -22,7 +22,8 @@ async function connect(page: Page) {
 async function install(page: Page) {
   await connect(page);
   await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toBeDisabled();
-  await page.getByLabel(/I have an AtomS3R/).check();
+  await page.getByLabel('Speaker model').selectOption('atoms3r-c126-pyramid-a167');
+  await page.getByLabel(/I have an? AtomS3R/).check();
   await page.getByRole('button', { name: 'Install OpenAthan', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Connect to your Wi-Fi' })).toBeVisible();
 }
@@ -177,7 +178,8 @@ test('password validation and lost acknowledgement do not silently repeat writes
 test('interrupted flashing gives a recovery exit', async ({ page }) => {
   await demo(page, 'flash-failed');
   await connect(page);
-  await page.getByLabel(/I have an AtomS3R/).check();
+  await page.getByLabel('Speaker model').selectOption('atoms3r-c126-pyramid-a167');
+  await page.getByLabel(/I have an? AtomS3R/).check();
   await page.getByRole('button', { name: 'Install OpenAthan', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Installation needs attention' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Disconnect and start again' })).toBeEnabled();
@@ -227,7 +229,8 @@ for (const action of ['Back to connection']) {
     await expect(
       page.locator('[data-panel]').getByRole('link', { name: 'Troubleshooting', exact: true }),
     ).toBeVisible();
-    await page.getByLabel(/I have an AtomS3R/).check();
+    await page.getByLabel('Speaker model').selectOption('atoms3r-c126-pyramid-a167');
+    await page.getByLabel(/I have an? AtomS3R/).check();
     await expect(
       page.getByRole('button', { name: 'Install OpenAthan', exact: true }),
     ).toBeEnabled();
@@ -245,3 +248,38 @@ for (const action of ['Back to connection']) {
     );
   });
 }
+
+test('Waveshare fresh installation requires model selection and a renewed erase confirmation', async ({
+  page,
+}) => {
+  await demo(page, 'waveshare-new');
+  await connect(page);
+  const installButton = page.getByRole('button', { name: 'Install OpenAthan', exact: true });
+  await expect(installButton).toBeDisabled();
+  await page.getByLabel('Speaker model').selectOption('waveshare-esp32-s3-touch-lcd-1_85c-box-v2');
+  await page.getByLabel(/I have a Waveshare Box V2/).check();
+  await expect(installButton).toBeEnabled();
+  await page.getByLabel('Speaker model').selectOption('atoms3r-c126-pyramid-a167');
+  await expect(installButton).toBeDisabled();
+  await page.getByLabel('Speaker model').selectOption('waveshare-esp32-s3-touch-lcd-1_85c-box-v2');
+  await page.getByLabel(/I have a Waveshare Box V2/).check();
+  await installButton.click();
+  await expect(page.getByRole('heading', { name: 'Connect to your Wi-Fi' })).toBeVisible();
+  await saveWifi(page);
+  await page.getByLabel('Device password', { exact: true }).fill('made-up device secret');
+  await page.getByLabel('Repeat password').fill('made-up device secret');
+  await page.getByRole('button', { name: 'Save device password' }).click();
+  await expect(page.getByText('Use the Waveshare rear USB-C port for normal power.')).toBeVisible();
+  await expect(page.getByText(/Pyramid’s bottom USB-C power/)).toHaveCount(0);
+});
+
+test('recognized Waveshare uses its identity without fresh-install choices', async ({ page }) => {
+  await demo(page, 'waveshare');
+  await connect(page);
+  await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeVisible();
+  await expect(
+    page.locator('[data-panel]').getByText('Waveshare Box V2', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Speaker model')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
+});
