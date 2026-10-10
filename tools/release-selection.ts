@@ -1,17 +1,29 @@
 /** Build-only release discovery. Publication as stable latest is the human approval gate. */
 import { readFile, mkdir, writeFile, rename } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { checkedManifest, parsePin, sha256, type ReleasePin } from '../installer/release.ts';
+import {
+  checkedManifest,
+  parsePin,
+  parseHardwareReleases,
+  HARDWARE,
+  WAVESHARE,
+  assetName,
+  sha256,
+  type HardwareReleases,
+  type ReleasePin,
+} from '../installer/release.ts';
 
 export const FIRMWARE_API = 'https://api.github.com/repos/OpenAthan-Project/openathan';
 export const WEBSITE_API = 'https://api.github.com/repos/OpenAthan-Project/website';
 export const DEPLOYED_METADATA = 'https://openathan.com/release.json';
 export interface Policy {
+  hardwareReleases?: HardwareReleases;
   usbUpdateEnabled?: boolean;
   automatic: boolean;
   pin: ReleasePin | null;
 }
 export interface Selection {
+  hardwareReleases?: HardwareReleases;
   usbUpdateEnabled?: boolean;
   schema: 1;
   automatic: boolean;
@@ -20,12 +32,15 @@ export interface Selection {
   release: ReleasePin | null;
 }
 export interface Metadata {
+  hardwareReleases?: HardwareReleases;
   schema: 1;
   websiteCommit: string;
   release: { tag: string; manifestSha256: string } | null;
 }
 export function parsePolicy(value: unknown): Policy {
   const pin = parsePin(value);
+  const hardwareReleases = parseHardwareReleases((value as Policy).hardwareReleases);
+  validateHardwareSelection(pin, hardwareReleases);
   const automatic = (value as { automatic?: unknown }).automatic;
   if (automatic !== undefined && typeof automatic !== 'boolean')
     throw new Error('Invalid automatic release policy.');
@@ -35,6 +50,7 @@ export function parsePolicy(value: unknown): Policy {
   return {
     automatic: automatic === true,
     pin,
+    ...(Object.keys(hardwareReleases).length ? { hardwareReleases } : {}),
     ...(usbUpdateEnabled === undefined ? {} : { usbUpdateEnabled }),
   };
 }
@@ -50,17 +66,32 @@ export function parseSelection(value: unknown): Selection {
     !/^[a-f0-9]{40}$/.test(s.websiteCommit)
   )
     throw new Error('Invalid build release selection.');
-  return { ...s, release: pin };
+  const hardwareReleases = parseHardwareReleases(s.hardwareReleases);
+  validateHardwareSelection(pin, hardwareReleases);
+  return {
+    ...s,
+    release: pin,
+    ...(Object.keys(hardwareReleases).length ? { hardwareReleases } : {}),
+  };
 }
 export function metadata(selection: Selection): Metadata {
   return {
     schema: 1,
     websiteCommit: selection.websiteCommit,
+    ...(selection.hardwareReleases ? { hardwareReleases: selection.hardwareReleases } : {}),
     release: selection.release && {
       tag: selection.release.tag,
       manifestSha256: selection.release.manifestSha256,
     },
   };
+}
+function validateHardwareSelection(pin: ReleasePin | null, hardwareReleases: HardwareReleases) {
+  if (pin?.hardware !== undefined && pin.hardware !== HARDWARE)
+    throw new Error('The primary release must remain the Atom bundle.');
+  if (pin && Object.values(hardwareReleases).some((other) => other?.tag !== pin.tag))
+    throw new Error('Hardware bundles must use the same release tag.');
+  if (!pin && Object.keys(hardwareReleases).length)
+    throw new Error('Disabled installation cannot select additional hardware.');
 }
 export function parseMetadata(value: unknown): Metadata {
   if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -79,6 +110,15 @@ export function sameRelease(a: Metadata['release'], b: Metadata['release']): boo
   return a?.tag === b?.tag && a?.manifestSha256 === b?.manifestSha256;
 }
 export function needsDeployment(candidate: Metadata, deployed: Metadata | null): boolean {
+  const next = candidate.hardwareReleases?.[WAVESHARE],
+    previous = deployed?.hardwareReleases?.[WAVESHARE];
+  if (
+    next &&
+    previous &&
+    next.tag === previous.tag &&
+    next.manifestSha256 !== previous.manifestSha256
+  )
+    throw new Error('A served hardware manifest changed. Publish a new release tag.');
   if (
     candidate.release &&
     deployed?.release &&
@@ -89,7 +129,9 @@ export function needsDeployment(candidate: Metadata, deployed: Metadata | null):
   return (
     !deployed ||
     !sameRelease(candidate.release, deployed.release) ||
-    candidate.websiteCommit !== deployed.websiteCommit
+    candidate.websiteCommit !== deployed.websiteCommit ||
+    JSON.stringify(candidate.hardwareReleases ?? {}) !==
+      JSON.stringify(deployed.hardwareReleases ?? {})
   );
 }
 /** Bound streamed bytes even when Content-Length is absent or incorrect. */
@@ -216,6 +258,31 @@ export async function resolveRelease(
     throw new Error('Release tag does not match its source commit.');
   return pin;
 }
+/** Legacy releases omit Waveshare assets. New stable releases include a matched pair of boards. */
+export async function resolveHardwareReleases(
+  policy: Policy,
+  pin: ReleasePin | null,
+  fetcher: typeof fetch = fetch,
+): Promise<HardwareReleases> {
+  if (!pin) return {};
+  if (!policy.automatic) return policy.hardwareReleases ?? {};
+  const release = await publishedRelease(pin.tag, fetcher);
+  const name = assetName(WAVESHARE, 'manifest.json');
+  const present = release.assets.some(
+    (asset) => !!asset && typeof asset === 'object' && (asset as { name?: string }).name === name,
+  );
+  if (!present) return {};
+  const bytes = await releaseAsset(release, name, 16384, fetcher);
+  const selected: ReleasePin = { ...pin, hardware: WAVESHARE, manifestSha256: await sha256(bytes) };
+  const manifest = await checkedManifest(bytes, selected);
+  const reference = await checkedManifest(
+    await releaseAsset(release, 'manifest.json', 16384, fetcher),
+    pin,
+  );
+  if (manifest.commit !== reference.commit)
+    throw new Error('Hardware bundles use different source commits.');
+  return { [WAVESHARE]: selected };
+}
 export async function deployedMetadata(fetcher: typeof fetch = fetch): Promise<Metadata | null> {
   const bytes = await download(DEPLOYED_METADATA, 4096, fetcher, true);
   return bytes === null ? null : parseMetadata(parseBytes(bytes));
@@ -232,9 +299,20 @@ export async function freshSelection(
     throw new Error('Invalid website main commit.');
   if (head.sha !== selection.websiteCommit) return false;
   const release = await resolveRelease(policy, fetcher);
+  const hardwareReleases = await resolveHardwareReleases(policy, release, fetcher);
   // Also detect tag mutation against the currently served release at deployment time.
-  needsDeployment(metadata({ ...selection, release }), await deployedMetadata(fetcher));
-  return sameRelease(release, selection.release);
+  needsDeployment(
+    metadata({
+      ...selection,
+      release,
+      hardwareReleases: Object.keys(hardwareReleases).length ? hardwareReleases : undefined,
+    }),
+    await deployedMetadata(fetcher),
+  );
+  return (
+    sameRelease(release, selection.release) &&
+    JSON.stringify(hardwareReleases) === JSON.stringify(selection.hardwareReleases ?? {})
+  );
 }
 export async function readPolicy(root = process.cwd()) {
   const bytes = new Uint8Array(await readFile(resolve(root, 'installer/catalog.json')));
@@ -250,6 +328,9 @@ export async function readSelection(root = process.cwd()): Promise<Selection> {
     selection.usbUpdateEnabled !== policy.usbUpdateEnabled ||
     selection.automatic !== policy.automatic ||
     (!policy.automatic && !sameRelease(selection.release, policy.pin)) ||
+    (!policy.automatic &&
+      JSON.stringify(selection.hardwareReleases ?? {}) !==
+        JSON.stringify(policy.hardwareReleases ?? {})) ||
     (!policy.pin && selection.release)
   )
     throw new Error('Release policy changed. Run npm run release:select again.');

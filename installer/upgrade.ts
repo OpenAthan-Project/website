@@ -1,6 +1,9 @@
 /** Signed application-only updates. Does not import the destructive flasher. */
 import {
   HARDWARE,
+  assetName,
+  isHardware,
+  type Hardware,
   LAYOUT,
   checkedManifest,
   sha256,
@@ -8,6 +11,7 @@ import {
   type ReleaseManifest,
 } from './release.ts';
 export interface FirmwareInfo {
+  hardware?: Hardware;
   version: string;
   commit: string;
   supported: boolean;
@@ -18,6 +22,7 @@ export interface FirmwareInfo {
   received: number;
 }
 export interface UpgradeOffer {
+  hardware?: Hardware;
   version: string;
   commit: string;
   bytes: number;
@@ -72,9 +77,11 @@ export function newerVersion(offered: string, installed: string): boolean {
   return false;
 }
 export function parseFirmware(fields: string[]): FirmwareInfo {
-  const [protocol, version, commit, support, state, boot, result, offered, received] = fields;
+  const [protocol, version, commit, support, state, boot, result, offered, received, hardware] =
+    fields;
   if (
-    fields.length !== 9 ||
+    ![9, 10].includes(fields.length) ||
+    (fields.length === 10 && !isHardware(hardware)) ||
     protocol !== '1' ||
     !stable.test(version ?? '') ||
     !/^(?:[a-f0-9]{40}|development)$/.test(commit ?? '') ||
@@ -114,6 +121,7 @@ export function parseFirmware(fields: string[]): FirmwareInfo {
     result: result!,
     offered: offered!,
     received: Number(received),
+    hardware: (hardware ?? HARDWARE) as Hardware,
   };
 }
 /** Strict DER ECDSA to WebCrypto's fixed-width P-256 r || s representation. */
@@ -184,7 +192,7 @@ export async function verifyDescriptor(
     p.version !== manifest.tag ||
     p.commit !== manifest.commit ||
     !stable.test(p.version) ||
-    p.hardware !== HARDWARE ||
+    p.hardware !== manifest.hardware ||
     p.layout !== LAYOUT ||
     p.storageFormat !== 1 ||
     p.audioFormat !== 1 ||
@@ -197,6 +205,7 @@ export async function verifyDescriptor(
     throw new Error('Incompatible firmware update.');
   newerVersion(p.version, p.version);
   return {
+    hardware: manifest.hardware,
     version: p.version,
     commit: p.commit,
     bytes: p.bytes,
@@ -267,10 +276,19 @@ async function bounded(url: string, maximum: number): Promise<Uint8Array> {
 }
 export async function loadUpgrade(pin: ReleasePin): Promise<UpgradeBundle> {
   const base = `/releases/${pin.tag}/`;
-  const manifest = await checkedManifest(await bounded(base + 'manifest.json', 16384), pin);
-  const descriptor = await bounded(base + 'upgrade.json', 8192),
+  const manifest = await checkedManifest(
+    await bounded(base + assetName(pin.hardware ?? HARDWARE, 'manifest.json'), 16384),
+    pin,
+  );
+  const descriptor = await bounded(
+      base + assetName(pin.hardware ?? HARDWARE, 'upgrade.json'),
+      8192,
+    ),
     offer = await verifyDescriptor(descriptor, manifest);
-  const application = await bounded(base + 'firmware.ota.bin', offer.bytes);
+  const application = await bounded(
+    base + assetName(pin.hardware ?? HARDWARE, 'firmware.ota.bin'),
+    offer.bytes,
+  );
   await verifyApplication(offer, application);
   return { offer, descriptor, application };
 }

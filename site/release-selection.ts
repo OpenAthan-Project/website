@@ -12,6 +12,7 @@ export async function siteSelection(): Promise<Selection> {
     return {
       schema: 1,
       automatic: policy.automatic,
+      ...(policy.hardwareReleases ? { hardwareReleases: policy.hardwareReleases } : {}),
       ...(policy.usbUpdateEnabled === undefined
         ? {}
         : { usbUpdateEnabled: policy.usbUpdateEnabled }),

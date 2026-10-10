@@ -15,7 +15,10 @@ vi.mock('../../installer/flasher', () => ({
   flashBundle: hooks.flash,
   serialProgrammer: hooks.programmer,
 }));
-vi.mock('../../installer/release', () => ({ loadRelease: hooks.bundle }));
+vi.mock('../../installer/release', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../installer/release')>()),
+  loadRelease: hooks.bundle,
+}));
 import { RealService } from '../../installer/real-service';
 
 const pin = {

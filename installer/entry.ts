@@ -1,4 +1,4 @@
-import { parsePin } from './release';
+import { parsePin, parseHardwareReleases } from './release';
 import { usbSupport } from './browser-transport';
 import { RealService } from './real-service';
 import { mountInstaller } from './ui';
@@ -11,6 +11,9 @@ if (root) {
       new RealService(
         parsePin(JSON.parse(root.dataset.releaseSelection ?? 'null')),
         JSON.parse(root.dataset.releaseSelection ?? 'null')?.usbUpdateEnabled === true,
+        parseHardwareReleases(
+          JSON.parse(root.dataset.releaseSelection ?? 'null')?.hardwareReleases,
+        ),
       ),
       usbSupport(),
     );

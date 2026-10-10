@@ -1,3 +1,4 @@
+import { HARDWARE, isHardware, type Hardware } from './release';
 /** Improv Serial v1 and the OpenAthan v1 extension. No transport or browser imports. */
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
@@ -124,6 +125,7 @@ export function validatePassword(password: string): void {
 }
 
 export interface DeviceStatus {
+  hardware?: Hardware;
   wifi: '2' | '3' | '4';
   password: 'absent' | 'ready' | 'fault';
   setup: 'incomplete' | 'active' | 'storage_fault';
@@ -166,6 +168,10 @@ export function localDeviceUrls(urls: string[], hostname: string): string[] {
 
 export function parseStatus(fields: string[]): DeviceStatus {
   const [version, wifi, password, setup, revision, hostname, storage, ...urls] = fields;
+  const hardwareFields = urls.filter((value) => value.startsWith('hardware='));
+  const hardware = hardwareFields[0]?.slice(9) ?? HARDWARE;
+  if (hardwareFields.length > 1 || !isHardware(hardware))
+    throw new Error('Unsupported connected hardware.');
   if (
     version !== '1' ||
     !['2', '3', '4'].includes(wifi ?? '') ||
@@ -179,6 +185,7 @@ export function parseStatus(fields: string[]): DeviceStatus {
     throw new Error('This device returned an unsupported OpenAthan status.');
   }
   return {
+    hardware,
     wifi,
     password,
     setup,

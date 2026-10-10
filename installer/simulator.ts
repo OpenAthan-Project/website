@@ -1,3 +1,4 @@
+import { HARDWARE, WAVESHARE, type Hardware } from './release';
 /** Deliberately has no dependency on Web Serial, release files or the flasher. */
 import { decodeFields, encodeFrame, FrameDecoder, rpcPayload } from './protocol';
 import { ProvisioningSession, type ByteTransport } from './session';
@@ -6,6 +7,8 @@ import type { Connected, InstallerService } from './service';
 export const scenarios = [
   'success',
   'new-device',
+  'waveshare',
+  'waveshare-new',
   'unreadable',
   'denied',
   'busy',
@@ -77,6 +80,21 @@ export class SimulatedTransport implements ByteTransport {
       ]);
       return;
     }
+    if (extension && command === 0x10) {
+      this.send(true, 0x10, [
+        '1',
+        'v0.4.0',
+        'a'.repeat(40),
+        'unsupported',
+        'idle',
+        'confirmed',
+        '',
+        '',
+        '0',
+        this.scenario === 'waveshare' ? WAVESHARE : HARDWARE,
+      ]);
+      return;
+    }
     if (extension && command === 1) {
       this.send(true, 1, [
         '1',
@@ -126,6 +144,8 @@ export class SimulatedTransport implements ByteTransport {
 }
 
 export class SimulatorService implements InstallerService {
+  readonly installHardware: Hardware[] = [HARDWARE, WAVESHARE];
+  private hardware: Hardware = HARDWARE;
   readonly simulated = true;
   readonly installAvailable = true;
   private session?: ProvisioningSession;
@@ -141,7 +161,7 @@ export class SimulatorService implements InstallerService {
     await this.close();
     if (this.scenario === 'denied') throw new DOMException('Permission dismissed', 'NotFoundError');
     if (this.scenario === 'busy') throw new DOMException('Port busy', 'InvalidStateError');
-    if (['new-device', 'unknown', 'flash-failed'].includes(this.scenario)) {
+    if (['new-device', 'waveshare-new', 'unknown', 'flash-failed'].includes(this.scenario)) {
       this.installationCandidate = true;
       return { kind: 'unrecognized' };
     }
@@ -153,12 +173,18 @@ export class SimulatorService implements InstallerService {
         'OpenAthan was recognized, but its status could not be read. Reconnect your speaker; do not reinstall.',
       );
     }
-    return { kind: 'existing', status: await session.status() };
+    this.hardware = this.scenario === 'waveshare' ? WAVESHARE : HARDWARE;
+    return { kind: 'existing', status: await session.status(), hardware: this.hardware };
   }
-  async install(confirmed: boolean, progress: (percent: number) => void) {
+  async install(
+    confirmed: boolean,
+    progress: (percent: number) => void,
+    hardware: Hardware = HARDWARE,
+  ) {
     if (!confirmed || !this.installationCandidate)
       throw new Error('Confirm the simulated installation first.');
     this.installationCandidate = false;
+    this.hardware = hardware;
     for (const percent of [15, 40, 75, 100]) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       progress(percent);
@@ -172,6 +198,7 @@ export class SimulatorService implements InstallerService {
   async discardUpdate() {}
   async firmware(): Promise<FirmwareInfo> {
     return {
+      hardware: this.hardware,
       version: 'v0.4.0',
       commit: 'a'.repeat(40),
       supported: true,

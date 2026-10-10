@@ -131,3 +131,26 @@ These simulations establish software behavior only. They do not establish USB re
 6. Before enabling USB updates: capable confirmed firmware and approved rollback bootloader; desktop Chrome/Edge streaming and exact version confirmation; Atom-only transfer then bottom-power startup; preservation readback; disconnect/power cuts before and after selection; failed startup rollback; invalid/truncated/out-of-order traffic; competing Wi-Fi/USB/settings actions; runtime heap, fragmentation and prayer/audio responsiveness. Prior fresh-install or Wi-Fi update evidence does not establish this new transport.
 
 Use the firmware repository's current hardware runbooks and fresh private backups for coordinated acceptance. Historical full-flash images can roll back prayer history and are not routine credential recovery. Keep private diagnostics, credentials and recovery images outside this repository. Published recordings are imported only through the reviewed release manifest; never commit generated binaries.
+
+## Waveshare Box V2 release preparation
+
+The installer supports hardware-specific schema-1 bundles when a published stable
+release provides them. Atom retains its existing release fields and filenames.
+`hardwareReleases` adds a Waveshare pin under
+`waveshare-esp32-s3-touch-lcd-1_85c-box-v2`; automatic selection adopts the prefixed
+manifest only when present and source-matched. Legacy Atom-only releases continue
+to work. Additional pins must use the same release tag; manual pins and disabling
+installation retain their existing policy. Static metadata and freshness checks
+include all selected hardware manifests.
+
+Recognized OpenAthan reports hardware through USB status; older responses retain
+Atom compatibility. Factory/blank devices require explicit model selection,
+followed by full-erasure confirmation. Changing models clears that confirmation.
+The flasher checks unlocked ESP32-S3 and matching 8/16 MiB capacity; capacity alone
+cannot identify the board or distinguish Waveshare V1 from V2. V1 is unsupported.
+
+Waveshare bundles use `waveshare-box-v2.` names except for shared
+`athan-audio.bin`. Signed USB updates verify the selected hardware, and recovery
+continues to preserve settings/history. Public USB update writes remain disabled
+by the existing policy until physical qualification. New simulator scenarios
+`waveshare` and `waveshare-new` exercise existing and fresh-install flows.

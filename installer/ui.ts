@@ -1,3 +1,4 @@
+import { HARDWARE, WAVESHARE, HARDWARE_PROFILES, isHardware, type Hardware } from './release';
 import { validatePassword, validateWifi, type DeviceStatus } from './protocol';
 import { DeviceError, UncertainOutcome } from './session';
 import type { InstallerService } from './service';
@@ -29,6 +30,7 @@ export function mountInstaller(
     offered: UpgradeOffer | undefined,
     installed = false,
     updateWritten = false;
+  let hardware: Hardware = HARDWARE;
   let operation: 'wifi' | 'password' | 'update' | 'none' = 'none';
   let notice = '',
     mutationBlocked = false,
@@ -64,14 +66,14 @@ export function mountInstaller(
     if (unsupported) {
       render(
         'Use a computer for USB setup',
-        `<p>${escape(unsupported)}</p><p><a href="/docs/getting-started/">Setup instructions</a> · <a href="/docs/troubleshooting/">Troubleshooting</a></p><p>USB recovery can fix Wi-Fi or your device password without resetting prayer settings or history.</p>${!service.installAvailable ? unavailable : ''}<p class="small">Supported hardware: AtomS3R C126 + Pyramid A167. Use a USB data cable.</p>`,
+        `<p>${escape(unsupported)}</p><p><a href="/docs/getting-started/">Setup instructions</a> · <a href="/docs/troubleshooting/">Troubleshooting</a></p><p>USB recovery can fix Wi-Fi or your device password without resetting prayer settings or history.</p>${!service.installAvailable ? unavailable : ''}<p class="small">Supported hardware: AtomS3R C126 + Pyramid A167 and Waveshare Box V2. Use a USB data cable.</p>`,
         0,
         true,
       );
     } else {
       render(
         'Connect speaker',
-        `<p>Use a <strong>USB data cable</strong> to connect your computer to the <strong>Atom’s USB-C port</strong>. Leave the Pyramid’s bottom power cable unplugged.</p><div class="connection-diagram" aria-label="Computer connects to Atom USB-C. Pyramid bottom power is unplugged."><span>Computer</span><span class="cable" aria-hidden="true"></span><span>Atom USB-C</span></div><p class="small muted">Use desktop Chrome or Edge. Close other serial tools first. Choose the USB JTAG/serial device in your browser’s connection window.</p><p>We’ll check for OpenAthan, then show settings and recovery options or ask you to confirm a new installation. Connecting does not install or erase firmware.</p>${!service.installAvailable ? unavailable : ''}<div class="actions">${button(service.simulated ? 'Connect simulated device' : 'Choose USB device', 'connect')}<a href="/docs/getting-started/">Setup instructions</a><a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
+        `<p>Use a <strong>USB data cable</strong> to connect your computer to the <strong>speaker’s USB-C port</strong>. For Atom, use its USB-C port and leave the Pyramid’s bottom power cable unplugged. For Waveshare Box V2, use the rear USB-C port.</p><div class="connection-diagram" aria-label="Computer connects to the speaker USB-C port."><span>Computer</span><span class="cable" aria-hidden="true"></span><span>Speaker USB-C</span></div><p class="small muted">Use desktop Chrome or Edge. Close other serial tools first. Choose the USB JTAG/serial device in your browser’s connection window.</p><p>We’ll check for OpenAthan, then show settings and recovery options or ask you to confirm a new installation. Connecting does not install or erase firmware.</p>${!service.installAvailable ? unavailable : ''}<div class="actions">${button(service.simulated ? 'Connect simulated device' : 'Choose USB device', 'connect')}<a href="/docs/getting-started/">Setup instructions</a><a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
         0,
         true,
       );
@@ -81,9 +83,15 @@ export function mountInstaller(
   function confirmation() {
     path = 'install';
     const available = service.installAvailable;
+    const choices = service.installHardware ?? [HARDWARE];
+    hardware = choices[0] ?? HARDWARE;
+    const modelChoice =
+      choices.length > 1
+        ? `<label for="hardware-choice">Speaker model</label><select id="hardware-choice"><option value="">Choose your model</option>${choices.map((board) => `<option value="${board}">${HARDWARE_PROFILES[board].label}</option>`).join('')}</select><p class="small muted">Check the model printed on your device. Waveshare V1 is not supported.</p>`
+        : '';
     render(
       available ? 'Confirm a new installation' : 'New installation is unavailable',
-      `<p>OpenAthan was not recognized. This does not prove the device is new or empty. If you expected an existing OpenAthan, check the cable and retry before considering installation.</p>${available ? '<div class="notice warning"><strong>This erases the device.</strong><p>Existing firmware, saved Wi-Fi, prayer settings and prayer history will be replaced. This is not an update or a password recovery.</p></div><label class="check-line"><input type="checkbox" id="confirm-install" /> <span>I have an AtomS3R C126 with Pyramid A167 and want to erase it for a new installation.</span></label>' : '<p>No installation release is available. Check the connection or follow the troubleshooting instructions.</p>'}<div class="actions">${available ? '<button class="button" type="button" data-action="install" disabled>Install OpenAthan</button>' : ''}${button('Back to connection', 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
+      `<p>OpenAthan was not recognized. This does not prove the device is new or empty. If you expected an existing OpenAthan, check the cable and retry before considering installation.</p>${available ? `${modelChoice}<div class="notice warning"><strong>This erases the device.</strong><p>Existing firmware, saved Wi-Fi, prayer settings and prayer history will be replaced. This is not an update or a password recovery.</p></div><label class="check-line"><input type="checkbox" id="confirm-install" ${choices.length > 1 ? 'disabled' : ''} /> <span id="model-confirmation">${choices.length > 1 ? 'Choose a model, then confirm that you want to erase it for a new installation.' : 'I have an AtomS3R C126 with Pyramid A167 and want to erase it for a new installation.'}</span></label>` : '<p>No installation release is available. Check the connection or follow the troubleshooting instructions.</p>'}<div class="actions">${available ? '<button class="button" type="button" data-action="install" disabled>Install OpenAthan</button>' : ''}${button('Back to connection', 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
       0,
     );
   }
@@ -153,7 +161,7 @@ export function mountInstaller(
           : button('Continue to device settings', 'finish');
     render(
       'Your OpenAthan is connected',
-      `<p class="device-name">${escape(status?.hostname ?? '')}</p><p>${wifiMissing ? 'Wi-Fi is not connected.' : 'Wi-Fi is connected.'} ${passwordMissing ? 'A device password is needed.' : 'Your device password is set.'}</p>
+      `<p class="device-name">${escape(status?.hostname ?? '')}</p><p class="small muted">${HARDWARE_PROFILES[hardware].label}</p><p>${wifiMissing ? 'Wi-Fi is not connected.' : 'Wi-Fi is connected.'} ${passwordMissing ? 'A device password is needed.' : 'Your device password is set.'}</p>
       <p class="small muted">Compatible firmware updates preserve settings, prayer history and recordings. Recovery changes only the Wi-Fi or password you choose.</p>
       <div class="actions">${primary}${!recoveryBlocked && wifiMissing ? button('Refresh status', 'refresh-status', true) : ''}</div>
       ${recoveryBlocked ? row('Firmware', firmwareText) : row('Firmware', firmwareText, upgradeCheck?.state === 'available' ? 'Review update' : 'Check for updates', upgradeCheck?.state === 'available' ? 'review-update' : 'check-update')}
@@ -180,9 +188,13 @@ export function mountInstaller(
   }
   function reviewUpdate() {
     if (!offered || mutationBlocked || recoveryBlocked) return;
+    const powerInstructions =
+      hardware === WAVESHARE
+        ? 'Keep the Waveshare rear USB-C cable connected during transfer. After verification, press RESET to restart and complete startup checks.'
+        : 'Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.';
     render(
       'Review firmware update',
-      `<p>Install <strong>${escape(offered.version)}</strong> over USB.</p><p>Your Wi-Fi, device password, prayer settings, playback history and recordings stay on the speaker. The current application is retained for startup rollback.</p><p><a href="${escape(offered.notes)}" target="_blank" rel="noopener noreferrer">Read the release notes</a></p><p>Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.</p><div class="actions">${button('Install update', 'update')}${button('Back', 'recovery', true)}</div>`,
+      `<p>Install <strong>${escape(offered.version)}</strong> over USB.</p><p>Your Wi-Fi, device password, prayer settings, playback history and recordings stay on the speaker. The current application is retained for startup rollback.</p><p><a href="${escape(offered.notes)}" target="_blank" rel="noopener noreferrer">Read the release notes</a></p><p>${powerInstructions}</p><div class="actions">${button('Install update', 'update')}${button('Back', 'recovery', true)}</div>`,
       1,
     );
   }
@@ -216,7 +228,9 @@ export function mountInstaller(
     const needsRecovery = passwordAbsent || wifiDisconnected;
     const urls = needsRecovery ? [] : device.urls;
     const recoveryGuidance = needsRecovery
-      ? `<div class="notice">${passwordAbsent ? '<p>Your device password still needs to be created through USB setup.</p>' : ''}${wifiDisconnected ? '<p>The speaker may reconnect using its saved Wi-Fi settings. If it stays offline, check or change Wi-Fi through USB setup.</p>' : ''}<p><strong>For USB recovery after startup:</strong></p><ol class="finish-list"><li>After the speaker starts, unplug the Pyramid’s bottom power cable before connecting the Atom’s USB-C port to your computer.</li><li>Select <strong>Back to connection</strong>, reconnect, then choose <strong>Check for updates</strong>.</li><li>Follow any remaining update instructions before changing Wi-Fi or creating a device password.</li><li>After recovery, unplug Atom USB and return to Pyramid bottom-only power, then open the device’s settings.</li></ol></div>`
+      ? hardware === WAVESHARE
+        ? `<div class="notice"><p>After restarting, connect the rear USB-C port to your computer and reconnect through USB setup. Check firmware status before changing Wi-Fi or the device password. Keep your saved prayer settings and history.</p></div>`
+        : `<div class="notice">${passwordAbsent ? '<p>Your device password still needs to be created through USB setup.</p>' : ''}${wifiDisconnected ? '<p>The speaker may reconnect using its saved Wi-Fi settings. If it stays offline, check or change Wi-Fi through USB setup.</p>' : ''}<p><strong>For USB recovery after startup:</strong></p><ol class="finish-list"><li>After the speaker starts, unplug the Pyramid’s bottom power cable before connecting the Atom’s USB-C port to your computer.</li><li>Select <strong>Back to connection</strong>, reconnect, then choose <strong>Check for updates</strong>.</li><li>Follow any remaining update instructions before changing Wi-Fi or creating a device password.</li><li>After recovery, unplug Atom USB and return to Pyramid bottom-only power, then open the device’s settings.</li></ol></div>`
       : '';
     render(
       updateWritten
@@ -224,7 +238,7 @@ export function mountInstaller(
         : path === 'install'
           ? 'Ready for device setup'
           : 'Continue on speaker power',
-      `<div class="success-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m9 16 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>${updateWritten ? 'The signed application was verified and selected. Switch to normal speaker power so it can start and complete its health checks.' : path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p><ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li><li>${needsRecovery ? 'Let the speaker start and complete its startup checks.' : 'Wait for it to reconnect, then open its settings on the same home network.'}</li></ol>${recoveryGuidance}${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">${needsRecovery ? '' : 'Sign in as <strong>admin</strong> with the password you chose. '}${path === 'install' && !updateWritten ? 'Review your location, timezone and timetable, then select <strong>Finish setup</strong>.' : updateWritten ? 'Check the firmware version and update result on the device’s settings page. Startup success is confirmed there; an interrupted connection alone cannot establish success or rollback.' : 'Continue with your saved prayer settings.'} Athan playback waits until the device has synchronized its clock.</p>${!urls.length && !needsRecovery ? '<p class="notice">A device address was not returned. Reconnect through USB setup to read it again.</p>' : ''}<div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
+      `<div class="success-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m9 16 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>${updateWritten ? 'The signed application was verified and selected. Switch to normal speaker power so it can start and complete its health checks.' : path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p>${hardware === WAVESHARE ? '<ol class="finish-list"><li>Use the Waveshare rear USB-C port for normal power.</li><li>Press RESET to restart after a verified update.</li>' : '<ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li>'}<li>${needsRecovery ? 'Let the speaker start and complete its startup checks.' : 'Wait for it to reconnect, then open its settings on the same home network.'}</li></ol>${recoveryGuidance}${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">${needsRecovery ? '' : 'Sign in as <strong>admin</strong> with the password you chose. '}${path === 'install' && !updateWritten ? 'Review your location, timezone and timetable, then select <strong>Finish setup</strong>.' : updateWritten ? 'Check the firmware version and update result on the device’s settings page. Startup success is confirmed there; an interrupted connection alone cannot establish success or rollback.' : 'Continue with your saved prayer settings.'} Athan playback waits until the device has synchronized its clock.</p>${!urls.length && !needsRecovery ? '<p class="notice">A device address was not returned. Reconnect through USB setup to read it again.</p>' : ''}<div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
       3,
     );
   }
@@ -250,7 +264,9 @@ export function mountInstaller(
         await service.close();
       } catch {
         notify(
-          'The browser could not close the USB connection. Unplug the Atom’s USB cable and follow the power steps below.',
+          hardware === WAVESHARE
+            ? 'The browser could not close the USB connection. Disconnect the data cable, then follow the restart and power steps below.'
+            : 'The browser could not close the USB connection. Unplug the Atom’s USB cable and follow the power steps below.',
         );
       }
     } else {
@@ -348,6 +364,19 @@ export function mountInstaller(
   };
   root.addEventListener('change', (event) => {
     const target = event.target as HTMLInputElement;
+    if (target.id === 'hardware-choice') {
+      const valid =
+        isHardware(target.value) && (service.installHardware ?? [HARDWARE]).includes(target.value);
+      const checkbox = panel.querySelector<HTMLInputElement>('#confirm-install')!;
+      checkbox.checked = false;
+      checkbox.disabled = !valid;
+      panel.querySelector<HTMLButtonElement>('[data-action="install"]')!.disabled = true;
+      if (valid) {
+        hardware = target.value as Hardware;
+        panel.querySelector('#model-confirmation')!.textContent =
+          `I have ${hardware === HARDWARE ? 'an' : 'a'} ${HARDWARE_PROFILES[hardware].label} and want to erase it for a new installation.`;
+      }
+    }
     if (target.id === 'confirm-install')
       panel.querySelector<HTMLButtonElement>('[data-action="install"]')!.disabled = !target.checked;
     if (target.id === 'network-choice')
@@ -374,6 +403,7 @@ export function mountInstaller(
         notify('');
         if (result.kind === 'unrecognized') confirmation();
         else {
+          hardware = result.hardware ?? HARDWARE;
           status = result.status;
           path = 'recovery';
           recoveryMenu();
@@ -387,11 +417,15 @@ export function mountInstaller(
           0,
         );
         try {
-          status = await service.install(confirmed, (percent) => {
-            panel.querySelector('progress')!.value = percent;
-            panel.querySelector('[data-progress]')!.textContent =
-              `${percent}% · ${percent === 100 ? 'Verifying…' : 'Writing firmware…'}`;
-          });
+          status = await service.install(
+            confirmed,
+            (percent) => {
+              panel.querySelector('progress')!.value = percent;
+              panel.querySelector('[data-progress]')!.textContent =
+                `${percent}% · ${percent === 100 ? 'Verifying…' : 'Writing firmware…'}`;
+            },
+            hardware,
+          );
           installed = true;
           wifiScreen();
         } catch (error) {
@@ -449,7 +483,7 @@ export function mountInstaller(
         const selected = offered;
         render(
           'Updating firmware',
-          '<p>Keep Atom USB connected while the application is written and verified. You will switch to speaker power afterwards.</p><progress max="100" value="0" aria-label="Firmware update progress"></progress><p data-progress>Preparing signed update…</p>',
+          `<p>Keep ${hardware === WAVESHARE ? 'Waveshare USB' : 'Atom USB'} connected while the application is written and verified. You will switch to speaker power afterwards.</p><progress max="100" value="0" aria-label="Firmware update progress"></progress><p data-progress>Preparing signed update…</p>`,
           1,
         );
         try {

@@ -10,12 +10,20 @@ import {
   type UpgradeOffer,
   type UpgradeCheck,
 } from './upgrade';
-import { loadRelease, type ReleasePin } from './release';
+import {
+  loadRelease,
+  HARDWARE,
+  type Hardware,
+  type HardwareReleases,
+  type ReleasePin,
+} from './release';
 import type { InstallerService, Connected } from './service';
 
 export class RealService implements InstallerService {
   readonly simulated = false;
   readonly installAvailable: boolean;
+  readonly installHardware: Hardware[];
+  private hardware: Hardware = HARDWARE;
   private port?: SerialPort;
   private session?: ProvisioningSession;
   private installationCandidate = false;
@@ -26,8 +34,10 @@ export class RealService implements InstallerService {
   constructor(
     private pin: ReleasePin | null,
     private usbUpdateEnabled = false,
+    private hardwareReleases: HardwareReleases = {},
   ) {
     this.installAvailable = pin !== null;
+    this.installHardware = pin ? [HARDWARE, ...(Object.keys(hardwareReleases) as Hardware[])] : [];
   }
   private async open(): Promise<ProvisioningSession> {
     if (!this.port) throw new Error('Choose the USB device first.');
@@ -62,7 +72,8 @@ export class RealService implements InstallerService {
       const status = await session.status(remaining);
       recognized = true;
       this.installationCandidate = false;
-      return { kind: 'existing', status };
+      this.hardware = status.hardware ?? HARDWARE;
+      return { kind: 'existing', status, hardware: this.hardware };
     } catch {
       if (recognized || this.connectionLost) {
         await this.close();
@@ -80,11 +91,19 @@ export class RealService implements InstallerService {
       return { kind: 'unrecognized' };
     }
   }
-  async install(confirmed: boolean, progress: (percent: number) => void) {
+  async install(
+    confirmed: boolean,
+    progress: (percent: number) => void,
+    hardware: Hardware = HARDWARE,
+  ) {
     if (!confirmed || !this.installationCandidate || !this.port || !this.pin || this.session)
       throw new Error('A confirmed new-device connection is required.');
     this.installationCandidate = false;
-    const bundle = await loadRelease(this.pin);
+    const selected = hardware === HARDWARE ? this.pin : this.hardwareReleases[hardware];
+    if (!selected || !this.installHardware.includes(hardware))
+      throw new Error('No reviewed release for this hardware.');
+    this.hardware = hardware;
+    const bundle = await loadRelease(selected);
     const { flashBundle, serialProgrammer } = await import('./flasher');
     try {
       await flashBundle(serialProgrammer(this.port), bundle, true, progress);
@@ -170,7 +189,7 @@ export class RealService implements InstallerService {
               : undefined,
         detail:
           info.state === 'awaiting_power'
-            ? 'An update is verified. Switch to Pyramid bottom power to finish.'
+            ? 'An update is verified. Switch to normal speaker power to finish.'
             : 'The device has an update or startup check in progress. Check its status before another update.',
       };
     if (!this.usbUpdateEnabled || !this.pin)
@@ -181,7 +200,10 @@ export class RealService implements InstallerService {
           'USB updating is awaiting physical qualification. Use firmware updates on the device’s settings page.',
       };
     try {
-      const bundle = await loadUpgrade(this.pin);
+      const selected =
+        (info.hardware ?? HARDWARE) === HARDWARE ? this.pin : this.hardwareReleases[info.hardware!];
+      if (!selected) throw new Error('No reviewed update for this hardware.');
+      const bundle = await loadUpgrade(selected);
       if (!newerVersion(bundle.offer.version, info.version))
         return {
           state: 'current',

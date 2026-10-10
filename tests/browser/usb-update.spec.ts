@@ -1,11 +1,13 @@
 import { test, expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { HARDWARE, WAVESHARE, type Hardware } from '../../installer/release';
 import type { DeviceStatus } from '../../installer/protocol';
 import type { InstallerService } from '../../installer/service';
 import type { UpgradeCheck, UpgradeOffer } from '../../installer/upgrade';
 
 interface HandoffOptions {
+  hardware?: Hardware;
   cleanup?: 'reject' | 'pending';
   transfer?: 'failed' | 'uncertain';
   queuedDisconnect?: boolean;
@@ -76,7 +78,9 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       throw new Error(`Unexpected ${operation} operation`);
     };
     const missingWifi = options.missingWifi || options.missingCredentials;
+    const hardware = options.hardware ?? 'atoms3r-c126-pyramid-a167';
     const status: DeviceStatus = {
+      hardware,
       wifi: missingWifi ? '2' : '4',
       password: options.missingPassword || options.missingCredentials ? 'absent' : 'ready',
       setup: 'active',
@@ -86,6 +90,7 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       urls: missingWifi ? [] : ['http://openathan-test.local/', 'http://192.168.1.50/'],
     };
     const offer: UpgradeOffer = {
+      hardware,
       version: 'v0.5.0',
       commit: 'b'.repeat(40),
       bytes: 1024,
@@ -100,7 +105,7 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       installAvailable: false,
       async connect() {
         counts.connect++;
-        return { kind: 'existing', status };
+        return { kind: 'existing', status, hardware };
       },
       async checkUpdate() {
         counts.checkUpdate++;
@@ -141,6 +146,7 @@ async function injectHandoffService(page: Page, options: HandoffOptions = {}) {
       async firmware() {
         counts.firmware++;
         return {
+          hardware,
           version: 'v0.4.0',
           commit: 'a'.repeat(40),
           supported: true,
@@ -383,6 +389,48 @@ async function expectOperations(page: Page, update: number, close: number, firmw
     discardUpdate: 0,
   });
   expect(await page.evaluate(() => window.usbHandoffFixture.unexpectedOperations)).toEqual([]);
+}
+
+for (const hardware of [HARDWARE, WAVESHARE] as const) {
+  test(`firmware review uses ${hardware} power instructions without writing`, async ({
+    page,
+  }, testInfo) => {
+    await injectHandoffService(page, { hardware, deferCheck: true });
+    await page.getByRole('button', { name: 'Check for updates' }).press('Enter');
+    await page.getByRole('button', { name: 'Review update' }).press('Enter');
+    await expect(page.getByRole('heading', { name: 'Review firmware update' })).toBeFocused();
+    const panel = page.locator('[data-panel]');
+    if (hardware === WAVESHARE) {
+      await expect(
+        panel.getByText(
+          'Keep the Waveshare rear USB-C cable connected during transfer. After verification, press RESET to restart and complete startup checks.',
+          { exact: true },
+        ),
+      ).toBeVisible();
+      await expect(panel).not.toContainText(/Atom|Pyramid/);
+    } else {
+      await expect(
+        panel.getByText(
+          'Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.',
+          { exact: true },
+        ),
+      ).toBeVisible();
+      await expect(panel).not.toContainText(/Waveshare|RESET/);
+    }
+    await expect(page.getByRole('button', { name: 'Install update', exact: true })).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    await expectOperations(page, 0, 0);
+    const capture = process.env.OPENATHAN_REVIEW_DIR;
+    if (capture && ['chromium', 'mobile'].includes(testInfo.project.name)) {
+      await mkdir(capture, { recursive: true });
+      await page.screenshot({
+        path: resolve(capture, `${hardware}-${testInfo.project.name}-review.png`),
+        fullPage: true,
+      });
+    }
+  });
 }
 
 test('verified update retains the power handoff when USB cleanup rejects', async ({
@@ -894,6 +942,7 @@ test('post-install Back preserves installation and cannot return to erase confir
   await page.goto('/preview/installer/');
   await page.getByLabel('Preview scenario').selectOption('new-device');
   await page.getByRole('button', { name: 'Connect simulated device' }).click();
+  await page.getByLabel('Speaker model').selectOption('atoms3r-c126-pyramid-a167');
   await page.getByLabel(/I have an AtomS3R/).check();
   await page.getByRole('button', { name: 'Install OpenAthan', exact: true }).click();
   await page.getByRole('button', { name: 'Back', exact: true }).click();

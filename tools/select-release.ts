@@ -8,6 +8,7 @@ import {
   parseSelection,
   readPolicy,
   resolveRelease,
+  resolveHardwareReleases,
   writeSelection,
 } from './release-selection.ts';
 
@@ -26,13 +27,16 @@ if (process.argv.includes('--freshness')) {
   );
 } else {
   const websiteCommit = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+  const release = await resolveRelease(policy);
+  const hardwareReleases = await resolveHardwareReleases(policy, release);
   const selection = parseSelection({
     schema: 1,
     automatic: policy.automatic,
     ...(policy.usbUpdateEnabled === undefined ? {} : { usbUpdateEnabled: policy.usbUpdateEnabled }),
     policySha256,
     websiteCommit,
-    release: await resolveRelease(policy),
+    release,
+    ...(Object.keys(hardwareReleases).length ? { hardwareReleases } : {}),
   });
   const changed =
     process.argv.includes('--deployed') || process.argv.includes('--poll')
