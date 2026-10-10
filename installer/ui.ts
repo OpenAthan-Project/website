@@ -188,9 +188,13 @@ export function mountInstaller(
   }
   function reviewUpdate() {
     if (!offered || mutationBlocked || recoveryBlocked) return;
+    const powerInstructions =
+      hardware === WAVESHARE
+        ? 'Keep the Waveshare rear USB-C cable connected during transfer. After verification, press RESET to restart and complete startup checks.'
+        : 'Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.';
     render(
       'Review firmware update',
-      `<p>Install <strong>${escape(offered.version)}</strong> over USB.</p><p>Your Wi-Fi, device password, prayer settings, playback history and recordings stay on the speaker. The current application is retained for startup rollback.</p><p><a href="${escape(offered.notes)}" target="_blank" rel="noopener noreferrer">Read the release notes</a></p><p>Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.</p><div class="actions">${button('Install update', 'update')}${button('Back', 'recovery', true)}</div>`,
+      `<p>Install <strong>${escape(offered.version)}</strong> over USB.</p><p>Your Wi-Fi, device password, prayer settings, playback history and recordings stay on the speaker. The current application is retained for startup rollback.</p><p><a href="${escape(offered.notes)}" target="_blank" rel="noopener noreferrer">Read the release notes</a></p><p>${powerInstructions}</p><div class="actions">${button('Install update', 'update')}${button('Back', 'recovery', true)}</div>`,
       1,
     );
   }
