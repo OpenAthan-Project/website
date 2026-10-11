@@ -137,6 +137,41 @@ it.each(['legacy', 'success'] as const)(
     await service.close();
   },
 );
+it('keeps legacy firmware read-only when public USB updates are enabled', async () => {
+  const port = new Port('legacy');
+  hooks.open.mockResolvedValue(port);
+  const service = new RealService(pin, true);
+  await service.connect();
+  expect(await service.checkUpdate()).toMatchObject({
+    state: 'unsupported',
+    recoveryBlocked: false,
+    detail:
+      'This firmware needs an initial Wi-Fi or maintainer update before USB updates are supported.',
+  });
+  await expect(service.update(offer, () => {})).rejects.toThrow('review');
+  expect(hooks.load).not.toHaveBeenCalled();
+  expect(hooks.flash).not.toHaveBeenCalled();
+  expect(port.commands).not.toContain(UPGRADE.begin);
+  expect(port.chunks).toBe(0);
+  await service.close();
+});
+it.each(['v0.4.0', 'v0.3.0'])(
+  'does not offer or transfer selected version %s to confirmed v0.4.0 firmware',
+  async (version) => {
+    const port = new Port();
+    hooks.open.mockResolvedValue(port);
+    const selectedOffer = { ...offer, version };
+    hooks.load.mockResolvedValue({ offer: selectedOffer });
+    const service = new RealService(pin, true);
+    await service.connect();
+    expect((await service.checkUpdate()).state).toBe('current');
+    await expect(service.update(selectedOffer, () => {})).rejects.toThrow('review');
+    expect(hooks.flash).not.toHaveBeenCalled();
+    expect(port.commands).not.toContain(UPGRADE.begin);
+    expect(port.chunks).toBe(0);
+    await service.close();
+  },
+);
 it('streams only the reviewed signed application and confirms handoff without flashing or retry', async () => {
   const port = new Port();
   hooks.open.mockResolvedValue(port);
