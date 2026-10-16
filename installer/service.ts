@@ -4,6 +4,10 @@ import type { FirmwareInfo, UpgradeCheck, UpgradeOffer } from './upgrade';
 export type Connected =
   | { kind: 'unrecognized' }
   | { kind: 'existing'; status: DeviceStatus; hardware?: Hardware };
+export interface InstallationResult {
+  status: DeviceStatus;
+  phoneSetup: boolean;
+}
 export interface InstallerService {
   readonly simulated: boolean;
   readonly installAvailable: boolean;
@@ -14,7 +18,7 @@ export interface InstallerService {
     confirmed: boolean,
     progress: (percent: number) => void,
     hardware?: Hardware,
-  ): Promise<DeviceStatus>;
+  ): Promise<InstallationResult>;
   discardUpdate(): Promise<void>;
   firmware(): Promise<FirmwareInfo>;
   checkUpdate(): Promise<UpgradeCheck>;

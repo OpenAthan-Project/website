@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SimulatedTransport } from '../../installer/simulator';
+import { SimulatedTransport, SimulatorService } from '../../installer/simulator';
+import { HARDWARE, WAVESHARE } from '../../installer/release';
+import type { InstallationResult } from '../../installer/service';
 const hooks = vi.hoisted(() => ({
   requestPort: vi.fn(),
   open: vi.fn(),
@@ -152,5 +154,136 @@ describe('unified connection and recovery boundary', () => {
     expect(hooks.requestPort).toHaveBeenCalledOnce();
     expect(hooks.open).toHaveBeenCalledOnce();
     expect(hooks.flash).toHaveBeenCalledOnce();
+  });
+});
+
+describe('fresh-install phone-setup capability', () => {
+  async function candidate() {
+    const silent = new SimulatedTransport('success');
+    vi.spyOn(silent, 'write').mockResolvedValue();
+    hooks.open.mockResolvedValueOnce(silent);
+    const service = new RealService(pin);
+    const discovery = service.connect();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(await discovery).toEqual({ kind: 'unrecognized' });
+    return service;
+  }
+
+  it.each([false, true])(
+    'returns phoneSetup=%s only from the verified installed bundle after successful status',
+    async (phoneSetup) => {
+      vi.useFakeTimers();
+      const service = await candidate();
+      const bundle = { manifest: phoneSetup ? { phoneSetup: 1 } : {} };
+      hooks.bundle.mockResolvedValue(bundle);
+      hooks.flash.mockResolvedValue(undefined);
+      hooks.open.mockResolvedValueOnce(new SimulatedTransport('success'));
+      const completed = vi.fn<(result: InstallationResult) => void>();
+      const installation = service
+        .install(true, () => {})
+        .then((result) => {
+          completed(result);
+          return result;
+        });
+      await vi.advanceTimersByTimeAsync(2_079);
+      expect(completed).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(81);
+      const result = await installation;
+      expect(result).toMatchObject({ phoneSetup, status: { password: 'absent', wifi: '2' } });
+      expect(completed).toHaveBeenCalledOnce();
+      expect(hooks.bundle).toHaveBeenCalledWith(pin);
+      expect(hooks.flash).toHaveBeenCalledWith(undefined, bundle, true, expect.any(Function));
+      expect(hooks.flash).toHaveBeenCalledOnce();
+      const refreshed = service.status();
+      await vi.advanceTimersByTimeAsync(80);
+      expect(await refreshed).not.toHaveProperty('phoneSetup');
+      await service.close();
+    },
+  );
+
+  it('does not complete a capable installation after a failed flash', async () => {
+    vi.useFakeTimers();
+    const service = await candidate();
+    hooks.bundle.mockResolvedValue({ manifest: { phoneSetup: 1 } });
+    hooks.flash.mockRejectedValue(new Error('Flash readback failed'));
+    const completed = vi.fn();
+    await expect(service.install(true, () => {}).then(completed)).rejects.toThrow(
+      'Flash readback failed',
+    );
+    expect(completed).not.toHaveBeenCalled();
+    expect(hooks.open).toHaveBeenCalledOnce();
+    expect(hooks.flash).toHaveBeenCalledOnce();
+    await service.close();
+  });
+
+  it('does not flash or return capability when release verification fails', async () => {
+    vi.useFakeTimers();
+    const service = await candidate();
+    hooks.bundle.mockRejectedValue(new Error('Release manifest verification failed'));
+    const completed = vi.fn();
+    await expect(service.install(true, () => {}).then(completed)).rejects.toThrow(
+      'Release manifest verification failed',
+    );
+    expect(completed).not.toHaveBeenCalled();
+    expect(hooks.open).toHaveBeenCalledOnce();
+    expect(hooks.flash).not.toHaveBeenCalled();
+    await service.close();
+  });
+
+  it('does not complete or expose capability when verified flashing cannot read status', async () => {
+    vi.useFakeTimers();
+    const service = await candidate();
+    hooks.bundle.mockResolvedValue({ manifest: { phoneSetup: 1 } });
+    hooks.flash.mockResolvedValue(undefined);
+    hooks.open.mockImplementation(async () => {
+      const port = new SimulatedTransport('success');
+      const write = port.write.bind(port);
+      vi.spyOn(port, 'write')
+        .mockImplementationOnce(write)
+        .mockRejectedValue(new Error('Status unavailable'));
+      return port;
+    });
+    const completed = vi.fn();
+    const installation = service
+      .install(true, () => {})
+      .then(completed)
+      .catch((error) => error);
+    await vi.advanceTimersByTimeAsync(12_480);
+    expect(String(await installation)).toContain(
+      'Installation was verified, but setup could not reconnect',
+    );
+    expect(completed).not.toHaveBeenCalled();
+    expect(hooks.open).toHaveBeenCalledTimes(7);
+    expect(hooks.flash).toHaveBeenCalledOnce();
+    await service.close();
+  });
+
+  it('does not infer phone-setup readiness from an existing connection or firmware version', async () => {
+    hooks.open.mockResolvedValue(new SimulatedTransport('success', true));
+    const service = new RealService(pin);
+    const connected = await service.connect();
+    expect(connected).toMatchObject({ kind: 'existing' });
+    expect(connected).not.toHaveProperty('phoneSetup');
+    expect(await service.status()).not.toHaveProperty('phoneSetup');
+    expect(hooks.bundle).not.toHaveBeenCalled();
+    expect(hooks.flash).not.toHaveBeenCalled();
+    await service.close();
+  });
+
+  it.each([
+    ['new-device', HARDWARE, false],
+    ['waveshare-new', WAVESHARE, false],
+    ['phone-new', HARDWARE, true],
+    ['phone-waveshare-new', WAVESHARE, true],
+  ] as const)('keeps simulator %s capability explicit', async (scenario, hardware, phoneSetup) => {
+    vi.useFakeTimers();
+    const service = new SimulatorService(scenario);
+    expect(await service.connect()).toEqual({ kind: 'unrecognized' });
+    const installation = service.install(true, () => {}, hardware);
+    await vi.advanceTimersByTimeAsync(480);
+    expect(await installation).toMatchObject({ phoneSetup, status: { password: 'absent' } });
+    expect(hooks.bundle).not.toHaveBeenCalled();
+    expect(hooks.flash).not.toHaveBeenCalled();
+    await service.close();
   });
 });

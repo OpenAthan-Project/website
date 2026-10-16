@@ -3,12 +3,14 @@ import { HARDWARE, WAVESHARE, type Hardware } from './release';
 import { decodeFields, encodeFrame, FrameDecoder, rpcPayload } from './protocol';
 import { ProvisioningSession, type ByteTransport } from './session';
 import type { FirmwareInfo, UpgradeCheck, UpgradeOffer } from './upgrade';
-import type { Connected, InstallerService } from './service';
+import type { Connected, InstallerService, InstallationResult } from './service';
 export const scenarios = [
   'success',
   'new-device',
+  'phone-new',
   'waveshare',
   'waveshare-new',
+  'phone-waveshare-new',
   'unreadable',
   'denied',
   'busy',
@@ -161,7 +163,16 @@ export class SimulatorService implements InstallerService {
     await this.close();
     if (this.scenario === 'denied') throw new DOMException('Permission dismissed', 'NotFoundError');
     if (this.scenario === 'busy') throw new DOMException('Port busy', 'InvalidStateError');
-    if (['new-device', 'waveshare-new', 'unknown', 'flash-failed'].includes(this.scenario)) {
+    if (
+      [
+        'new-device',
+        'phone-new',
+        'waveshare-new',
+        'phone-waveshare-new',
+        'unknown',
+        'flash-failed',
+      ].includes(this.scenario)
+    ) {
       this.installationCandidate = true;
       return { kind: 'unrecognized' };
     }
@@ -180,7 +191,7 @@ export class SimulatorService implements InstallerService {
     confirmed: boolean,
     progress: (percent: number) => void,
     hardware: Hardware = HARDWARE,
-  ) {
+  ): Promise<InstallationResult> {
     if (!confirmed || !this.installationCandidate)
       throw new Error('Confirm the simulated installation first.');
     this.installationCandidate = false;
@@ -193,7 +204,11 @@ export class SimulatorService implements InstallerService {
           'Simulated installation interrupted. Reconnect and review recovery guidance before retrying.',
         );
     }
-    return this.open(false).status();
+    const status = await this.open(false).status();
+    return {
+      status,
+      phoneSetup: ['phone-new', 'phone-waveshare-new'].includes(this.scenario),
+    };
   }
   async discardUpdate() {}
   async firmware(): Promise<FirmwareInfo> {

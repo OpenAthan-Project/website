@@ -6,6 +6,14 @@ The website adopts the firmware repository’s latest approved stable release af
 
 Review `/preview/installer/` on the development server to exercise the complete wizard without hardware. Its injected simulator transport cannot reach Web Serial or the flasher; its route and code are excluded from the static build. Both example addresses are clickable and open `/preview/device/` in a new tab, a clearly labelled local handoff preview. They never navigate to the example hostname or LAN IP. Actual device addresses open the reported local device URL. Synthetic firmware and recording fixtures are never served.
 
+## Installation and setup handoff
+
+The optional schema-1 manifest field `phoneSetup: 1` declares the firmware’s first-run phone setup and screen address discovery contract. It is accepted only from the SHA-256-pinned manifest of a successfully verified fresh installation, followed by a readable healthy initial status. Absence retains USB setup; any other present value is rejected. Protocol version, disconnected Wi-Fi, firmware version and an existing speaker’s incomplete setup do not establish this capability. Current releases without the field continue to require USB credentials.
+
+Capable fresh installations stop at **OpenAthan installed**, before Wi-Fi or password writes. The owner may unplug and finish later, choose **Set up with your phone**, or keep USB connected and **Continue on this computer**. Phone handoff closes USB and keeps board-specific power instructions, setup-network/manual-page guidance, home-network reconnection and screen QR/current-IP fallback visible after disconnect or cleanup failure. It never opens the desktop browser at the AP’s fixed IP or sends credentials to the public website. A computer Wi-Fi submission, including an uncertain outcome, removes the deferred phone option because saved network credentials may end enrollment eligibility. Existing-device recovery and pending-update restrictions are unchanged.
+
+The phone flow is staged until an approved published release supplies the capability field. Firmware publication, automatic release selection, qualification and rollout remain separate. The development scenarios `phone-new` and `phone-waveshare-new` exercise it without hardware; `new-device` and `waveshare-new` exercise legacy USB setup.
+
 ## Protocol and session ownership
 
 Credential recovery follows the firmware [provisioning handoff](https://github.com/OpenAthan-Project/openathan/blob/d376d4e3e59b59e3b7b26910768d630048c9839e/firmware/esphome/provisioning/README.md) and [Python protocol tests](https://github.com/OpenAthan-Project/openathan/blob/d376d4e3e59b59e3b7b26910768d630048c9839e/tests/test_provision_device.py). The separate application updater requires the new [USB upgrade protocol](https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/usb-firmware-updates.md).

@@ -31,6 +31,10 @@ export function mountInstaller(
     installed = false,
     updateWritten = false;
   let hardware: Hardware = HARDWARE;
+  let phoneSetupCapable = false,
+    phoneSetupAvailable = false;
+  let handoff: 'choice' | 'phone' | 'settings' | undefined;
+  let usbDisconnected = false;
   let operation: 'wifi' | 'password' | 'update' | 'none' = 'none';
   let notice = '',
     mutationBlocked = false,
@@ -57,6 +61,10 @@ export function mountInstaller(
     offered = undefined;
     installed = false;
     updateWritten = false;
+    phoneSetupCapable = false;
+    phoneSetupAvailable = false;
+    handoff = undefined;
+    usbDisconnected = false;
     path = 'recovery';
     mutationBlocked = false;
     recoveryBlocked = false;
@@ -120,7 +128,16 @@ export function mountInstaller(
     status = undefined;
     try {
       status = await service.status();
+      // Another client may have enrolled the speaker since installation.
+      // Once observed, configured state cannot become an AP promise again.
+      phoneSetupAvailable =
+        phoneSetupAvailable &&
+        status.setup === 'incomplete' &&
+        status.wifi === '2' &&
+        status.password === 'absent' &&
+        status.storage === 'ready';
     } catch (error) {
+      if (handoff === 'phone' && usbDisconnected) return false;
       render(
         'Check the device status',
         '<p>The device’s current status could not be confirmed. Reconnect through USB setup before making another change.</p><div class="actions">' +
@@ -203,7 +220,7 @@ export function mountInstaller(
     if (blockRecovery()) return;
     render(
       'Connect to your Wi-Fi',
-      `<p>Choose your home’s 2.4 GHz network, or enter its name. Your computer and phone will need to be on the same home network.</p><div data-networks></div><form data-form="wifi" autocomplete="off"><div class="field-heading"><label for="ssid">Network name</label>${button('Find networks', 'scan', true)}</div><input id="ssid" name="ssid" required autocomplete="off" autocapitalize="none" spellcheck="false" /><label for="wifi-password">Wi-Fi password</label><input id="wifi-password" name="password" type="password" required autocomplete="off" aria-describedby="wifi-password-help" /><p id="wifi-password-help" class="field-help">Use your router’s Wi-Fi password. A 64-character key must contain only 0–9 and A–F (upper or lower case).</p><p class="field-help">WPA2/WPA3 personal networks. Guest portals and enterprise sign-ins are not supported.</p><div class="actions"><button class="button" type="submit">Save Wi-Fi</button>${button('Back', installed || path === 'recovery' ? 'recovery' : 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div></form>`,
+      `<p>Choose your home’s 2.4 GHz network, or enter its name. Your computer and phone will need to be on the same home network.</p><div data-networks></div><form data-form="wifi" autocomplete="off"><div class="field-heading"><label for="ssid">Network name</label>${button('Find networks', 'scan', true)}</div><input id="ssid" name="ssid" required autocomplete="off" autocapitalize="none" spellcheck="false" /><label for="wifi-password">Wi-Fi password</label><input id="wifi-password" name="password" type="password" required autocomplete="off" aria-describedby="wifi-password-help" /><p id="wifi-password-help" class="field-help">Use your router’s Wi-Fi password. A 64-character key must contain only 0–9 and A–F (upper or lower case).</p><p class="field-help">WPA2/WPA3 personal networks. Guest portals and enterprise sign-ins are not supported.</p><div class="actions"><button class="button" type="submit">Save Wi-Fi</button>${button('Back', phoneSetupAvailable ? 'setup-choice' : installed || path === 'recovery' ? 'recovery' : 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div></form>`,
       1,
     );
   }
@@ -221,6 +238,33 @@ export function mountInstaller(
     recoveryMenu();
     notify('Resolve the pending USB update before changing Wi-Fi or the device password.');
     return true;
+  }
+  function setupChoice() {
+    if (!phoneSetupAvailable || mutationBlocked) return;
+    handoff = 'choice';
+    render(
+      'OpenAthan installed',
+      `<p>Installation is complete. You can unplug the speaker now and set it up whenever you’re ready.</p><p>Setup connects it to home Wi-Fi, creates a speaker password and lets you choose prayer settings.</p><div class="actions">${button('Set up with your phone', 'phone-setup')}${button('Continue on this computer', 'computer-setup', true)}</div><p class="small muted">Keep USB connected if you want to continue on this computer.</p>`,
+      1,
+    );
+  }
+  function phoneHandoff() {
+    handoff = 'phone';
+    notice = '';
+    render(
+      'Set up with your phone',
+      `<p>You can do this now or the next time you plug in the speaker.</p><ol class="finish-list">${hardware === WAVESHARE ? '<li>Power the Waveshare through its rear USB-C port.</li>' : '<li>Unplug the Atom’s USB cable. For setup, connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li>'}<li>Scan the Wi-Fi QR on the speaker’s screen, or join the <strong>OpenAthan-Setup-</strong> network whose name matches the screen. ${hardware === WAVESHARE ? 'Use the BOOT button' : 'Short-press the Atom’s front button'} to show the QR. Stay connected if your phone warns there is no internet.</li><li>Open the automatic setup page. If it does not open, enter <code>http://192.168.4.1/setup/</code> in your browser while connected to the speaker’s setup Wi-Fi.</li><li>Choose a speaker password, select home Wi-Fi and enter its password. Read the speaker’s permanent address before connecting.</li><li>Rejoin home Wi-Fi. Scan the speaker’s webpage QR or open its displayed address, then sign in as <strong>admin</strong> with your speaker password. Review your location and timetable, then choose <strong>Finish setup</strong>.</li></ol><p>If the <code>.local</code> address does not open, use the current IP address on the speaker’s screen. On Atom, short-press again to see the addresses. Keep your phone on the same home network.</p><p class="small muted">After setup, a short button press while audio is idle shows the page information again. If audio is playing, the button stops it.</p><div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/#phone-setup">Phone setup instructions</a></div>`,
+      3,
+    );
+  }
+  async function closeForHandoff() {
+    try {
+      await service.close();
+    } catch {
+      notify(
+        'The browser could not close the USB connection. Unplug the data cable and follow the power instructions below.',
+      );
+    }
   }
   function renderHandoff(device: DeviceStatus) {
     const passwordAbsent = updateWritten && device.password === 'absent';
@@ -241,6 +285,14 @@ export function mountInstaller(
       `<div class="success-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m9 16 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>${updateWritten ? 'The signed application was verified and selected. Switch to normal speaker power so it can start and complete its health checks.' : path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p>${hardware === WAVESHARE ? '<ol class="finish-list"><li>Use the Waveshare rear USB-C port for normal power.</li><li>Press RESET to restart after a verified update.</li>' : '<ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li>'}<li>${needsRecovery ? 'Let the speaker start and complete its startup checks.' : 'Wait for it to reconnect, then open its settings on the same home network.'}</li></ol>${recoveryGuidance}${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">${needsRecovery ? '' : 'Sign in as <strong>admin</strong> with the password you chose. '}${path === 'install' && !updateWritten ? 'Review your location, timezone and timetable, then select <strong>Finish setup</strong>.' : updateWritten ? 'Check the firmware version and update result on the device’s settings page. Startup success is confirmed there; an interrupted connection alone cannot establish success or rollback.' : 'Continue with your saved prayer settings.'} Athan playback waits until the device has synchronized its clock.</p>${!urls.length && !needsRecovery ? '<p class="notice">A device address was not returned. Reconnect through USB setup to read it again.</p>' : ''}<div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
       3,
     );
+    if (phoneSetupCapable && !needsRecovery && !updateWritten) {
+      panel
+        .querySelector('.device-links')
+        ?.insertAdjacentHTML(
+          'afterend',
+          `<p>To find this page again, ${hardware === WAVESHARE ? 'briefly press BOOT to show the webpage QR and addresses' : 'short-press the front button for the webpage QR, then press again for the addresses'} while audio is idle. If <code>.local</code> does not open, use the current IP address on the screen.</p>`,
+        );
+    }
   }
   async function finish() {
     if (!updateWritten && blockRecovery()) return;
@@ -270,8 +322,10 @@ export function mountInstaller(
         );
       }
     } else {
-      await service.close();
+      handoff = 'settings';
+      notice = '';
       renderHandoff(status);
+      await closeForHandoff();
     }
   }
   async function attempt(action: () => Promise<void>) {
@@ -333,7 +387,7 @@ export function mountInstaller(
       busy = false;
       root.removeAttribute('aria-busy');
       if (notice) {
-        if (!handledUncertain && !updateWritten) {
+        if (!handledUncertain && !updateWritten && !handoff) {
           render(
             'Connection lost',
             '<p>Your device is no longer connected.</p>' + button('Start again', 'start'),
@@ -346,7 +400,13 @@ export function mountInstaller(
     }
   }
   service.onDisconnect = () => {
-    if (updateWritten) {
+    usbDisconnected = true;
+    if (handoff === 'choice') {
+      mutationBlocked = true;
+      phoneHandoff();
+      return;
+    }
+    if (updateWritten || handoff) {
       notice = '';
       return;
     }
@@ -417,7 +477,7 @@ export function mountInstaller(
           0,
         );
         try {
-          status = await service.install(
+          const result = await service.install(
             confirmed,
             (percent) => {
               panel.querySelector('progress')!.value = percent;
@@ -426,8 +486,19 @@ export function mountInstaller(
             },
             hardware,
           );
+          status = result.status;
           installed = true;
-          wifiScreen();
+          phoneSetupCapable = result.phoneSetup;
+          phoneSetupAvailable =
+            phoneSetupCapable &&
+            status.setup === 'incomplete' &&
+            status.wifi === '2' &&
+            status.password === 'absent' &&
+            status.storage === 'ready';
+          if (storageFault()) return;
+          if (phoneSetupAvailable && usbDisconnected) phoneHandoff();
+          else if (phoneSetupAvailable) setupChoice();
+          else wifiScreen();
         } catch (error) {
           render(
             'Installation needs attention',
@@ -437,6 +508,27 @@ export function mountInstaller(
             0,
           );
           throw error;
+        }
+      } else if (action === 'setup-choice') {
+        if (await readCurrentStatus()) {
+          if (phoneSetupAvailable) setupChoice();
+          else recoveryMenu();
+        }
+      } else if (action === 'phone-setup' && phoneSetupAvailable) {
+        if (await readCurrentStatus()) {
+          if (phoneSetupAvailable) {
+            phoneHandoff();
+            await closeForHandoff();
+          } else {
+            handoff = undefined;
+            recoveryMenu();
+          }
+        }
+      } else if (action === 'computer-setup' && phoneSetupAvailable && !mutationBlocked) {
+        handoff = undefined;
+        if (await readCurrentStatus()) {
+          if (phoneSetupAvailable) wifiScreen();
+          else recoveryMenu();
         }
       } else if (action === 'refresh-status') {
         if (await readCurrentStatus()) {
@@ -545,6 +637,8 @@ export function mountInstaller(
       let acknowledged = false;
       try {
         if (kind === 'wifi') {
+          // A saved or uncertain USB Wi-Fi write may end AP eligibility.
+          phoneSetupAvailable = false;
           await service.wifi(ssid, password);
           acknowledged = true;
           status = await service.status();
