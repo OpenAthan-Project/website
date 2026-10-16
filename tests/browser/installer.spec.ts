@@ -284,6 +284,8 @@ test('recognized Waveshare uses its identity without fresh-install choices', asy
   await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
 });
 
+type StatusFailure = 'storage' | 'password' | 'setup' | 'read';
+
 declare global {
   interface Window {
     setupHandoffTest: {
@@ -291,6 +293,10 @@ declare global {
       disconnect(): void;
       failClose(): void;
       configureElsewhere(): void;
+      failStatus(failure: StatusFailure): void;
+      deferStatus(): void;
+      releaseStatus(): void;
+      statusPending: boolean;
     };
   }
 }
@@ -317,8 +323,21 @@ async function phonePreview(page: Page, waveshare = false, disconnectAtCompletio
       const writes: string[] = [];
       const readStatus = service.status.bind(service);
       let configuredElsewhere = false;
+      let statusFailure: StatusFailure | undefined;
+      let statusGate: Promise<void> | undefined;
+      let releaseStatus: (() => void) | undefined;
       service.status = async () => {
         const status = await readStatus();
+        if (statusGate) {
+          window.setupHandoffTest.statusPending = true;
+          await statusGate;
+          window.setupHandoffTest.statusPending = false;
+          statusGate = undefined;
+        }
+        if (statusFailure === 'read') throw new Error('Test status read failure');
+        if (statusFailure === 'storage') return { ...status, storage: 'fault' };
+        if (statusFailure === 'password') return { ...status, password: 'fault' };
+        if (statusFailure === 'setup') return { ...status, setup: 'storage_fault' };
         return configuredElsewhere
           ? { ...status, wifi: '4', password: 'ready', passwordRevision: 1 }
           : status;
@@ -348,6 +367,16 @@ async function phonePreview(page: Page, waveshare = false, disconnectAtCompletio
         configureElsewhere: () => {
           configuredElsewhere = true;
         },
+        failStatus: (failure) => {
+          statusFailure = failure;
+        },
+        deferStatus: () => {
+          statusGate = new Promise((resolve) => {
+            releaseStatus = resolve;
+          });
+        },
+        releaseStatus: () => releaseStatus!(),
+        statusPending: false,
       };
       mountInstaller(next, service);
     },
@@ -399,8 +428,115 @@ for (const action of ['Set up with your phone', 'Continue on this computer', 'Ba
       page.getByRole('button', { name: 'Set up with your phone', exact: true }),
     ).toHaveCount(0);
     expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+    await page.evaluate(() => window.setupHandoffTest.disconnect());
+    await expect(page.getByRole('heading', { name: 'Connection lost', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+    ).toHaveCount(0);
   });
 }
+
+for (const waveshare of [false, true]) {
+  for (const action of ['Set up with your phone', 'Continue on this computer', 'Back']) {
+    for (const failure of ['storage', 'password', 'setup', 'read'] as const) {
+      test(`${waveshare ? 'Waveshare' : 'Atom'} ${action} preserves ${failure} status guidance after unplug`, async ({
+        page,
+      }) => {
+        await phonePreview(page, waveshare);
+        if (action === 'Back') {
+          await page
+            .getByRole('button', { name: 'Continue on this computer', exact: true })
+            .click();
+          await expect(
+            page.getByRole('heading', { name: 'Connect to your Wi-Fi', exact: true }),
+          ).toBeVisible();
+        }
+        await page.evaluate((failure) => window.setupHandoffTest.failStatus(failure), failure);
+        await page.getByRole('button', { name: action, exact: true }).click();
+        const heading = page.getByRole('heading', {
+          name: failure === 'read' ? 'Check the device status' : 'The device needs attention',
+          exact: true,
+        });
+        await expect(heading).toBeFocused();
+        await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute(
+          'aria-busy',
+          'true',
+        );
+        const guidance = await page.locator('[data-panel]').innerText();
+        await page.evaluate(() => window.setupHandoffTest.disconnect());
+        await expect(page.locator('[data-panel]')).toHaveText(guidance, { useInnerText: true });
+        await expect(heading).toBeFocused();
+        await expect(
+          page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+        ).toHaveCount(0);
+        await expect(page.locator('[data-panel] input')).toHaveCount(0);
+        expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+      });
+    }
+  }
+
+  for (const outcome of [
+    'healthy',
+    'read',
+    'configured',
+    'storage',
+    'password',
+    'setup',
+  ] as const) {
+    test(`${waveshare ? 'Waveshare' : 'Atom'} pending phone handoff resolves ${outcome} status after unplug`, async ({
+      page,
+    }) => {
+      await phonePreview(page, waveshare);
+      await page.evaluate((outcome) => {
+        window.setupHandoffTest.deferStatus();
+        if (outcome === 'configured') window.setupHandoffTest.configureElsewhere();
+        else if (outcome !== 'healthy') window.setupHandoffTest.failStatus(outcome);
+      }, outcome);
+      await page.getByRole('button', { name: 'Set up with your phone', exact: true }).click();
+      await page.waitForFunction(() => window.setupHandoffTest.statusPending);
+      await page.evaluate(() => window.setupHandoffTest.disconnect());
+      await expect(
+        page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+      ).toBeFocused();
+      await page.evaluate(() => window.setupHandoffTest.releaseStatus());
+      await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute('aria-busy', 'true');
+      const heading = page.getByRole('heading', {
+        name:
+          outcome === 'healthy' || outcome === 'read'
+            ? 'Set up with your phone'
+            : outcome === 'configured'
+              ? 'Connection lost'
+              : 'The device needs attention',
+        exact: true,
+      });
+      await expect(heading).toBeFocused();
+      await page.evaluate(() => window.setupHandoffTest.disconnect());
+      await expect(heading).toBeVisible();
+      if (outcome !== 'healthy' && outcome !== 'read') {
+        await expect(
+          page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+        ).toHaveCount(0);
+      }
+      expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+    });
+  }
+}
+
+test('leaving a status error clears its disconnect protection for the next connection', async ({
+  page,
+}) => {
+  await phonePreview(page);
+  await page.evaluate(() => window.setupHandoffTest.failStatus('read'));
+  await page.getByRole('button', { name: 'Set up with your phone', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Check the device status', exact: true }),
+  ).toBeFocused();
+  await page.getByRole('button', { name: 'Disconnect and start again', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Connect speaker', exact: true })).toBeFocused();
+  await page.evaluate(() => window.setupHandoffTest.disconnect());
+  await expect(page.getByRole('heading', { name: 'Connection lost', exact: true })).toBeFocused();
+  expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+});
 
 for (const waveshare of [false, true]) {
   test(`verified ${waveshare ? 'Waveshare' : 'Atom'} installation can defer all credentials and hand off to phone`, async ({

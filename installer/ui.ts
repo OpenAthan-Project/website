@@ -35,6 +35,7 @@ export function mountInstaller(
     phoneSetupAvailable = false;
   let handoff: 'choice' | 'phone' | 'settings' | undefined;
   let usbDisconnected = false;
+  let statusErrorVisible = false;
   let operation: 'wifi' | 'password' | 'update' | 'none' = 'none';
   let notice = '',
     mutationBlocked = false,
@@ -47,6 +48,7 @@ export function mountInstaller(
     message.classList.remove('uncertain');
   };
   function render(title: string, body: string, step: number, _entry = false) {
+    statusErrorVisible = false;
     current = step;
     root.dataset.view = 'flow';
     context.hidden = true;
@@ -103,6 +105,17 @@ export function mountInstaller(
       0,
     );
   }
+  function revokePhoneSetup() {
+    phoneSetupAvailable = false;
+    if (handoff === 'choice' || handoff === 'phone') handoff = undefined;
+  }
+  function renderStatusError(title: string, body: string) {
+    revokePhoneSetup();
+    mutationBlocked = true;
+    notice = '';
+    render(title, body, current);
+    statusErrorVisible = true;
+  }
   function storageFault(): boolean {
     if (
       status &&
@@ -110,13 +123,11 @@ export function mountInstaller(
         status.password === 'fault' ||
         status.setup === 'storage_fault')
     ) {
-      mutationBlocked = true;
-      render(
+      renderStatusError(
         'The device needs attention',
         '<p>The device reported a storage fault. Keep its current data and follow the troubleshooting instructions before making another change.</p><div class="actions"><a class="button" href="/docs/troubleshooting/">Troubleshooting</a>' +
           button('Disconnect', 'start', true) +
           '</div>',
-        current,
       );
       return true;
     }
@@ -136,18 +147,22 @@ export function mountInstaller(
         status.wifi === '2' &&
         status.password === 'absent' &&
         status.storage === 'ready';
+      if (!phoneSetupAvailable) revokePhoneSetup();
     } catch (error) {
       if (handoff === 'phone' && usbDisconnected) return false;
-      render(
+      renderStatusError(
         'Check the device status',
         '<p>The device’s current status could not be confirmed. Reconnect through USB setup before making another change.</p><div class="actions">' +
           button('Disconnect and start again', 'start') +
           '<a href="/docs/troubleshooting/">Troubleshooting</a></div>',
-        current,
       );
       throw error;
     }
     if (storageFault()) return false;
+    if (usbDisconnected) {
+      if (handoff !== 'phone') connectionLost();
+      return false;
+    }
     mutationBlocked = false;
     return true;
   }
@@ -387,7 +402,7 @@ export function mountInstaller(
       busy = false;
       root.removeAttribute('aria-busy');
       if (notice) {
-        if (!handledUncertain && !updateWritten && !handoff) {
+        if (!handledUncertain && !updateWritten && !handoff && !statusErrorVisible) {
           render(
             'Connection lost',
             '<p>Your device is no longer connected.</p>' + button('Start again', 'start'),
@@ -399,17 +414,7 @@ export function mountInstaller(
       }
     }
   }
-  service.onDisconnect = () => {
-    usbDisconnected = true;
-    if (handoff === 'choice') {
-      mutationBlocked = true;
-      phoneHandoff();
-      return;
-    }
-    if (updateWritten || handoff) {
-      notice = '';
-      return;
-    }
+  function connectionLost() {
     mutationBlocked = true;
     notice = 'The device disconnected. Reconnect the USB data cable and start again.';
     if (!busy) {
@@ -421,6 +426,23 @@ export function mountInstaller(
       notify(notice, true);
       notice = '';
     }
+  }
+  service.onDisconnect = () => {
+    usbDisconnected = true;
+    if (statusErrorVisible) {
+      notice = '';
+      return;
+    }
+    if (handoff === 'choice' && phoneSetupAvailable) {
+      mutationBlocked = true;
+      phoneHandoff();
+      return;
+    }
+    if (updateWritten || handoff === 'phone' || handoff === 'settings') {
+      notice = '';
+      return;
+    }
+    connectionLost();
   };
   root.addEventListener('change', (event) => {
     const target = event.target as HTMLInputElement;

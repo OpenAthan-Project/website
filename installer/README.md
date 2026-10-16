@@ -12,6 +12,8 @@ The optional schema-1 manifest field `phoneSetup: 1` declares the firmware’s f
 
 Capable fresh installations stop at **OpenAthan installed**, before Wi-Fi or password writes. The owner may unplug and finish later, choose **Set up with your phone**, or keep USB connected and **Continue on this computer**. Phone handoff closes USB and keeps board-specific power instructions, setup-network/manual-page guidance, home-network reconnection and screen QR/current-IP fallback visible after disconnect or cleanup failure. It never opens the desktop browser at the AP’s fixed IP or sends credentials to the public website. A computer Wi-Fi submission, including an uncertain outcome, removes the deferred phone option because saved network credentials may end enrollment eligibility. Existing-device recovery and pending-update restrictions are unchanged.
 
+Status faults and failed status reads revoke the deferred phone option and keep their recovery guidance visible through a later disconnect. Unplugging during a pending phone-choice read can retain the verified installation handoff when that read rejects; a returned fault or configured status takes precedence over those provisional phone instructions.
+
 The phone flow is staged until an approved published release supplies the capability field. Firmware publication, automatic release selection, qualification and rollout remain separate. The development scenarios `phone-new` and `phone-waveshare-new` exercise it without hardware; `new-device` and `waveshare-new` exercise legacy USB setup.
 
 ## Protocol and session ownership
