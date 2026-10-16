@@ -53,6 +53,7 @@ export interface ReleaseManifest {
   flashBytes: number;
   layout: typeof LAYOUT;
   provisioningProtocol: 1;
+  phoneSetup?: 1;
   media: { redistributionApproved: true; licenseUrl: string };
   parts: ReleasePart[];
 }
@@ -99,6 +100,7 @@ export function parseManifest(value: unknown, pin: ReleasePin): ReleaseManifest 
     m.flashBytes !== HARDWARE_PROFILES[pin.hardware ?? HARDWARE].flashBytes ||
     m.layout !== LAYOUT ||
     m.provisioningProtocol !== 1 ||
+    (Object.hasOwn(m, 'phoneSetup') && m.phoneSetup !== 1) ||
     media.redistributionApproved !== true ||
     typeof media.licenseUrl !== 'string' ||
     !media.licenseUrl.startsWith(

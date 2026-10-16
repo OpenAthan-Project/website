@@ -29,6 +29,23 @@ describe('release boundary', () => {
     const m = await checkedManifest(f.bytes, f.pin);
     expect((await verifyBundle(m, f.inputs)).parts).toHaveLength(2);
   });
+  it('accepts legacy manifests and the exact supported phone-setup capability', async () => {
+    const f = await fixture();
+    expect(parseManifest(f.manifest, f.pin)).not.toHaveProperty('phoneSetup');
+    const bytes = new TextEncoder().encode(JSON.stringify({ ...f.manifest, phoneSetup: 1 }));
+    const pin = { ...f.pin, manifestSha256: await sha256(bytes) };
+    expect(await checkedManifest(bytes, pin)).toMatchObject({ phoneSetup: 1 });
+    await expect(checkedManifest(bytes, f.pin)).rejects.toThrow('verification');
+  });
+  it.each([undefined, null, false, true, '1', 0, 2, -1, 1.5, {}, []])(
+    'rejects a present unsupported phone-setup capability: %j',
+    async (phoneSetup) => {
+      const f = await fixture();
+      expect(() => parseManifest({ ...f.manifest, phoneSetup }, f.pin)).toThrow(
+        'Unsupported or unapproved',
+      );
+    },
+  );
   it.each(['hardware', 'chip', 'layout', 'repository'] as const)(
     'rejects incorrect %s',
     async (key) => {

@@ -283,3 +283,351 @@ test('recognized Waveshare uses its identity without fresh-install choices', asy
   await expect(page.getByLabel('Speaker model')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
 });
+
+type StatusFailure = 'storage' | 'password' | 'setup' | 'read';
+
+declare global {
+  interface Window {
+    setupHandoffTest: {
+      writes: string[];
+      disconnect(): void;
+      failClose(): void;
+      configureElsewhere(): void;
+      failStatus(failure: StatusFailure): void;
+      deferStatus(): void;
+      releaseStatus(): void;
+      statusPending: boolean;
+    };
+  }
+}
+
+async function phonePreview(page: Page, waveshare = false, disconnectAtCompletion = false) {
+  await demo(page);
+  // Mount the actual UI and simulator, with test-only failure controls. No serial API.
+  await page.evaluate(
+    async ({ waveshare, disconnectAtCompletion }) => {
+      const uiPath = '/installer/ui.ts';
+      const simulatorPath = '/installer/simulator.ts';
+      const { mountInstaller } = await import(/* @vite-ignore */ uiPath);
+      const { SimulatorService } = await import(/* @vite-ignore */ simulatorPath);
+      const service = new SimulatorService(waveshare ? 'phone-waveshare-new' : 'phone-new');
+      const install = service.install.bind(service);
+      service.install = async (...args: unknown[]) => {
+        const result = await install(...args);
+        if (disconnectAtCompletion) service.onDisconnect?.();
+        return result;
+      };
+      const root = document.querySelector<HTMLElement>('[data-demo-installer]')!;
+      const next = root.cloneNode(true) as HTMLElement;
+      root.replaceWith(next);
+      const writes: string[] = [];
+      const readStatus = service.status.bind(service);
+      let configuredElsewhere = false;
+      let statusFailure: StatusFailure | undefined;
+      let statusGate: Promise<void> | undefined;
+      let releaseStatus: (() => void) | undefined;
+      service.status = async () => {
+        const status = await readStatus();
+        if (statusGate) {
+          window.setupHandoffTest.statusPending = true;
+          await statusGate;
+          window.setupHandoffTest.statusPending = false;
+          statusGate = undefined;
+        }
+        if (statusFailure === 'read') throw new Error('Test status read failure');
+        if (statusFailure === 'storage') return { ...status, storage: 'fault' };
+        if (statusFailure === 'password') return { ...status, password: 'fault' };
+        if (statusFailure === 'setup') return { ...status, setup: 'storage_fault' };
+        return configuredElsewhere
+          ? { ...status, wifi: '4', password: 'ready', passwordRevision: 1 }
+          : status;
+      };
+      for (const kind of ['wifi', 'password'] as const) {
+        const original = service[kind].bind(service);
+        service[kind] = (...args: string[]) => {
+          writes.push(kind);
+          return original(...args);
+        };
+      }
+      const close = service.close.bind(service);
+      let failClose = false;
+      service.close = async () => {
+        await close();
+        if (failClose) {
+          service.onDisconnect?.();
+          throw new Error('Test cleanup failure');
+        }
+      };
+      window.setupHandoffTest = {
+        writes,
+        disconnect: () => service.onDisconnect?.(),
+        failClose: () => {
+          failClose = true;
+        },
+        configureElsewhere: () => {
+          configuredElsewhere = true;
+        },
+        failStatus: (failure) => {
+          statusFailure = failure;
+        },
+        deferStatus: () => {
+          statusGate = new Promise((resolve) => {
+            releaseStatus = resolve;
+          });
+        },
+        releaseStatus: () => releaseStatus!(),
+        statusPending: false,
+      };
+      mountInstaller(next, service);
+    },
+    { waveshare, disconnectAtCompletion },
+  );
+  await connect(page);
+  await page
+    .getByLabel('Speaker model')
+    .selectOption(
+      waveshare ? 'waveshare-esp32-s3-touch-lcd-1_85c-box-v2' : 'atoms3r-c126-pyramid-a167',
+    );
+  await page.getByLabel(/I have an? /).check();
+  await page.getByRole('button', { name: 'Install OpenAthan', exact: true }).click();
+  await expect(
+    page.getByRole('heading', {
+      name: disconnectAtCompletion ? 'Set up with your phone' : 'OpenAthan installed',
+      exact: true,
+    }),
+  ).toBeFocused();
+}
+
+test('disconnect queued with a completed install keeps the verified phone handoff', async ({
+  page,
+}) => {
+  await phonePreview(page, false, true);
+  await expect(page.getByText(/only the Pyramid’s bottom USB-C power/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Connection lost' })).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Continue on this computer', exact: true }),
+  ).toHaveCount(0);
+  expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+});
+
+for (const action of ['Set up with your phone', 'Continue on this computer', 'Back']) {
+  test(`${action} observes external enrollment and revokes deferred AP setup`, async ({ page }) => {
+    await phonePreview(page);
+    if (action === 'Back') {
+      await page.getByRole('button', { name: 'Continue on this computer', exact: true }).click();
+      await expect(
+        page.getByRole('heading', { name: 'Connect to your Wi-Fi', exact: true }),
+      ).toBeVisible();
+    }
+    await page.evaluate(() => window.setupHandoffTest.configureElsewhere());
+    await page.getByRole('button', { name: action, exact: true }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Your OpenAthan is connected', exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Set up with your phone', exact: true }),
+    ).toHaveCount(0);
+    expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+    await page.evaluate(() => window.setupHandoffTest.disconnect());
+    await expect(page.getByRole('heading', { name: 'Connection lost', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+    ).toHaveCount(0);
+  });
+}
+
+for (const waveshare of [false, true]) {
+  for (const action of ['Set up with your phone', 'Continue on this computer', 'Back']) {
+    for (const failure of ['storage', 'password', 'setup', 'read'] as const) {
+      test(`${waveshare ? 'Waveshare' : 'Atom'} ${action} preserves ${failure} status guidance after unplug`, async ({
+        page,
+      }) => {
+        await phonePreview(page, waveshare);
+        if (action === 'Back') {
+          await page
+            .getByRole('button', { name: 'Continue on this computer', exact: true })
+            .click();
+          await expect(
+            page.getByRole('heading', { name: 'Connect to your Wi-Fi', exact: true }),
+          ).toBeVisible();
+        }
+        await page.evaluate((failure) => window.setupHandoffTest.failStatus(failure), failure);
+        await page.getByRole('button', { name: action, exact: true }).click();
+        const heading = page.getByRole('heading', {
+          name: failure === 'read' ? 'Check the device status' : 'The device needs attention',
+          exact: true,
+        });
+        await expect(heading).toBeFocused();
+        await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute(
+          'aria-busy',
+          'true',
+        );
+        const guidance = await page.locator('[data-panel]').innerText();
+        await page.evaluate(() => window.setupHandoffTest.disconnect());
+        await expect(page.locator('[data-panel]')).toHaveText(guidance, { useInnerText: true });
+        await expect(heading).toBeFocused();
+        await expect(
+          page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+        ).toHaveCount(0);
+        await expect(page.locator('[data-panel] input')).toHaveCount(0);
+        expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+      });
+    }
+  }
+
+  for (const outcome of [
+    'healthy',
+    'read',
+    'configured',
+    'storage',
+    'password',
+    'setup',
+  ] as const) {
+    test(`${waveshare ? 'Waveshare' : 'Atom'} pending phone handoff resolves ${outcome} status after unplug`, async ({
+      page,
+    }) => {
+      await phonePreview(page, waveshare);
+      await page.evaluate((outcome) => {
+        window.setupHandoffTest.deferStatus();
+        if (outcome === 'configured') window.setupHandoffTest.configureElsewhere();
+        else if (outcome !== 'healthy') window.setupHandoffTest.failStatus(outcome);
+      }, outcome);
+      await page.getByRole('button', { name: 'Set up with your phone', exact: true }).click();
+      await page.waitForFunction(() => window.setupHandoffTest.statusPending);
+      await page.evaluate(() => window.setupHandoffTest.disconnect());
+      await expect(
+        page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+      ).toBeFocused();
+      await page.evaluate(() => window.setupHandoffTest.releaseStatus());
+      await expect(page.locator('[data-demo-installer]')).not.toHaveAttribute('aria-busy', 'true');
+      const heading = page.getByRole('heading', {
+        name:
+          outcome === 'healthy' || outcome === 'read'
+            ? 'Set up with your phone'
+            : outcome === 'configured'
+              ? 'Connection lost'
+              : 'The device needs attention',
+        exact: true,
+      });
+      await expect(heading).toBeFocused();
+      await page.evaluate(() => window.setupHandoffTest.disconnect());
+      await expect(heading).toBeVisible();
+      if (outcome !== 'healthy' && outcome !== 'read') {
+        await expect(
+          page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+        ).toHaveCount(0);
+      }
+      expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+    });
+  }
+}
+
+test('leaving a status error clears its disconnect protection for the next connection', async ({
+  page,
+}) => {
+  await phonePreview(page);
+  await page.evaluate(() => window.setupHandoffTest.failStatus('read'));
+  await page.getByRole('button', { name: 'Set up with your phone', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Check the device status', exact: true }),
+  ).toBeFocused();
+  await page.getByRole('button', { name: 'Disconnect and start again', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Connect speaker', exact: true })).toBeFocused();
+  await page.evaluate(() => window.setupHandoffTest.disconnect());
+  await expect(page.getByRole('heading', { name: 'Connection lost', exact: true })).toBeFocused();
+  expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+});
+
+for (const waveshare of [false, true]) {
+  test(`verified ${waveshare ? 'Waveshare' : 'Atom'} installation can defer all credentials and hand off to phone`, async ({
+    page,
+  }) => {
+    await phonePreview(page, waveshare);
+    await expect(page.getByText(/unplug the speaker now and set it up whenever/)).toBeVisible();
+    await expect(page.locator('[data-panel] input')).toHaveCount(0);
+    expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+    await page.getByRole('button', { name: 'Set up with your phone', exact: true }).press('Enter');
+    await expect(
+      page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+    ).toBeFocused();
+    await expect(page.getByText('http://192.168.4.1/setup/', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-panel] a[href^="http:"]')).toHaveCount(0);
+    await expect(page.getByText(/current IP address on the speaker’s screen/)).toBeVisible();
+    if (waveshare) {
+      await expect(
+        page.getByText('Power the Waveshare through its rear USB-C port.'),
+      ).toBeVisible();
+      await expect(page.getByText(/Pyramid’s bottom USB-C power/)).toHaveCount(0);
+    } else await expect(page.getByText(/only the Pyramid’s bottom USB-C power/)).toBeVisible();
+    await page.evaluate(() => window.setupHandoffTest.disconnect());
+    await expect(
+      page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+    ).toBeVisible();
+    expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+    expect(
+      await page.evaluate(() => ({ local: localStorage.length, session: sessionStorage.length })),
+    ).toEqual({ local: 0, session: 0 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+  });
+}
+
+test('unplugging at install completion keeps later phone setup available', async ({ page }) => {
+  await phonePreview(page);
+  await page.evaluate(() => window.setupHandoffTest.disconnect());
+  await expect(
+    page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Connection lost' })).toHaveCount(0);
+  expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+  await page.getByRole('button', { name: 'Back to connection', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Connect speaker', exact: true })).toBeVisible();
+  await page.evaluate(() => window.setupHandoffTest.disconnect());
+  await expect(page.getByRole('heading', { name: 'Connection lost', exact: true })).toBeVisible();
+});
+
+test('cleanup failure and its queued disconnect preserve the phone power instructions', async ({
+  page,
+}) => {
+  await phonePreview(page);
+  await page.evaluate(() => window.setupHandoffTest.failClose());
+  await page.getByRole('button', { name: 'Set up with your phone', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Set up with your phone', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('could not close the USB connection');
+  await expect(page.getByText(/only the Pyramid’s bottom USB-C power/)).toBeVisible();
+  expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+});
+
+test('computer continuation keeps USB setup and removes phone deferral after Wi-Fi writes', async ({
+  page,
+}) => {
+  await phonePreview(page);
+  await page.getByRole('button', { name: 'Continue on this computer', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Connect to your Wi-Fi', exact: true }),
+  ).toBeFocused();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'OpenAthan installed', exact: true }),
+  ).toBeFocused();
+  expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual([]);
+  await page.getByRole('button', { name: 'Continue on this computer', exact: true }).click();
+  await saveWifi(page);
+  await expect(page.getByRole('heading', { name: 'Create a device password' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Your OpenAthan is connected' })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Set up with your phone', exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Create device password', exact: true }).click();
+  await page.getByLabel('Device password', { exact: true }).fill('made-up device secret');
+  await page.getByLabel('Repeat password').fill('made-up device secret');
+  await page.getByRole('button', { name: 'Save device password' }).click();
+  await expect(page.getByRole('heading', { name: 'Ready for device setup' })).toBeVisible();
+  await expect(page.getByText(/To find this page again/)).toBeVisible();
+  expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual(['wifi', 'password']);
+});

@@ -17,7 +17,7 @@ import {
   type HardwareReleases,
   type ReleasePin,
 } from './release';
-import type { InstallerService, Connected } from './service';
+import type { InstallerService, Connected, InstallationResult } from './service';
 
 export class RealService implements InstallerService {
   readonly simulated = false;
@@ -95,7 +95,7 @@ export class RealService implements InstallerService {
     confirmed: boolean,
     progress: (percent: number) => void,
     hardware: Hardware = HARDWARE,
-  ) {
+  ): Promise<InstallationResult> {
     if (!confirmed || !this.installationCandidate || !this.port || !this.pin || this.session)
       throw new Error('A confirmed new-device connection is required.');
     this.installationCandidate = false;
@@ -119,7 +119,8 @@ export class RealService implements InstallerService {
       try {
         const session = await this.open();
         await session.identify();
-        return await session.status();
+        const status = await session.status();
+        return { status, phoneSetup: bundle.manifest.phoneSetup === 1 };
       } catch {
         await this.releaseSession().catch(() => undefined);
       }

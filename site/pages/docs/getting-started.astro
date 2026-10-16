@@ -72,10 +72,20 @@ const waveshareRelease = hardwareReleases?.[WAVESHARE];
       </p><p>
         If OpenAthan is recognized but its status cannot be read, reconnect and troubleshoot.
         Installation is blocked to protect the existing device.
-      </p><h2>3. Save Wi-Fi and a device password</h2><p>
-        After a new installation, select your home network or enter its name for a hidden network,
-        then enter its Wi-Fi password. Next, create a separate, long device password. Your browser
-        sends these credentials directly over USB; the website does not store them.
+      </p><h2>3. Choose where to set up</h2><p>
+        On releases that support phone setup, the installer shows <strong
+          >OpenAthan installed</strong
+        >. You can unplug the speaker and set it up later, choose <strong
+          >Set up with your phone</strong
+        >, or keep USB connected and choose <strong>Continue on this computer</strong>. No Wi-Fi or
+        speaker password is required to finish installation. Follow the <a href="#phone-setup"
+          >phone instructions</a
+        > below if you choose that path.
+      </p><p>
+        Earlier releases continue with USB setup. On the computer, select your home network or enter
+        its name for a hidden network, then enter its Wi-Fi password. Next, create a separate, long
+        device password. Your browser sends these credentials directly over USB; the website does
+        not store them.
       </p><p>
         Remember the device password. You will use the username <strong>admin</strong> to sign into the
         device’s settings.
@@ -98,6 +108,47 @@ const waveshareRelease = hardwareReleases?.[WAVESHARE];
         available. On earlier firmware, copy the helper’s values into the settings yourself. Select <strong
           >Finish setup</strong
         > to enable the Athan. If the clock has not synchronized yet, Athan playback will wait.
+      </p><h2 id="phone-setup">Set up with your phone</h2><p>
+        These steps apply when the installer offers phone setup. Earlier firmware needs Wi-Fi and a
+        device password set through <a href="/install/">USB setup</a> first.
+      </p><ol>
+        <li>
+          Power the speaker normally: Pyramid bottom power only for Atom, or the rear USB-C port for
+          Waveshare Box V2.
+        </li>
+        <li>
+          Scan the screen’s Wi-Fi QR, or join the <strong>OpenAthan-Setup-</strong> network matching
+          the screen. On Atom, short-press the front button to show the QR; on Waveshare, use BOOT. Stay
+          connected when warned there is no internet.
+        </li>
+        <li>
+          Use the automatic setup page, or enter <code>http://192.168.4.1/setup/</code> while connected
+          to the setup network.
+        </li>
+        <li>
+          Choose a speaker password, select your home’s 2.4 GHz Wi-Fi and enter its password. Read
+          the permanent speaker address before connecting.
+        </li>
+        <li>
+          Rejoin home Wi-Fi, scan the speaker’s webpage QR or open its displayed address, and sign
+          in as <strong>admin</strong> with your speaker password. Review the location and prayer timetable,
+          then choose <strong>Finish setup</strong>.
+        </li>
+      </ol><p>
+        If the hostname does not open, use the current IP address shown on the speaker. On Atom,
+        press again after the webpage QR to see the addresses. The setup Wi-Fi and its
+        <code>192.168.4.1</code> address are only for initial enrollment; everyday settings use your
+        home network.
+      </p><h2 id="find-speaker-page">Find your speaker’s page again</h2><p>
+        Keep your phone or computer on the same home Wi-Fi. On firmware with screen connection
+        information, briefly press the Atom front button or Waveshare BOOT button while audio is
+        idle. Scan the webpage QR or enter the displayed address. Atom shows its QR and addresses on
+        separate screens; Waveshare shows them together. A press during audio stops playback.
+      </p><p>
+        If <code>.local</code> does not open, try the current IP address. It can change when the speaker
+        reconnects. You can also reconnect through <a href="/install/">USB setup</a> and choose
+        <strong>Continue to device settings</strong> to read its available addresses without changing
+        Wi-Fi or resetting your password. Bookmarking is optional.
       </p><h2>Everyday use</h2><p>
         Your speaker calculates prayer times and plays recordings stored on the device. The current
         Atom build needs internet access to set its clock after a restart, before it can play the
@@ -193,9 +244,10 @@ const waveshareRelease = hardwareReleases?.[WAVESHARE];
         firmware and saved data will be erased.
       </p>
       <p>
-        Save Wi-Fi and a device password, then open device settings to choose your location, prayer
-        settings and volume. The rear USB-C port also supplies normal power; RESET restarts the
-        device. Touch and microphones are not supported.
+        When offered, choose phone setup now or later, or continue on the computer. Earlier releases
+        use USB to save Wi-Fi and a device password first. Then open device settings to choose your
+        location, prayer settings and volume. The rear USB-C port also supplies normal power; RESET
+        restarts the device. Touch and microphones are not supported.
       </p>
       <p>
         The onboard RTC restores previously synchronized time across powered restarts. First use
