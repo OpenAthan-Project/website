@@ -1,4 +1,11 @@
-import { HARDWARE, WAVESHARE, HARDWARE_PROFILES, isHardware, type Hardware } from './release';
+import {
+  HARDWARE,
+  WAVESHARE,
+  AUDIO_BOARD,
+  HARDWARE_PROFILES,
+  isHardware,
+  type Hardware,
+} from './release';
 import { validatePassword, validateWifi, type DeviceStatus } from './protocol';
 import { DeviceError, UncertainOutcome } from './session';
 import type { InstallerService } from './service';
@@ -97,7 +104,7 @@ export function mountInstaller(
     hardware = choices[0] ?? HARDWARE;
     const modelChoice =
       choices.length > 1
-        ? `<label for="hardware-choice">Speaker model</label><select id="hardware-choice"><option value="">Choose your model</option>${choices.map((board) => `<option value="${board}">${HARDWARE_PROFILES[board].label}</option>`).join('')}</select><p class="small muted">Check the model printed on your device. Waveshare V1 is not supported.</p>`
+        ? `<label for="hardware-choice">Speaker model</label><select id="hardware-choice"><option value="">Choose your model</option>${choices.map((board) => `<option value="${board}">${HARDWARE_PROFILES[board].label}</option>`).join('')}</select><p class="small muted">Check the model printed on your device. Box V1 and other Waveshare models are not supported.</p>`
         : '';
     render(
       available ? 'Confirm a new installation' : 'New installation is unavailable',
@@ -221,9 +228,11 @@ export function mountInstaller(
   function reviewUpdate() {
     if (!offered || mutationBlocked || recoveryBlocked) return;
     const powerInstructions =
-      hardware === WAVESHARE
-        ? 'Keep the Waveshare rear USB-C cable connected during transfer. After verification, press RESET to restart and complete startup checks.'
-        : 'Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.';
+      hardware === AUDIO_BOARD
+        ? 'Keep the AUDIO-Board USB-C cable connected during transfer. After verification, press RESET to restart and complete startup checks.'
+        : hardware === WAVESHARE
+          ? 'Keep the Waveshare rear USB-C cable connected during transfer. After verification, press RESET to restart and complete startup checks.'
+          : 'Keep Atom USB connected during transfer. After verification, you’ll switch to Pyramid bottom power.';
     render(
       'Review firmware update',
       `<p>Install <strong>${escape(offered.version)}</strong> over USB.</p><p>Your Wi-Fi, device password, prayer settings, playback history and recordings stay on the speaker. The current application is retained for startup rollback.</p><p><a href="${escape(offered.notes)}" target="_blank" rel="noopener noreferrer">Read the release notes</a></p><p>${powerInstructions}</p><div class="actions">${button('Install update', 'update')}${button('Back', 'recovery', true)}</div>`,
@@ -266,6 +275,14 @@ export function mountInstaller(
   function phoneHandoff() {
     handoff = 'phone';
     notice = '';
+    if (hardware === AUDIO_BOARD) {
+      render(
+        'Set up with your phone',
+        `<p>You can do this now or the next time you plug in the speaker.</p><ol class="finish-list"><li>Power the AUDIO-Board through its USB-C port.</li><li>Join the <strong>OpenAthan-Setup-</strong> Wi-Fi network. Keep other unconfigured OpenAthan speakers unplugged so you can identify yours. Stay connected if your phone warns there is no internet.</li><li>Open the automatic setup page, or enter <code>http://192.168.4.1/setup/</code> while connected to the speaker’s setup Wi-Fi.</li><li>Choose a speaker password and enter home Wi-Fi. Copy the speaker’s permanent address shown on the setup page before connecting.</li><li>Rejoin home Wi-Fi, open that address and sign in as <strong>admin</strong>. Review location and timetable, then choose <strong>Finish setup</strong>.</li></ol><p>Bookmark the speaker’s address. If it does not open, reconnect through USB setup to read its hostname and current IP address. This model has no screen.</p><div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/#phone-setup">Phone setup instructions</a></div>`,
+        3,
+      );
+      return;
+    }
     render(
       'Set up with your phone',
       `<p>You can do this now or the next time you plug in the speaker.</p><ol class="finish-list">${hardware === WAVESHARE ? '<li>Power the Waveshare through its rear USB-C port.</li>' : '<li>Unplug the Atom’s USB cable. For setup, connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li>'}<li>Scan the Wi-Fi QR on the speaker’s screen, or join the <strong>OpenAthan-Setup-</strong> network whose name matches the screen. ${hardware === WAVESHARE ? 'Use the BOOT button' : 'Short-press the Atom’s front button'} to show the QR. Stay connected if your phone warns there is no internet.</li><li>Open the automatic setup page. If it does not open, enter <code>http://192.168.4.1/setup/</code> in your browser while connected to the speaker’s setup Wi-Fi.</li><li>Choose a speaker password, select home Wi-Fi and enter its password. Read the speaker’s permanent address before connecting.</li><li>Rejoin home Wi-Fi. Scan the speaker’s webpage QR or open its displayed address, then sign in as <strong>admin</strong> with your speaker password. Review your location and timetable, then choose <strong>Finish setup</strong>.</li></ol><p>If the <code>.local</code> address does not open, use the current IP address on the speaker’s screen. On Atom, short-press again to see the addresses. Keep your phone on the same home network.</p><p class="small muted">After setup, a short button press while audio is idle shows the page information again. If audio is playing, the button stops it.</p><div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/#phone-setup">Phone setup instructions</a></div>`,
@@ -287,8 +304,8 @@ export function mountInstaller(
     const needsRecovery = passwordAbsent || wifiDisconnected;
     const urls = needsRecovery ? [] : device.urls;
     const recoveryGuidance = needsRecovery
-      ? hardware === WAVESHARE
-        ? `<div class="notice"><p>After restarting, connect the rear USB-C port to your computer and reconnect through USB setup. Check firmware status before changing Wi-Fi or the device password. Keep your saved prayer settings and history.</p></div>`
+      ? hardware !== HARDWARE
+        ? `<div class="notice"><p>After restarting, connect the speaker’s USB-C port to your computer and reconnect through USB setup. Check firmware status before changing Wi-Fi or the device password. Keep your saved prayer settings and history.</p></div>`
         : `<div class="notice">${passwordAbsent ? '<p>Your device password still needs to be created through USB setup.</p>' : ''}${wifiDisconnected ? '<p>The speaker may reconnect using its saved Wi-Fi settings. If it stays offline, check or change Wi-Fi through USB setup.</p>' : ''}<p><strong>For USB recovery after startup:</strong></p><ol class="finish-list"><li>After the speaker starts, unplug the Pyramid’s bottom power cable before connecting the Atom’s USB-C port to your computer.</li><li>Select <strong>Back to connection</strong>, reconnect, then choose <strong>Check for updates</strong>.</li><li>Follow any remaining update instructions before changing Wi-Fi or creating a device password.</li><li>After recovery, unplug Atom USB and return to Pyramid bottom-only power, then open the device’s settings.</li></ol></div>`
       : '';
     render(
@@ -297,7 +314,7 @@ export function mountInstaller(
         : path === 'install'
           ? 'Ready for device setup'
           : 'Continue on speaker power',
-      `<div class="success-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m9 16 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>${updateWritten ? 'The signed application was verified and selected. Switch to normal speaker power so it can start and complete its health checks.' : path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p>${hardware === WAVESHARE ? '<ol class="finish-list"><li>Use the Waveshare rear USB-C port for normal power.</li><li>Press RESET to restart after a verified update.</li>' : '<ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li>'}<li>${needsRecovery ? 'Let the speaker start and complete its startup checks.' : 'Wait for it to reconnect, then open its settings on the same home network.'}</li></ol>${recoveryGuidance}${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">${needsRecovery ? '' : 'Sign in as <strong>admin</strong> with the password you chose. '}${path === 'install' && !updateWritten ? 'Review your location, timezone and timetable, then select <strong>Finish setup</strong>.' : updateWritten ? 'Check the firmware version and update result on the device’s settings page. Startup success is confirmed there; an interrupted connection alone cannot establish success or rollback.' : 'Continue with your saved prayer settings.'} Athan playback waits until the device has synchronized its clock.</p>${!urls.length && !needsRecovery ? '<p class="notice">A device address was not returned. Reconnect through USB setup to read it again.</p>' : ''}<div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
+      `<div class="success-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="15" stroke="currentColor"/><path d="m9 16 5 5 9-11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p>${updateWritten ? 'The signed application was verified and selected. Switch to normal speaker power so it can start and complete its health checks.' : path === 'install' ? 'Wi-Fi and your device password are saved. Finish your prayer settings on the device.' : 'Your device is ready to open. Its prayer settings and history were not reset.'}</p>${hardware === AUDIO_BOARD ? '<ol class="finish-list"><li>Use the AUDIO-Board USB-C port for normal power.</li><li>Press RESET to restart after a verified update.</li>' : hardware === WAVESHARE ? '<ol class="finish-list"><li>Use the Waveshare rear USB-C port for normal power.</li><li>Press RESET to restart after a verified update.</li>' : '<ol class="finish-list"><li>Unplug the Atom’s USB cable.</li><li>Connect <strong>only the Pyramid’s bottom USB-C power</strong>.</li>'}<li>${needsRecovery ? 'Let the speaker start and complete its startup checks.' : 'Wait for it to reconnect, then open its settings on the same home network.'}</li></ol>${recoveryGuidance}${urls.length && !service.simulated ? '<p id="device-new-tab" class="small muted">Device links open in a new tab.</p>' : ''}<div class="device-links">${urls.map((url, index) => (service.simulated ? `<div class="demo-url"><span>${index === 0 ? 'Device address' : 'IP fallback'}</span><a class="address-link" href="/preview/device/" target="_blank" rel="noopener noreferrer" aria-describedby="device-link-help-${index}"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a><small id="device-link-help-${index}">Opens a local preview in a new tab</small></div>` : `<div class="device-address"><a class="${index === 0 ? 'button' : 'fallback-link'}" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab">${index === 0 ? 'Open device settings' : 'Try the IP address'} <span aria-hidden="true">↗</span></a><a class="address-link" href="${escape(url)}" target="_blank" rel="noopener noreferrer" aria-describedby="device-new-tab"><code>${escape(url)}</code><span aria-hidden="true">↗</span></a></div>`)).join('')}</div><p class="small muted">${needsRecovery ? '' : 'Sign in as <strong>admin</strong> with the password you chose. '}${path === 'install' && !updateWritten ? 'Review your location, timezone and timetable, then select <strong>Finish setup</strong>.' : updateWritten ? 'Check the firmware version and update result on the device’s settings page. Startup success is confirmed there; an interrupted connection alone cannot establish success or rollback.' : 'Continue with your saved prayer settings.'} Athan playback waits until the device has synchronized its clock.</p>${!urls.length && !needsRecovery ? '<p class="notice">A device address was not returned. Reconnect through USB setup to read it again.</p>' : ''}<div class="actions">${button('Back to connection', 'start', true)}<a href="/docs/getting-started/">Setup instructions</a></div>`,
       3,
     );
     if (phoneSetupCapable && !needsRecovery && !updateWritten) {
@@ -305,7 +322,7 @@ export function mountInstaller(
         .querySelector('.device-links')
         ?.insertAdjacentHTML(
           'afterend',
-          `<p>To find this page again, ${hardware === WAVESHARE ? 'briefly press BOOT to show the webpage QR and addresses' : 'short-press the front button for the webpage QR, then press again for the addresses'} while audio is idle. If <code>.local</code> does not open, use the current IP address on the screen.</p>`,
+          `<p>To find this page again, ${hardware === AUDIO_BOARD ? 'bookmark the address above. If it does not open, reconnect through USB setup to read the hostname and current IP address. This model has no screen' : `${hardware === WAVESHARE ? 'briefly press BOOT to show the webpage QR and addresses' : 'short-press the front button for the webpage QR, then press again for the addresses'} while audio is idle. If <code>.local</code> does not open, use the current IP address on the screen`}.</p>`,
         );
     }
   }
@@ -331,7 +348,7 @@ export function mountInstaller(
         await service.close();
       } catch {
         notify(
-          hardware === WAVESHARE
+          hardware !== HARDWARE
             ? 'The browser could not close the USB connection. Disconnect the data cable, then follow the restart and power steps below.'
             : 'The browser could not close the USB connection. Unplug the Atom’s USB cable and follow the power steps below.',
         );

@@ -631,3 +631,36 @@ test('computer continuation keeps USB setup and removes phone deferral after Wi-
   await expect(page.getByText(/To find this page again/)).toBeVisible();
   expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual(['wifi', 'password']);
 });
+
+test('AUDIO-Board requires explicit model confirmation and offers screenless phone setup', async ({
+  page,
+}, testInfo) => {
+  await demo(page, 'phone-audio-board-new');
+  await connect(page);
+  const install = page.getByRole('button', { name: 'Install OpenAthan', exact: true });
+  await expect(install).toBeDisabled();
+  await page.getByLabel('Speaker model').selectOption('waveshare-esp32-s3-audio-board');
+  await page.getByLabel(/I have a Waveshare AUDIO-Board/).check();
+  await install.click();
+  await page.getByRole('button', { name: 'Set up with your phone', exact: true }).click();
+  await expect(page.getByText('http://192.168.4.1/setup/', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Bookmark the speaker’s address/)).toBeVisible();
+  await expect(page.locator('[data-panel]')).not.toContainText(
+    /QR|bottom power|front button|rear USB/,
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  if (['chromium', 'mobile'].includes(testInfo.project.name))
+    await page.screenshot({
+      path: `/private/tmp/openathan-audio-board-20261021/installer-${testInfo.project.name}.png`,
+      fullPage: true,
+    });
+});
+test('recognized AUDIO-Board preserves the existing-device path', async ({ page }) => {
+  await demo(page, 'audio-board');
+  await connect(page);
+  await expect(
+    page.locator('[data-panel]').getByText('Waveshare AUDIO-Board (no screen)', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Speaker model')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
+});

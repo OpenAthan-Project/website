@@ -2,6 +2,10 @@ import { expect, it, vi } from 'vitest';
 import {
   HARDWARE,
   WAVESHARE,
+  AUDIO_BOARD,
+  type Hardware,
+  type ReleasePin,
+  type ReleaseManifest,
   HARDWARE_PROFILES,
   assetName,
   checkedManifest,
@@ -20,28 +24,28 @@ import {
   resolveHardwareReleases,
 } from '../../tools/release-selection';
 
-async function waveshareFixture() {
+async function waveshareFixture(hardware: Hardware = WAVESHARE) {
   const f = await fixture();
   f.factory[3] = f.factory[0x10003] = 0x40;
-  const manifest = {
+  const manifest: ReleaseManifest = {
     ...f.manifest,
-    hardware: WAVESHARE,
+    hardware,
     flashBytes: 0x1000000,
     parts: f.manifest.parts.map((part) =>
       part.role === 'factory'
-        ? { ...part, file: assetName(WAVESHARE, part.file), sha256: '' }
+        ? { ...part, file: assetName(hardware, part.file), sha256: '' }
         : part,
     ),
   };
   manifest.parts[0]!.sha256 = await sha256(f.factory);
   const bytes = new TextEncoder().encode(JSON.stringify(manifest));
-  const pin = {
+  const pin: ReleasePin & { hardware: Hardware } = {
     ...f.pin,
-    hardware: WAVESHARE as typeof WAVESHARE,
+    hardware,
     manifestSha256: await sha256(bytes),
   };
   const inputs = new Map([
-    [assetName(WAVESHARE, 'firmware.factory.bin'), f.factory],
+    [assetName(hardware, 'firmware.factory.bin'), f.factory],
     ['athan-audio.bin', f.audio],
   ]);
   return { ...f, manifest, bytes, pin, inputs };
@@ -147,4 +151,83 @@ it('automatically selects a same-source Waveshare manifest and rejects mismatche
   await expect(
     resolveHardwareReleases({ automatic: true, pin: atom.pin }, atom.pin, fetcher),
   ).rejects.toThrow('different source');
+});
+
+it('recognizes AUDIO-Board identity without treating it as Box V2', async () => {
+  const f = await waveshareFixture(AUDIO_BOARD);
+  expect((await checkedManifest(f.bytes, f.pin)).hardware).toBe(AUDIO_BOARD);
+  await verifyBundle(f.manifest, f.inputs);
+  expect(() => parseManifest(f.manifest, { ...f.pin, hardware: WAVESHARE })).toThrow();
+  const fields = ['1', 'v0.8.0', 'a'.repeat(40), 'supported', 'idle', 'confirmed', '', '', '0'];
+  expect(parseFirmware([...fields, AUDIO_BOARD]).hardware).toBe(AUDIO_BOARD);
+  expect(assetName(AUDIO_BOARD, 'upgrade.json')).toBe('waveshare-audio-board.upgrade.json');
+  expect(assetName(AUDIO_BOARD, 'athan-audio.bin')).toBe('athan-audio.bin');
+  f.factory[0x10003] = 0x30;
+  f.manifest.parts[0]!.sha256 = await sha256(f.factory);
+  await expect(verifyBundle(f.manifest, f.inputs)).rejects.toThrow('capacity');
+});
+it('selects all three same-source boards and detects AUDIO-Board asset changes', async () => {
+  const atom = await fixture();
+  const other = await Promise.all([waveshareFixture(), waveshareFixture(AUDIO_BOARD)]);
+  const release = {
+    draft: false,
+    prerelease: false,
+    tag_name: atom.pin.tag,
+    published_at: '2026-10-21T00:00:00Z',
+    assets: [
+      {
+        name: 'manifest.json',
+        size: atom.bytes.length,
+        browser_download_url: `https://github.com/OpenAthan-Project/openathan/releases/download/${atom.pin.tag}/manifest.json`,
+      },
+      ...other.map((f) => ({
+        name: assetName(f.pin.hardware, 'manifest.json'),
+        size: f.bytes.length,
+        browser_download_url: `https://github.com/OpenAthan-Project/openathan/releases/download/${atom.pin.tag}/${assetName(f.pin.hardware, 'manifest.json')}`,
+      })),
+    ],
+  };
+  const fetcher = vi.fn(async (url: string | URL | Request) => {
+    const selected = other.find((f) =>
+      String(url).endsWith(assetName(f.pin.hardware, 'manifest.json')),
+    );
+    return new Response(
+      selected
+        ? selected.bytes
+        : String(url).endsWith('/manifest.json')
+          ? atom.bytes
+          : JSON.stringify(release),
+    );
+  }) as unknown as typeof fetch;
+  const releases = await resolveHardwareReleases(
+    { automatic: true, pin: atom.pin },
+    atom.pin,
+    fetcher,
+  );
+  expect(Object.keys(releases)).toEqual([WAVESHARE, AUDIO_BOARD]);
+  expect(parseHardwareReleases(releases)[AUDIO_BOARD]?.hardware).toBe(AUDIO_BOARD);
+  const metadata = {
+    schema: 1 as const,
+    websiteCommit: 'b'.repeat(40),
+    release: atom.pin,
+    hardwareReleases: releases,
+  };
+  expect(() =>
+    needsDeployment(
+      {
+        ...metadata,
+        hardwareReleases: {
+          ...releases,
+          [AUDIO_BOARD]: { ...releases[AUDIO_BOARD]!, manifestSha256: 'c'.repeat(64) },
+        },
+      },
+      metadata,
+    ),
+  ).toThrow('manifest changed');
+  release.assets.pop();
+  expect(
+    Object.keys(
+      await resolveHardwareReleases({ automatic: true, pin: atom.pin }, atom.pin, fetcher),
+    ),
+  ).toEqual([WAVESHARE]);
 });

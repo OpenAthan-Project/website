@@ -1,4 +1,4 @@
-import { HARDWARE, WAVESHARE, type Hardware } from './release';
+import { HARDWARE, WAVESHARE, AUDIO_BOARD, type Hardware } from './release';
 /** Deliberately has no dependency on Web Serial, release files or the flasher. */
 import { decodeFields, encodeFrame, FrameDecoder, rpcPayload } from './protocol';
 import { ProvisioningSession, type ByteTransport } from './session';
@@ -8,6 +8,9 @@ export const scenarios = [
   'success',
   'new-device',
   'phone-new',
+  'audio-board',
+  'audio-board-new',
+  'phone-audio-board-new',
   'waveshare',
   'waveshare-new',
   'phone-waveshare-new',
@@ -93,7 +96,11 @@ export class SimulatedTransport implements ByteTransport {
         '',
         '',
         '0',
-        this.scenario === 'waveshare' ? WAVESHARE : HARDWARE,
+        this.scenario === 'audio-board'
+          ? AUDIO_BOARD
+          : this.scenario === 'waveshare'
+            ? WAVESHARE
+            : HARDWARE,
       ]);
       return;
     }
@@ -146,7 +153,7 @@ export class SimulatedTransport implements ByteTransport {
 }
 
 export class SimulatorService implements InstallerService {
-  readonly installHardware: Hardware[] = [HARDWARE, WAVESHARE];
+  readonly installHardware: Hardware[] = [HARDWARE, WAVESHARE, AUDIO_BOARD];
   private hardware: Hardware = HARDWARE;
   readonly simulated = true;
   readonly installAvailable = true;
@@ -167,6 +174,8 @@ export class SimulatorService implements InstallerService {
       [
         'new-device',
         'phone-new',
+        'audio-board-new',
+        'phone-audio-board-new',
         'waveshare-new',
         'phone-waveshare-new',
         'unknown',
@@ -184,7 +193,12 @@ export class SimulatorService implements InstallerService {
         'OpenAthan was recognized, but its status could not be read. Reconnect your speaker; do not reinstall.',
       );
     }
-    this.hardware = this.scenario === 'waveshare' ? WAVESHARE : HARDWARE;
+    this.hardware =
+      this.scenario === 'audio-board'
+        ? AUDIO_BOARD
+        : this.scenario === 'waveshare'
+          ? WAVESHARE
+          : HARDWARE;
     return { kind: 'existing', status: await session.status(), hardware: this.hardware };
   }
   async install(
@@ -207,7 +221,9 @@ export class SimulatorService implements InstallerService {
     const status = await this.open(false).status();
     return {
       status,
-      phoneSetup: ['phone-new', 'phone-waveshare-new'].includes(this.scenario),
+      phoneSetup: ['phone-new', 'phone-waveshare-new', 'phone-audio-board-new'].includes(
+        this.scenario,
+      ),
     };
   }
   async discardUpdate() {}
