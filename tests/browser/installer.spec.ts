@@ -651,7 +651,7 @@ test('AUDIO-Board requires explicit model confirmation and offers screenless pho
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   if (['chromium', 'mobile'].includes(testInfo.project.name))
     await page.screenshot({
-      path: `/private/tmp/openathan-audio-board-20261021/installer-${testInfo.project.name}.png`,
+      path: testInfo.outputPath('screenless-phone-setup.png'),
       fullPage: true,
     });
 });
