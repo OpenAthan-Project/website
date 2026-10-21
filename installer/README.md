@@ -1,5 +1,13 @@
 # OpenAthan browser installer
 
+The AUDIO-Board profile adds `waveshare-esp32-s3-audio-board` with
+`waveshare-audio-board.` artifact names and 16 MiB image headers. It remains
+unavailable publicly until a qualified stable release supplies its manifest.
+Older Atom-only and Atom/Box releases remain accepted. No firmware is compiled
+by this repository. The screenless phone handoff supplies setup-network/manual
+URL guidance and recommends bookmarking the returned address; USB status is the
+fallback for rediscovery.
+
 The `/install/` wizard has one **Connect speaker** entry with a **Choose USB device** action. Read-only discovery then opens existing-speaker controls or new-installation confirmation. Installation and credential recovery remain separate operations. Supported reference hardware is M5Stack AtomS3R C126 + Pyramid A167, with an unlocked ESP32-S3 and 8 MiB flash. USB setup targets desktop Chrome and Edge with Web Serial in a secure context. The documentation at `/docs/` remains available in other browsers.
 
 The website adopts the firmware repository’s latest approved stable release after verification and website tests. The committed pin is a local-preview default and a manual rollback option, not a version label that needs changing for every release. Credential recovery remains a command-only operation after discovery.

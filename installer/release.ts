@@ -1,13 +1,19 @@
 /** Versioned contract consumed from the firmware repository; no device access. */
 export const HARDWARE = 'atoms3r-c126-pyramid-a167';
 export const WAVESHARE = 'waveshare-esp32-s3-touch-lcd-1_85c-box-v2';
+export const AUDIO_BOARD = 'waveshare-esp32-s3-audio-board';
 export const HARDWARE_PROFILES = {
   [HARDWARE]: { label: 'AtomS3R C126 + Pyramid A167', flashBytes: 0x800000, prefix: '' },
   [WAVESHARE]: { label: 'Waveshare Box V2', flashBytes: 0x1000000, prefix: 'waveshare-box-v2.' },
+  [AUDIO_BOARD]: {
+    label: 'Waveshare AUDIO-Board (no screen)',
+    flashBytes: 0x1000000,
+    prefix: 'waveshare-audio-board.',
+  },
 } as const;
 export type Hardware = keyof typeof HARDWARE_PROFILES;
 export function isHardware(value: unknown): value is Hardware {
-  return value === HARDWARE || value === WAVESHARE;
+  return typeof value === 'string' && Object.hasOwn(HARDWARE_PROFILES, value);
 }
 export function assetName(hardware: Hardware, name: string): string {
   return name === 'athan-audio.bin' ? name : HARDWARE_PROFILES[hardware].prefix + name;
@@ -18,7 +24,8 @@ export function parseHardwareReleases(value: unknown): HardwareReleases {
   const releases = object(value),
     result: HardwareReleases = {};
   for (const [hardware, pin] of Object.entries(releases)) {
-    if (hardware !== WAVESHARE) throw new Error('Unsupported additional release hardware.');
+    if (!isHardware(hardware) || hardware === HARDWARE)
+      throw new Error('Unsupported additional release hardware.');
     const parsed = parsePin({ schema: 1, release: { ...object(pin), hardware } });
     if (!parsed) throw new Error('Invalid hardware release.');
     result[hardware] = parsed;
@@ -169,7 +176,10 @@ export function verifyFactory(bytes: Uint8Array, hardware: Hardware = HARDWARE):
   ];
   if (bytes.length < 0x10020 || bytes[0] !== 0xe9 || bytes[0x10000] !== 0xe9)
     throw new Error('Invalid factory image header.');
-  if (hardware === WAVESHARE && (bytes[3]! >> 4 !== 4 || bytes[0x10003]! >> 4 !== 4))
+  if (
+    HARDWARE_PROFILES[hardware].flashBytes === 0x1000000 &&
+    (bytes[3]! >> 4 !== 4 || bytes[0x10003]! >> 4 !== 4)
+  )
     throw new Error('Factory flash capacity differs from hardware.');
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (view.getUint16(12, true) !== 9 || view.getUint16(0x1000c, true) !== 9)
