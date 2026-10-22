@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import CableDiagram from '../../components/CableDiagram.astro';
+import HardwarePurchases from '../../components/HardwarePurchases.astro';
 import { siteSelection } from '../../release-selection';
 import { WAVESHARE, AUDIO_BOARD } from '../../../installer/release';
 const { release, hardwareReleases } = await siteSelection();
@@ -37,13 +38,14 @@ const audioBoardRelease = hardwareReleases?.[AUDIO_BOARD];
           Already have OpenAthan installed? Connect through USB setup to open its settings or recover
           Wi-Fi and password access while keeping your prayer settings and playback history.
         </p>
-      </aside><h2>What you’ll need</h2><p>
-        Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
-        and a <a href="https://docs.m5stack.com/en/atom/Voice_Pyramid">Voice Pyramid A167</a> speaker
-        base separately. A167 has also been called “Echo Pyramid”; check the SKU when buying. These instructions
-        describe this combination of parts. See the <a href="#waveshare-setup"
-          >Waveshare Box V2 instructions</a
-        > below for that model.
+      </aside><h2>What you’ll need</h2>
+      <HardwarePurchases />
+      <p>
+        The steps below describe AtomS3R C126 + Voice Pyramid A167. See the
+        <a href="#waveshare-setup">Waveshare Box V2 instructions</a> for that speaker. Technical references:
+        <a href="https://docs.m5stack.com/en/core/AtomS3R">AtomS3R documentation</a>
+        and <a href="https://docs.m5stack.com/en/atom/Voice_Pyramid">Voice Pyramid documentation</a
+        >.
       </p><p>
         You will need a computer with desktop Chrome or Edge, a USB-C <strong>data</strong> cable, and
         a 2.4 GHz WPA2/WPA3 personal Wi-Fi network. A charging-only cable will not work for USB setup.

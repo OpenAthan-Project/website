@@ -1,0 +1,36 @@
+---
+import { hardwarePurchases } from '../hardware-purchases';
+const hasAffiliateLinks = hardwarePurchases.some((option) =>
+  option.links.some((link) => link.affiliate),
+);
+---
+
+<div class="hardware-purchases">
+  {
+    hardwarePurchases.map((option) => (
+      <div>
+        <p>
+          <strong>{option.name}</strong>
+        </p>
+        <div class="inline-links">
+          {option.links.map((link) => (
+            <a href={link.href} rel={link.affiliate ? 'sponsored' : undefined}>
+              {link.label}
+              {link.affiliate && ' (affiliate)'}
+            </a>
+          ))}
+        </div>
+        <p>{option.warning}</p>
+      </div>
+    ))
+  }
+  {
+    hasAffiliateLinks && (
+      <p>
+        OpenAthan may earn a commission when you purchase through links marked “affiliate”. These
+        commissions support the project.
+      </p>
+    )
+  }
+  <p>You can also use a regional distributor. Prices, shipping and availability vary by seller.</p>
+</div>

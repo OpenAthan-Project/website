@@ -20,6 +20,20 @@ The installer uses the latest approved stable OpenAthan release. The website is 
 
 Prayer settings and activation happen on the device's own local page. The speaker operates independently of this website and Home Assistant. The optional [location helper](https://openathan.com/location/) uses browser location with a GeoJS IP-location fallback; users review the suggestion before saving it on the device.
 
+## Hardware purchase links
+
+The homepage and getting-started page share store URLs, model warnings and referral
+flags from `site/hardware-purchases.ts`, rendered by `HardwarePurchases.astro`.
+Only the two supported speaker builds are listed. Verify the exact SKU, revision
+and selectable product options with the manufacturer before changing a URL.
+
+Current links are ordinary official-store links. After affiliate approval, use
+the vendor-issued product URL and set that link's `affiliate` flag to `true`.
+The component then labels the link, adds `rel="sponsored"` and shows the adjacent
+project-support disclosure. Keep purchase links and disclosures in the firmware
+repository's README and hardware guides consistent when enabling referrals.
+Do not add affiliate scripts or publish account/payment details.
+
 ## Local preview
 
 The website uses Astro and TypeScript. Use Node **24.19.0** (pinned in `.nvmrc`) and npm:

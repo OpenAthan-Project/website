@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import HardwarePurchases from '../components/HardwarePurchases.astro';
 import { siteSelection } from '../release-selection';
 const { release } = await siteSelection();
 ---
@@ -61,7 +62,8 @@ const { release } = await siteSelection();
     <section class="home-hardware" aria-labelledby="supported-hardware">
       <h2 id="supported-hardware">What you’ll need</h2>
       <div>
-        <p>OpenAthan is software for a speaker you assemble from separately purchased parts.</p>
+        <p>Choose a supported speaker build. Buy the parts separately, then install OpenAthan.</p>
+        <HardwarePurchases />
         <a class="text-link" href="/docs/getting-started/">See the parts and setup instructions</a>
       </div>
     </section>
