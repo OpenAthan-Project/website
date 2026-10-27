@@ -619,7 +619,7 @@ export function mountInstaller(
         const selected = offered;
         render(
           'Updating firmware',
-          `<p>Keep ${hardware === WAVESHARE ? 'Waveshare USB' : 'Atom USB'} connected while the application is written and verified. You will switch to speaker power afterwards.</p><progress max="100" value="0" aria-label="Firmware update progress"></progress><p data-progress>Preparing signed update…</p>`,
+          `<p>${hardware === AUDIO_BOARD ? 'Keep the AUDIO-Board USB-C cable connected while the application is written and verified. After verification, press RESET to restart and complete startup checks.' : `Keep ${hardware === WAVESHARE ? 'Waveshare USB' : 'Atom USB'} connected while the application is written and verified. You will switch to speaker power afterwards.`}</p><progress max="100" value="0" aria-label="Firmware update progress"></progress><p data-progress>Preparing signed update…</p>`,
           1,
         );
         try {
