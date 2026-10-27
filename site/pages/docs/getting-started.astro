@@ -2,9 +2,10 @@
 import Layout from '../../layouts/Layout.astro';
 import CableDiagram from '../../components/CableDiagram.astro';
 import { siteSelection } from '../../release-selection';
-import { WAVESHARE } from '../../../installer/release';
+import { WAVESHARE, AUDIO_BOARD } from '../../../installer/release';
 const { release, hardwareReleases } = await siteSelection();
 const waveshareRelease = hardwareReleases?.[WAVESHARE];
+const audioBoardRelease = hardwareReleases?.[AUDIO_BOARD];
 ---
 
 <Layout
@@ -253,6 +254,44 @@ const waveshareRelease = hardwareReleases?.[WAVESHARE];
         The onboard RTC restores previously synchronized time across powered restarts. First use
         needs internet time. Retention after unplugging, battery behavior and clock drift remain
         unqualified.
+      </p>
+    </div>
+  </section>
+  <section class="docs wrap" aria-labelledby="audio-board-setup">
+    <div class="docs-body">
+      <h2 id="audio-board-setup">Waveshare AUDIO-Board (no screen)</h2>
+      <p>
+        {
+          audioBoardRelease
+            ? `OpenAthan ${audioBoardRelease.tag} is available for this model.`
+            : 'Public installation is not currently available for this model.'
+        }
+        Public installation requires hardware qualification and a compatible published release. The AUDIO-Board
+        is a different model from the Box V2; check the exact board and revision before installing.
+      </p>
+      <p>
+        This profile uses the speaker’s USB-C port for installation and normal power. It provides
+        prayer-status RGB lights. KEY1 lowers volume, KEY2 stops playback and KEY3 raises volume.
+        Microphones, external displays, SD storage and battery management are not supported.
+      </p>
+      <p>
+        With USB-C at the top, the buttons down the right edge are <strong
+          >RESET → BOOT → KEY3 → KEY2 → KEY1</strong
+        >. A short BOOT press also stops playback; hold it for 2–5 seconds to skip the next Athan,
+        or 6–10 seconds to cancel a skip. RESET restarts the speaker.
+      </p>
+      <p>
+        When phone setup is offered, join <strong>OpenAthan-Setup-</strong> Wi-Fi. Open <code
+          >http://192.168.4.1/setup/</code
+        > if the setup page does not appear. Copy the permanent address shown before connecting to home
+        Wi-Fi. Rejoin home Wi-Fi, open that address, review prayer settings and choose <strong
+          >Finish setup</strong
+        >.
+      </p>
+      <p>
+        Bookmark the speaker address. This model has no screen or QR code. Reconnect through USB
+        setup to read its hostname and current IP address again; credential recovery does not
+        require reinstalling.
       </p>
     </div>
   </section>

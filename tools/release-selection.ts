@@ -6,7 +6,8 @@ import {
   parsePin,
   parseHardwareReleases,
   HARDWARE,
-  WAVESHARE,
+  HARDWARE_PROFILES,
+  type Hardware,
   assetName,
   sha256,
   type HardwareReleases,
@@ -110,15 +111,17 @@ export function sameRelease(a: Metadata['release'], b: Metadata['release']): boo
   return a?.tag === b?.tag && a?.manifestSha256 === b?.manifestSha256;
 }
 export function needsDeployment(candidate: Metadata, deployed: Metadata | null): boolean {
-  const next = candidate.hardwareReleases?.[WAVESHARE],
-    previous = deployed?.hardwareReleases?.[WAVESHARE];
-  if (
-    next &&
-    previous &&
-    next.tag === previous.tag &&
-    next.manifestSha256 !== previous.manifestSha256
-  )
-    throw new Error('A served hardware manifest changed. Publish a new release tag.');
+  for (const hardware of Object.keys(HARDWARE_PROFILES) as Hardware[]) {
+    const next = candidate.hardwareReleases?.[hardware],
+      previous = deployed?.hardwareReleases?.[hardware];
+    if (
+      next &&
+      previous &&
+      next.tag === previous.tag &&
+      next.manifestSha256 !== previous.manifestSha256
+    )
+      throw new Error('A served hardware manifest changed. Publish a new release tag.');
+  }
   if (
     candidate.release &&
     deployed?.release &&
@@ -258,7 +261,7 @@ export async function resolveRelease(
     throw new Error('Release tag does not match its source commit.');
   return pin;
 }
-/** Legacy releases omit Waveshare assets. New stable releases include a matched pair of boards. */
+/** Older stable releases may omit any additional hardware profile. */
 export async function resolveHardwareReleases(
   policy: Policy,
   pin: ReleasePin | null,
@@ -267,21 +270,28 @@ export async function resolveHardwareReleases(
   if (!pin) return {};
   if (!policy.automatic) return policy.hardwareReleases ?? {};
   const release = await publishedRelease(pin.tag, fetcher);
-  const name = assetName(WAVESHARE, 'manifest.json');
-  const present = release.assets.some(
-    (asset) => !!asset && typeof asset === 'object' && (asset as { name?: string }).name === name,
-  );
-  if (!present) return {};
-  const bytes = await releaseAsset(release, name, 16384, fetcher);
-  const selected: ReleasePin = { ...pin, hardware: WAVESHARE, manifestSha256: await sha256(bytes) };
-  const manifest = await checkedManifest(bytes, selected);
-  const reference = await checkedManifest(
-    await releaseAsset(release, 'manifest.json', 16384, fetcher),
-    pin,
-  );
-  if (manifest.commit !== reference.commit)
-    throw new Error('Hardware bundles use different source commits.');
-  return { [WAVESHARE]: selected };
+  const result: HardwareReleases = {};
+  let referenceCommit: string | undefined;
+  for (const hardware of Object.keys(HARDWARE_PROFILES) as Hardware[]) {
+    if (hardware === HARDWARE) continue;
+    const name = assetName(hardware, 'manifest.json');
+    const present = release.assets.some(
+      (asset) => !!asset && typeof asset === 'object' && (asset as { name?: string }).name === name,
+    );
+    if (!present) continue;
+    const bytes = await releaseAsset(release, name, 16384, fetcher);
+    const selected: ReleasePin = { ...pin, hardware, manifestSha256: await sha256(bytes) };
+    const manifest = await checkedManifest(bytes, selected);
+    if (referenceCommit === undefined) {
+      referenceCommit = (
+        await checkedManifest(await releaseAsset(release, 'manifest.json', 16384, fetcher), pin)
+      ).commit;
+    }
+    if (manifest.commit !== referenceCommit)
+      throw new Error('Hardware bundles use different source commits.');
+    result[hardware] = selected;
+  }
+  return result;
 }
 export async function deployedMetadata(fetcher: typeof fetch = fetch): Promise<Metadata | null> {
   const bytes = await download(DEPLOYED_METADATA, 4096, fetcher, true);

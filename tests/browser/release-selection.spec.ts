@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { AUDIO_BOARD } from '../../installer/release';
 
 test('USB setup requires an explicit connection request', async ({ page }) => {
   let requests = 0;
@@ -46,6 +47,18 @@ test('served metadata, version labels, release links and installer use one selec
           `a[href="https://github.com/OpenAthan-Project/openathan/releases/tag/${served.release.tag}"]`,
         ),
       ).toBeVisible();
+    if (path === '/docs/getting-started/') {
+      const audioBoardRelease = served.hardwareReleases?.[AUDIO_BOARD];
+      const availability = page
+        .locator('section[aria-labelledby="audio-board-setup"]')
+        .locator('p')
+        .first();
+      await expect(availability).toContainText(
+        audioBoardRelease
+          ? `OpenAthan ${audioBoardRelease.tag} is available for this model.`
+          : 'Public installation is not currently available for this model.',
+      );
+    }
   }
   await page.goto('/install/');
   const selected = JSON.parse(

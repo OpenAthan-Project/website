@@ -198,6 +198,9 @@ test('unsupported browsers retain usable documentation and keyboard navigation',
   await page.goto('/install/');
   await expect(page.getByRole('heading', { name: 'Use a computer for USB setup' })).toBeVisible();
   await expect(page.getByText(/For USB setup, open this page on a computer/)).toBeVisible();
+  await expect(page.getByText(/Supported hardware:/)).toContainText(
+    'Waveshare AUDIO-Board (no screen)',
+  );
   await expect(page.getByRole('button', { name: /Choose USB device/ })).toHaveCount(0);
   await page.goto('/docs/getting-started/');
   await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible();
@@ -631,3 +634,92 @@ test('computer continuation keeps USB setup and removes phone deferral after Wi-
   await expect(page.getByText(/To find this page again/)).toBeVisible();
   expect(await page.evaluate(() => window.setupHandoffTest.writes)).toEqual(['wifi', 'password']);
 });
+
+test('AUDIO-Board requires explicit model confirmation and offers screenless phone setup', async ({
+  page,
+}, testInfo) => {
+  await demo(page, 'phone-audio-board-new');
+  await connect(page);
+  const install = page.getByRole('button', { name: 'Install OpenAthan', exact: true });
+  await expect(install).toBeDisabled();
+  await page.getByLabel('Speaker model').selectOption('waveshare-esp32-s3-audio-board');
+  await page.getByLabel(/I have a Waveshare AUDIO-Board/).check();
+  await install.click();
+  await page.getByRole('button', { name: 'Set up with your phone', exact: true }).click();
+  await expect(page.getByText('http://192.168.4.1/setup/', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Bookmark the speaker’s address/)).toBeVisible();
+  await expect(page.locator('[data-panel]')).not.toContainText(
+    /QR|bottom power|front button|rear USB/,
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  if (['chromium', 'mobile'].includes(testInfo.project.name))
+    await page.screenshot({
+      path: testInfo.outputPath('screenless-phone-setup.png'),
+      fullPage: true,
+    });
+  const help = page.getByRole('link', { name: 'Phone setup instructions', exact: true });
+  await help.focus();
+  await help.press('Enter');
+  await expect(page).toHaveURL(/\/docs\/getting-started\/#audio-board-setup$/);
+  await expect(page.locator('#audio-board-setup')).toBeInViewport();
+  const guidance = page.locator('section[aria-labelledby="audio-board-setup"]');
+  await expect(guidance.getByText('http://192.168.4.1/setup/', { exact: true })).toBeVisible();
+  await expect(guidance).toContainText('Copy the permanent address shown before connecting');
+  await expect(guidance).toContainText('Bookmark the speaker address.');
+  await expect(guidance).toContainText('read its hostname and current IP address again');
+});
+test('recognized AUDIO-Board preserves the existing-device path', async ({ page }) => {
+  await demo(page, 'audio-board');
+  await connect(page);
+  await expect(
+    page.locator('[data-panel]').getByText('Waveshare AUDIO-Board (no screen)', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel('Speaker model')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
+});
+
+for (const [hardware, label] of [
+  ['atoms3r-c126-pyramid-a167', 'AtomS3R C126 + Pyramid A167'],
+  ['waveshare-esp32-s3-touch-lcd-1_85c-box-v2', 'Waveshare Box V2'],
+  ['waveshare-esp32-s3-audio-board', 'Waveshare AUDIO-Board (no screen)'],
+] as const) {
+  test(`single-board release requires confirmation of ${label}`, async ({ page }, testInfo) => {
+    await demo(page);
+    await page.evaluate(async (hardware) => {
+      const uiPath = '/installer/ui.ts';
+      const simulatorPath = '/installer/simulator.ts';
+      const { mountInstaller } = await import(/* @vite-ignore */ uiPath);
+      const { SimulatorService } = await import(/* @vite-ignore */ simulatorPath);
+      const service = new SimulatorService('unknown');
+      Object.defineProperty(service, 'installHardware', { value: [hardware] });
+      const root = document.querySelector<HTMLElement>('[data-demo-installer]')!;
+      const next = root.cloneNode(true) as HTMLElement;
+      root.replaceWith(next);
+      mountInstaller(next, service);
+    }, hardware);
+    await expect(
+      page.getByText(/For Waveshare AUDIO-Board, use the board’s USB-C port/),
+    ).toBeVisible();
+    await connect(page);
+    await expect(page.getByLabel('Speaker model')).toHaveCount(0);
+    const confirmation = page.getByRole('checkbox');
+    await expect(confirmation).toHaveAccessibleName(new RegExp(label.replace(/[+()]/g, '\\$&')));
+    await expect(confirmation).not.toBeChecked();
+    const install = page.getByRole('button', { name: 'Install OpenAthan', exact: true });
+    await expect(install).toBeDisabled();
+    await confirmation.focus();
+    await page.keyboard.press('Space');
+    await expect(install).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    if (
+      hardware === 'waveshare-esp32-s3-audio-board' &&
+      ['chromium', 'mobile'].includes(testInfo.project.name)
+    )
+      await page.screenshot({
+        path: testInfo.outputPath('single-audio-board-confirmation.png'),
+        fullPage: true,
+      });
+  });
+}
