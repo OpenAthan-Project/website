@@ -657,6 +657,16 @@ test('AUDIO-Board requires explicit model confirmation and offers screenless pho
       path: testInfo.outputPath('screenless-phone-setup.png'),
       fullPage: true,
     });
+  const help = page.getByRole('link', { name: 'Phone setup instructions', exact: true });
+  await help.focus();
+  await help.press('Enter');
+  await expect(page).toHaveURL(/\/docs\/getting-started\/#audio-board-setup$/);
+  await expect(page.locator('#audio-board-setup')).toBeInViewport();
+  const guidance = page.locator('section[aria-labelledby="audio-board-setup"]');
+  await expect(guidance.getByText('http://192.168.4.1/setup/', { exact: true })).toBeVisible();
+  await expect(guidance).toContainText('Copy the permanent address shown before connecting');
+  await expect(guidance).toContainText('Bookmark the speaker address.');
+  await expect(guidance).toContainText('read its hostname and current IP address again');
 });
 test('recognized AUDIO-Board preserves the existing-device path', async ({ page }) => {
   await demo(page, 'audio-board');

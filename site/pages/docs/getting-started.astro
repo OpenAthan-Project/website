@@ -2,9 +2,10 @@
 import Layout from '../../layouts/Layout.astro';
 import CableDiagram from '../../components/CableDiagram.astro';
 import { siteSelection } from '../../release-selection';
-import { WAVESHARE } from '../../../installer/release';
+import { WAVESHARE, AUDIO_BOARD } from '../../../installer/release';
 const { release, hardwareReleases } = await siteSelection();
 const waveshareRelease = hardwareReleases?.[WAVESHARE];
+const audioBoardRelease = hardwareReleases?.[AUDIO_BOARD];
 ---
 
 <Layout
@@ -260,9 +261,13 @@ const waveshareRelease = hardwareReleases?.[WAVESHARE];
     <div class="docs-body">
       <h2 id="audio-board-setup">Waveshare AUDIO-Board (no screen)</h2>
       <p>
-        Support is in development. Public installation becomes available after hardware
-        qualification and publication of a compatible release. The AUDIO-Board is a different model
-        from the Box V2; check the exact board and revision before installing.
+        {
+          audioBoardRelease
+            ? `OpenAthan ${audioBoardRelease.tag} is available for this model.`
+            : 'Public installation is not currently available for this model.'
+        }
+        Public installation requires hardware qualification and a compatible published release. The AUDIO-Board
+        is a different model from the Box V2; check the exact board and revision before installing.
       </p>
       <p>
         This profile uses the speaker’s USB-C port for installation and normal power. It provides
