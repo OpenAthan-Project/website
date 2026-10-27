@@ -198,6 +198,9 @@ test('unsupported browsers retain usable documentation and keyboard navigation',
   await page.goto('/install/');
   await expect(page.getByRole('heading', { name: 'Use a computer for USB setup' })).toBeVisible();
   await expect(page.getByText(/For USB setup, open this page on a computer/)).toBeVisible();
+  await expect(page.getByText(/Supported hardware:/)).toContainText(
+    'Waveshare AUDIO-Board (no screen)',
+  );
   await expect(page.getByRole('button', { name: /Choose USB device/ })).toHaveCount(0);
   await page.goto('/docs/getting-started/');
   await expect(page.getByRole('heading', { name: 'Getting started' })).toBeVisible();
@@ -664,3 +667,49 @@ test('recognized AUDIO-Board preserves the existing-device path', async ({ page 
   await expect(page.getByLabel('Speaker model')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Install OpenAthan', exact: true })).toHaveCount(0);
 });
+
+for (const [hardware, label] of [
+  ['atoms3r-c126-pyramid-a167', 'AtomS3R C126 + Pyramid A167'],
+  ['waveshare-esp32-s3-touch-lcd-1_85c-box-v2', 'Waveshare Box V2'],
+  ['waveshare-esp32-s3-audio-board', 'Waveshare AUDIO-Board (no screen)'],
+] as const) {
+  test(`single-board release requires confirmation of ${label}`, async ({ page }, testInfo) => {
+    await demo(page);
+    await page.evaluate(async (hardware) => {
+      const uiPath = '/installer/ui.ts';
+      const simulatorPath = '/installer/simulator.ts';
+      const { mountInstaller } = await import(/* @vite-ignore */ uiPath);
+      const { SimulatorService } = await import(/* @vite-ignore */ simulatorPath);
+      const service = new SimulatorService('unknown');
+      Object.defineProperty(service, 'installHardware', { value: [hardware] });
+      const root = document.querySelector<HTMLElement>('[data-demo-installer]')!;
+      const next = root.cloneNode(true) as HTMLElement;
+      root.replaceWith(next);
+      mountInstaller(next, service);
+    }, hardware);
+    await expect(
+      page.getByText(/For Waveshare AUDIO-Board, use the board’s USB-C port/),
+    ).toBeVisible();
+    await connect(page);
+    await expect(page.getByLabel('Speaker model')).toHaveCount(0);
+    const confirmation = page.getByRole('checkbox');
+    await expect(confirmation).toHaveAccessibleName(new RegExp(label.replace(/[+()]/g, '\\$&')));
+    await expect(confirmation).not.toBeChecked();
+    const install = page.getByRole('button', { name: 'Install OpenAthan', exact: true });
+    await expect(install).toBeDisabled();
+    await confirmation.focus();
+    await page.keyboard.press('Space');
+    await expect(install).toBeEnabled();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+      true,
+    );
+    if (
+      hardware === 'waveshare-esp32-s3-audio-board' &&
+      ['chromium', 'mobile'].includes(testInfo.project.name)
+    )
+      await page.screenshot({
+        path: testInfo.outputPath('single-audio-board-confirmation.png'),
+        fullPage: true,
+      });
+  });
+}

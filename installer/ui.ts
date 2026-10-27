@@ -83,14 +83,18 @@ export function mountInstaller(
     if (unsupported) {
       render(
         'Use a computer for USB setup',
-        `<p>${escape(unsupported)}</p><p><a href="/docs/getting-started/">Setup instructions</a> · <a href="/docs/troubleshooting/">Troubleshooting</a></p><p>USB recovery can fix Wi-Fi or your device password without resetting prayer settings or history.</p>${!service.installAvailable ? unavailable : ''}<p class="small">Supported hardware: AtomS3R C126 + Pyramid A167 and Waveshare Box V2. Use a USB data cable.</p>`,
+        `<p>${escape(unsupported)}</p><p><a href="/docs/getting-started/">Setup instructions</a> · <a href="/docs/troubleshooting/">Troubleshooting</a></p><p>USB recovery can fix Wi-Fi or your device password without resetting prayer settings or history.</p>${!service.installAvailable ? unavailable : ''}<p class="small">Supported hardware: ${Object.values(
+          HARDWARE_PROFILES,
+        )
+          .map((profile) => escape(profile.label))
+          .join('; ')}. Use a USB data cable.</p>`,
         0,
         true,
       );
     } else {
       render(
         'Connect speaker',
-        `<p>Use a <strong>USB data cable</strong> to connect your computer to the <strong>speaker’s USB-C port</strong>. For Atom, use its USB-C port and leave the Pyramid’s bottom power cable unplugged. For Waveshare Box V2, use the rear USB-C port.</p><div class="connection-diagram" aria-label="Computer connects to the speaker USB-C port."><span>Computer</span><span class="cable" aria-hidden="true"></span><span>Speaker USB-C</span></div><p class="small muted">Use desktop Chrome or Edge. Close other serial tools first. Choose the USB JTAG/serial device in your browser’s connection window.</p><p>We’ll check for OpenAthan, then show settings and recovery options or ask you to confirm a new installation. Connecting does not install or erase firmware.</p>${!service.installAvailable ? unavailable : ''}<div class="actions">${button(service.simulated ? 'Connect simulated device' : 'Choose USB device', 'connect')}<a href="/docs/getting-started/">Setup instructions</a><a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
+        `<p>Use a <strong>USB data cable</strong> to connect your computer to the <strong>speaker’s USB-C port</strong>. For Atom, use its USB-C port and leave the Pyramid’s bottom power cable unplugged. For Waveshare Box V2, use the rear USB-C port. For Waveshare AUDIO-Board, use the board’s USB-C port.</p><div class="connection-diagram" aria-label="Computer connects to the speaker USB-C port."><span>Computer</span><span class="cable" aria-hidden="true"></span><span>Speaker USB-C</span></div><p class="small muted">Use desktop Chrome or Edge. Close other serial tools first. Choose the USB JTAG/serial device in your browser’s connection window.</p><p>We’ll check for OpenAthan, then show settings and recovery options or ask you to confirm a new installation. Connecting does not install or erase firmware.</p>${!service.installAvailable ? unavailable : ''}<div class="actions">${button(service.simulated ? 'Connect simulated device' : 'Choose USB device', 'connect')}<a href="/docs/getting-started/">Setup instructions</a><a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
         0,
         true,
       );
@@ -102,13 +106,14 @@ export function mountInstaller(
     const available = service.installAvailable;
     const choices = service.installHardware ?? [HARDWARE];
     hardware = choices[0] ?? HARDWARE;
+    const confirmationLabel = `I have ${hardware === HARDWARE ? 'an' : 'a'} ${HARDWARE_PROFILES[hardware].label} and want to erase it for a new installation.`;
     const modelChoice =
       choices.length > 1
         ? `<label for="hardware-choice">Speaker model</label><select id="hardware-choice"><option value="">Choose your model</option>${choices.map((board) => `<option value="${board}">${HARDWARE_PROFILES[board].label}</option>`).join('')}</select><p class="small muted">Check the model printed on your device. Box V1 and other Waveshare models are not supported.</p>`
         : '';
     render(
       available ? 'Confirm a new installation' : 'New installation is unavailable',
-      `<p>OpenAthan was not recognized. This does not prove the device is new or empty. If you expected an existing OpenAthan, check the cable and retry before considering installation.</p>${available ? `${modelChoice}<div class="notice warning"><strong>This erases the device.</strong><p>Existing firmware, saved Wi-Fi, prayer settings and prayer history will be replaced. This is not an update or a password recovery.</p></div><label class="check-line"><input type="checkbox" id="confirm-install" ${choices.length > 1 ? 'disabled' : ''} /> <span id="model-confirmation">${choices.length > 1 ? 'Choose a model, then confirm that you want to erase it for a new installation.' : 'I have an AtomS3R C126 with Pyramid A167 and want to erase it for a new installation.'}</span></label>` : '<p>No installation release is available. Check the connection or follow the troubleshooting instructions.</p>'}<div class="actions">${available ? '<button class="button" type="button" data-action="install" disabled>Install OpenAthan</button>' : ''}${button('Back to connection', 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
+      `<p>OpenAthan was not recognized. This does not prove the device is new or empty. If you expected an existing OpenAthan, check the cable and retry before considering installation.</p>${available ? `${modelChoice}<div class="notice warning"><strong>This erases the device.</strong><p>Existing firmware, saved Wi-Fi, prayer settings and prayer history will be replaced. This is not an update or a password recovery.</p></div><label class="check-line"><input type="checkbox" id="confirm-install" ${choices.length > 1 ? 'disabled' : ''} /> <span id="model-confirmation">${choices.length > 1 ? 'Choose a model, then confirm that you want to erase it for a new installation.' : escape(confirmationLabel)}</span></label>` : '<p>No installation release is available. Check the connection or follow the troubleshooting instructions.</p>'}<div class="actions">${available ? '<button class="button" type="button" data-action="install" disabled>Install OpenAthan</button>' : ''}${button('Back to connection', 'start', true)}<a href="/docs/troubleshooting/">Troubleshooting</a></div>`,
       0,
     );
   }
