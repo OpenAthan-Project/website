@@ -1,0 +1,107 @@
+---
+import { hardwarePurchases, audioBoardPurchase } from '../hardware-purchases';
+interface Props {
+  includeAudioBoard: boolean;
+}
+const purchases = Astro.props.includeAudioBoard
+  ? [...hardwarePurchases, audioBoardPurchase]
+  : hardwarePurchases;
+const affiliateLinks = purchases
+  .flatMap((option) => [...option.links, ...option.retailers.flatMap((retailer) => retailer.links)])
+  .filter((link) => link.affiliate);
+const hasAffiliateLinks = affiliateLinks.length > 0;
+const hasOtherAffiliateLinks = affiliateLinks.some(
+  (link) => new URL(link.href).hostname !== 'shop.m5stack.com',
+);
+---
+
+<div class="hardware-purchases">
+  {
+    purchases.map((option) => (
+      <div>
+        <p>
+          <strong>{option.name}</strong>
+        </p>
+        <div class="inline-links">
+          {option.links.map((link) => (
+            <a href={link.href} rel={link.affiliate ? 'sponsored' : undefined}>
+              {link.label}
+              {link.affiliate && ' (affiliate)'}
+            </a>
+          ))}
+        </div>
+        <p>{option.warning}</p>
+        {option.links.some(
+          (link) => link.affiliate && new URL(link.href).hostname === 'shop.m5stack.com',
+        ) && (
+          <p>
+            OpenAthan is a participant in the GoAffPro Affiliate Program for M5Stack. We may earn
+            advertising fees from qualifying purchases through these affiliate links. These
+            commissions support the project.
+          </p>
+        )}
+      </div>
+    ))
+  }
+  <details class="hardware-retailers">
+    <summary>Other stores and regional distributors</summary>
+    <p>
+      Confirm the exact model, revision and included parts with any seller. A product listing does
+      not guarantee the revision or current stock.
+    </p>
+    {
+      purchases.map((option) => (
+        <div>
+          <p>
+            <strong>{option.name}</strong>
+          </p>
+          <ul>
+            {option.retailers.map((retailer) => (
+              <li>
+                <p>
+                  {retailer.name}: {retailer.region}
+                </p>
+                <div class="inline-links">
+                  {retailer.links.map((link) => (
+                    <a href={link.href} rel={link.affiliate ? 'sponsored' : undefined}>
+                      {link.label}
+                      {link.affiliate && ' (affiliate)'}
+                    </a>
+                  ))}
+                </div>
+              </li>
+            ))}
+            <li>
+              <a href={option.distributorsUrl}>Manufacturer's regional distributor directory</a>
+            </li>
+          </ul>
+        </div>
+      ))
+    }
+  </details>
+  {
+    hasOtherAffiliateLinks && (
+      <p>
+        OpenAthan may earn a commission when you purchase through links marked “affiliate”. These
+        commissions support the project.
+      </p>
+    )
+  }
+  {
+    !hasAffiliateLinks && (
+      <p>
+        These are ordinary purchase links. OpenAthan does not currently earn commissions through
+        them.
+      </p>
+    )
+  }
+  <p>Prices, shipping and availability vary by seller.</p>
+</div>
+
+<style>
+  .hardware-retailers > summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 700;
+  }
+</style>

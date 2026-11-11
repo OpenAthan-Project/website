@@ -20,6 +20,36 @@ The installer uses the latest approved stable OpenAthan release. The website is 
 
 Prayer settings and activation happen on the device's own local page. The speaker operates independently of this website and Home Assistant. The optional [location helper](https://openathan.com/location/) uses browser location with a GeoJS IP-location fallback; users review the suggestion before saving it on the device.
 
+## Hardware purchase links
+
+The homepage and getting-started page share store URLs, model warnings and referral
+flags from `site/hardware-purchases.ts`, rendered by `HardwarePurchases.astro`.
+The AUDIO-Board purchase option appears only when the approved release selection
+includes that model. Verify the exact SKU, revision
+and selectable product options with the manufacturer before changing a URL.
+
+Manufacturer links stay visible, with additional retailer links and the full
+manufacturer distributor directories under **Other stores and regional distributors**.
+Keep the displayed regional examples consistent with the firmware repository's
+[M5Stack BOM](https://github.com/OpenAthan-Project/openathan/blob/main/hardware/reference-builds/voice-pyramid/bom.md#procurement-notes).
+Its dated [vendor and referral-program review](https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/hardware-vendors.md)
+records confirmed programs, candidate sellers and enrollment requirements.
+
+The two direct M5Stack links use the project referral code `dagcclbm` and have
+`affiliate: true`. Waveshare and regional retailer links remain ordinary URLs.
+The component includes the M5Stack GoAffPro participant statement when those
+affiliate links are present. Account acceptance, approved promotion channels and
+attribution still need verification before publication.
+
+For additional referrals, use the approved vendor-issued product URL and set
+that link's `affiliate` flag to `true`.
+The component then labels the link, adds `rel="sponsored"` and shows the adjacent
+project-support disclosure. Keep purchase links and disclosures in the firmware
+repository's README and hardware guides consistent when enabling referrals.
+Do not add affiliate scripts or publish account/payment details.
+The generic component disclosure does not replace any program-specific participant
+statement required by the vendor. Confirm those requirements before activation.
+
 ## Local preview
 
 The website uses Astro and TypeScript. Use Node **24.19.0** (pinned in `.nvmrc`) and npm:
