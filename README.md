@@ -35,8 +35,14 @@ Keep the displayed regional examples consistent with the firmware repository's
 Its dated [vendor and referral-program review](https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/hardware-vendors.md)
 records confirmed programs, candidate sellers and enrollment requirements.
 
-Current links are ordinary purchase links. After affiliate approval, use
-the vendor-issued product URL and set that link's `affiliate` flag to `true`.
+The two direct M5Stack links use the project referral code `dagcclbm` and have
+`affiliate: true`. Waveshare and regional retailer links remain ordinary URLs.
+The component includes the M5Stack GoAffPro participant statement when those
+affiliate links are present. Account acceptance, approved promotion channels and
+attribution still need verification before publication.
+
+For additional referrals, use the approved vendor-issued product URL and set
+that link's `affiliate` flag to `true`.
 The component then labels the link, adds `rel="sponsored"` and shows the adjacent
 project-support disclosure. Keep purchase links and disclosures in the firmware
 repository's README and hardware guides consistent when enabling referrals.

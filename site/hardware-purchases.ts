@@ -26,13 +26,13 @@ export const hardwarePurchases: HardwarePurchaseOption[] = [
     links: [
       {
         label: 'Buy AtomS3R C126',
-        href: 'https://shop.m5stack.com/products/atoms3r-dev-kit',
-        affiliate: false,
+        href: 'https://shop.m5stack.com/products/atoms3r-dev-kit?ref=dagcclbm',
+        affiliate: true,
       },
       {
         label: 'Buy Voice Pyramid A167',
-        href: 'https://shop.m5stack.com/products/echo-pyramid-smart-speaker-base-without-m5atom',
-        affiliate: false,
+        href: 'https://shop.m5stack.com/products/echo-pyramid-smart-speaker-base-without-m5atom?ref=dagcclbm',
+        affiliate: true,
       },
     ],
     warning:
