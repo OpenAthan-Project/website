@@ -39,10 +39,11 @@ const audioBoardRelease = hardwareReleases?.[AUDIO_BOARD];
           Wi-Fi and password access while keeping your prayer settings and playback history.
         </p>
       </aside><h2>What you’ll need</h2>
-      <HardwarePurchases />
+      <HardwarePurchases includeAudioBoard={Boolean(audioBoardRelease)} />
       <p>
         The steps below describe AtomS3R C126 + Voice Pyramid A167. See the
-        <a href="#waveshare-setup">Waveshare Box V2 instructions</a> for that speaker. Technical references:
+        <a href="#waveshare-setup">Waveshare Box V2 instructions</a> or
+        <a href="#audio-board-setup">AUDIO-Board instructions</a> for those speakers. Technical references:
         <a href="https://docs.m5stack.com/en/core/AtomS3R">AtomS3R documentation</a>
         and <a href="https://docs.m5stack.com/en/atom/Voice_Pyramid">Voice Pyramid documentation</a
         >.

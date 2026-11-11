@@ -24,15 +24,25 @@ Prayer settings and activation happen on the device's own local page. The speake
 
 The homepage and getting-started page share store URLs, model warnings and referral
 flags from `site/hardware-purchases.ts`, rendered by `HardwarePurchases.astro`.
-Only the two supported speaker builds are listed. Verify the exact SKU, revision
+The AUDIO-Board purchase option appears only when the approved release selection
+includes that model. Verify the exact SKU, revision
 and selectable product options with the manufacturer before changing a URL.
 
-Current links are ordinary official-store links. After affiliate approval, use
+Manufacturer links stay visible, with additional retailer links and the full
+manufacturer distributor directories under **Other stores and regional distributors**.
+Keep the displayed regional examples consistent with the firmware repository's
+[M5Stack BOM](https://github.com/OpenAthan-Project/openathan/blob/main/hardware/reference-builds/voice-pyramid/bom.md#procurement-notes).
+Its dated [vendor and referral-program review](https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/hardware-vendors.md)
+records confirmed programs, candidate sellers and enrollment requirements.
+
+Current links are ordinary purchase links. After affiliate approval, use
 the vendor-issued product URL and set that link's `affiliate` flag to `true`.
 The component then labels the link, adds `rel="sponsored"` and shows the adjacent
 project-support disclosure. Keep purchase links and disclosures in the firmware
 repository's README and hardware guides consistent when enabling referrals.
 Do not add affiliate scripts or publish account/payment details.
+The generic component disclosure does not replace any program-specific participant
+statement required by the vendor. Confirm those requirements before activation.
 
 ## Local preview
 

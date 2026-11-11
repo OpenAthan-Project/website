@@ -1,13 +1,21 @@
 ---
-import { hardwarePurchases } from '../hardware-purchases';
-const hasAffiliateLinks = hardwarePurchases.some((option) =>
-  option.links.some((link) => link.affiliate),
+import { hardwarePurchases, audioBoardPurchase } from '../hardware-purchases';
+interface Props {
+  includeAudioBoard: boolean;
+}
+const purchases = Astro.props.includeAudioBoard
+  ? [...hardwarePurchases, audioBoardPurchase]
+  : hardwarePurchases;
+const hasAffiliateLinks = purchases.some((option) =>
+  [...option.links, ...option.retailers.flatMap((retailer) => retailer.links)].some(
+    (link) => link.affiliate,
+  ),
 );
 ---
 
 <div class="hardware-purchases">
   {
-    hardwarePurchases.map((option) => (
+    purchases.map((option) => (
       <div>
         <p>
           <strong>{option.name}</strong>
@@ -24,6 +32,42 @@ const hasAffiliateLinks = hardwarePurchases.some((option) =>
       </div>
     ))
   }
+  <details class="hardware-retailers">
+    <summary>Other stores and regional distributors</summary>
+    <p>
+      Confirm the exact model, revision and included parts with any seller. A product listing does
+      not guarantee the revision or current stock.
+    </p>
+    {
+      purchases.map((option) => (
+        <div>
+          <p>
+            <strong>{option.name}</strong>
+          </p>
+          <ul>
+            {option.retailers.map((retailer) => (
+              <li>
+                <p>
+                  {retailer.name}: {retailer.region}
+                </p>
+                <div class="inline-links">
+                  {retailer.links.map((link) => (
+                    <a href={link.href} rel={link.affiliate ? 'sponsored' : undefined}>
+                      {link.label}
+                      {link.affiliate && ' (affiliate)'}
+                    </a>
+                  ))}
+                </div>
+              </li>
+            ))}
+            <li>
+              <a href={option.distributorsUrl}>Manufacturer's regional distributor directory</a>
+            </li>
+          </ul>
+        </div>
+      ))
+    }
+  </details>
   {
     hasAffiliateLinks && (
       <p>
@@ -32,5 +76,21 @@ const hasAffiliateLinks = hardwarePurchases.some((option) =>
       </p>
     )
   }
-  <p>You can also use a regional distributor. Prices, shipping and availability vary by seller.</p>
+  {
+    !hasAffiliateLinks && (
+      <p>
+        These are ordinary purchase links. OpenAthan does not currently earn commissions through
+        them.
+      </p>
+    )
+  }
+  <p>Prices, shipping and availability vary by seller.</p>
 </div>
+
+<style>
+  .hardware-retailers > summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-weight: 700;
+  }
+</style>
