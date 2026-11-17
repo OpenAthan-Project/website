@@ -1,304 +1,671 @@
 ---
-import Layout from '../../layouts/Layout.astro';
 import CableDiagram from '../../components/CableDiagram.astro';
+import SpeakerComparison from '../../components/SpeakerComparison.astro';
+import { guideSpeakers } from '../../getting-started';
+import Layout from '../../layouts/Layout.astro';
 import { siteSelection } from '../../release-selection';
-import { WAVESHARE, AUDIO_BOARD } from '../../../installer/release';
-const { release, hardwareReleases } = await siteSelection();
-const waveshareRelease = hardwareReleases?.[WAVESHARE];
-const audioBoardRelease = hardwareReleases?.[AUDIO_BOARD];
+import { AUDIO_BOARD, HARDWARE } from '../../../installer/release';
+
+const selection = await siteSelection();
+const { release } = selection;
+const speakers = guideSpeakers(selection);
+const firmware = 'https://github.com/OpenAthan-Project/openathan';
 ---
 
 <Layout
   title="Getting started"
-  description="Find the parts you need, connect your speaker, and set up OpenAthan’s prayer times and volume."
+  description="Compare supported speakers, install OpenAthan, and set up your prayer times and volume."
 >
-  <article class="docs wrap">
-    <div class="docs-heading">
-      <h1>Getting started</h1><p class="lede">
-        The parts you’ll need and the steps to set up your Athan speaker.
+  <article class="docs wrap guide" id="getting-started-guide">
+    <header class="docs-heading">
+      <h1>Getting started</h1>
+      <p class="lede">
+        Choose a speaker, install OpenAthan, then finish setup on your phone or computer.
       </p>
-    </div><div class="docs-body">
-      <aside class="notice">
-        <strong
-          >{
+      <a class="guide-link" href="#existing-speaker"
+        >Already installed? Open settings, update, or recover access</a
+      >
+    </header>
+
+    <section class="guide-section" id="choose-speaker" aria-labelledby="choose-speaker-title">
+      <h2 id="choose-speaker-title">1. Choose your speaker</h2>
+      <p>We recommend Waveshare for value. Choose whether you want a screen.</p>
+      <SpeakerComparison {speakers} />
+      <p>
+        All three open their settings in a browser on your phone or computer. No app is required.
+      </p>
+      <details>
+        <summary>Model details and controls</summary>
+        <div class="guide-copy">
+          <h3>Waveshare AUDIO-Board</h3>
+          <p>
+            With USB-C at the top, the buttons down the right edge are RESET, BOOT, KEY3, KEY2, and
+            KEY1. KEY1 lowers volume, KEY2 stops playback, and KEY3 raises volume. RESET restarts
+            the speaker. The <a href="https://makerworld.com/models/3509161"
+              >3D-printable lid on MakerWorld</a
+            > makes the three KEY buttons easier to press.
+          </p>
+          <p>
+            OpenAthan uses the board’s lights and speaker. Microphones, external displays, SD
+            storage, and battery management are unsupported.
+          </p>
+          <h3>Waveshare Box V2</h3>
+          <p>
+            Look for ESP32-S3-Touch-LCD-1.85C-BOX V2. RESET restarts the speaker. OpenAthan uses the
+            display, and touch and microphones are unsupported. The onboard clock can retain
+            synchronized time across powered restarts. First use still needs internet time.
+          </p>
+          <h3>M5Stack AtomS3R + Voice Pyramid</h3>
+          <p>
+            Buy the <a href="https://docs.m5stack.com/en/core/AtomS3R">AtomS3R C126</a> and{' '}
+            <a href="https://docs.m5stack.com/en/atom/Voice_Pyramid">Voice Pyramid A167</a> separately.
+            The A167 speaker base is also sold as Echo Pyramid. Check the part number.
+          </p>
+        </div>
+      </details>
+    </section>
+
+    <section class="guide-section guide-copy" aria-labelledby="install-speaker-title">
+      <h2 id="install-speaker-title">2. Install OpenAthan by USB</h2>
+      <aside class="notice release-summary">
+        <strong>
+          {
             release
               ? `OpenAthan ${release.tag} is available.`
               : 'New installation is temporarily unavailable.'
-          }</strong
-        ><p>
-          {
-            release && (
-              <>
-                Use <a href="/install/">USB setup</a> to install OpenAthan on the supported
-                hardware.{' '}
-              </>
-            )
           }
-          Already have OpenAthan installed? Connect through USB setup to open its settings or recover
-          Wi-Fi and password access while keeping your prayer settings and playback history.
-        </p>
-      </aside><h2>What you’ll need</h2><p>
-        Purchase an <a href="https://docs.m5stack.com/en/core/AtomS3R">M5Stack AtomS3R C126</a>{' '}
-        and a <a href="https://docs.m5stack.com/en/atom/Voice_Pyramid">Voice Pyramid A167</a> speaker
-        base separately. A167 has also been called “Echo Pyramid”; check the SKU when buying. These instructions
-        describe this combination of parts. See the <a href="#waveshare-setup"
-          >Waveshare Box V2 instructions</a
-        > below for that model.
-      </p><p>
-        You will need a computer with desktop Chrome or Edge, a USB-C <strong>data</strong> cable, and
-        a 2.4 GHz WPA2/WPA3 personal Wi-Fi network. A charging-only cable will not work for USB setup.
-        Enterprise networks and networks with a sign-in page are not supported.
-      </p><CableDiagram /><h2>1. Connect through the Atom</h2><p>
-        Attach the modules using their intended connector. Disconnect bottom power, then connect the
-        computer to the <strong>Atom’s USB-C port</strong>. Use only this one cable during USB
-        setup.
-      </p><p>
-        Close other serial tools and browser tabs using the device. On <a href="/install/"
-          >the installer page</a
-        >, select <strong>Choose USB device</strong>, then select the USB JTAG/serial device when
-        prompted.
-      </p><h2>2. Check the connected speaker</h2><p>
-        The website checks for OpenAthan before showing your next steps. An existing OpenAthan opens
-        its settings and recovery options. Choose <strong>Open device settings</strong>,
-        <strong>Change Wi-Fi</strong>, or create/reset its device password as needed. Recovery
-        preserves your prayer settings and playback history.
-      </p><p>
-        If OpenAthan is not recognized and a release is available, the website shows installation
-        confirmation. Detection alone does not prove the device is new or empty. If you expected an
-        existing OpenAthan, retry the connection or follow <a href="/docs/troubleshooting/"
-          >troubleshooting</a
-        >. Continue with a new installation only on supported hardware you intend to erase: confirm
-        the hardware and full erasure, then select <strong>Install OpenAthan</strong>. Installation
-        replaces existing firmware and saved data; it is not a preserving update.
-      </p><p>
-        If OpenAthan is recognized but its status cannot be read, reconnect and troubleshoot.
-        Installation is blocked to protect the existing device.
-      </p><h2>3. Choose where to set up</h2><p>
-        On releases that support phone setup, the installer shows <strong
-          >OpenAthan installed</strong
-        >. You can unplug the speaker and set it up later, choose <strong
-          >Set up with your phone</strong
-        >, or keep USB connected and choose <strong>Continue on this computer</strong>. No Wi-Fi or
-        speaker password is required to finish installation. Follow the <a href="#phone-setup"
-          >phone instructions</a
-        > below if you choose that path.
-      </p><p>
-        Earlier releases continue with USB setup. On the computer, select your home network or enter
-        its name for a hidden network, then enter its Wi-Fi password. Next, create a separate, long
-        device password. Your browser sends these credentials directly over USB; the website does
-        not store them.
-      </p><p>
-        Remember the device password. You will use the username <strong>admin</strong> to sign into the
-        device’s settings.
-      </p><h2>4. Move the power cable</h2><p>
-        When USB setup finishes, unplug the Atom’s USB cable. Connect <strong
-          >only the Pyramid’s bottom USB-C power</strong
-        > for normal speaker operation. Wait for Wi-Fi to reconnect.
-      </p><h2>5. Finish on the device</h2><p>
-        Keep your computer or phone on the same home network and open the device address shown by
-        the installer, such as <code>http://openathan-a1b2c3.local/</code>. Each device has its own
-        address. If the hostname does not work, try its displayed IP address.
-      </p><p>
-        Sign in, enter your location and timezone, choose a calculation method, and review the
-        prayer times. On current firmware, choose <strong>Find my location</strong> in the device’s settings
-        to open the optional <a href="/location/">location helper</a>. Review its suggestion, choose <strong
-          >Review on device</strong
-        >, then check the coordinates and timezone and choose
-        <strong>Preview schedule</strong>. A returned suggestion needs a ready timetable before
-        saving; if the clock has not synchronized, wait and preview again. Manual entry is always
-        available. On earlier firmware, copy the helper’s values into the settings yourself. Select <strong
-          >Finish setup</strong
-        > to enable the Athan. If the clock has not synchronized yet, Athan playback will wait.
-      </p><h2 id="phone-setup">Set up with your phone</h2><p>
-        These steps apply when the installer offers phone setup. Earlier firmware needs Wi-Fi and a
-        device password set through <a href="/install/">USB setup</a> first.
-      </p><ol>
-        <li>
-          Power the speaker normally: Pyramid bottom power only for Atom, or the rear USB-C port for
-          Waveshare Box V2.
-        </li>
-        <li>
-          Scan the screen’s Wi-Fi QR, or join the <strong>OpenAthan-Setup-</strong> network matching
-          the screen. On Atom, short-press the front button to show the QR; on Waveshare, use BOOT. Stay
-          connected when warned there is no internet.
-        </li>
-        <li>
-          Use the automatic setup page, or enter <code>http://192.168.4.1/setup/</code> while connected
-          to the setup network.
-        </li>
-        <li>
-          Choose a speaker password, select your home’s 2.4 GHz Wi-Fi and enter its password. Read
-          the permanent speaker address before connecting.
-        </li>
-        <li>
-          Rejoin home Wi-Fi, scan the speaker’s webpage QR or open its displayed address, and sign
-          in as <strong>admin</strong> with your speaker password. Review the location and prayer timetable,
-          then choose <strong>Finish setup</strong>.
-        </li>
-      </ol><p>
-        If the hostname does not open, use the current IP address shown on the speaker. On Atom,
-        press again after the webpage QR to see the addresses. The setup Wi-Fi and its
-        <code>192.168.4.1</code> address are only for initial enrollment; everyday settings use your
-        home network.
-      </p><h2 id="find-speaker-page">Find your speaker’s page again</h2><p>
-        Keep your phone or computer on the same home Wi-Fi. On firmware with screen connection
-        information, briefly press the Atom front button or Waveshare BOOT button while audio is
-        idle. Scan the webpage QR or enter the displayed address. Atom shows its QR and addresses on
-        separate screens; Waveshare shows them together. A press during audio stops playback.
-      </p><p>
-        If <code>.local</code> does not open, try the current IP address. It can change when the speaker
-        reconnects. You can also reconnect through <a href="/install/">USB setup</a> and choose
-        <strong>Continue to device settings</strong> to read its available addresses without changing
-        Wi-Fi or resetting your password. Bookmarking is optional.
-      </p><h2>Everyday use</h2><p>
-        Your speaker calculates prayer times and plays recordings stored on the device. The current
-        Atom build needs internet access to set its clock after a restart, before it can play the
-        Athan. To open its settings, connect your phone or computer to the same home Wi-Fi. Keep the
-        settings page on your trusted home network; do not make it accessible from the internet.
-      </p>
-      <h2 id="firmware-updates">Update your firmware</h2>
-      <p>
-        Open your speaker’s settings on the same home Wi-Fi and sign in. In <strong>Firmware</strong
-        >, choose <strong>Check for updates</strong>, read the release notes, then choose <strong
-          >Install update</strong
-        >. The update waits until playback finishes and the next announcement is at least 15 minutes
-        away. Keep the speaker powered while it updates and reconnects.
-      </p>
-      <p>
-        Compatible device-page updates preserve your Wi-Fi, device password, prayer settings,
-        playback history, light preferences and stored recordings. New recordings in a fresh-install
-        release do not replace the recordings on an existing speaker.
-      </p>
-      <p>
-        On v0.2.0, update checks may fail with “Could not check for updates”. Getting the fix
-        requires a preserving USB application update. If Firmware is missing or the device reports
-        an incompatible bootloader, a preserving USB transition is also required. Follow the
-        <a
-          href="https://github.com/OpenAthan-Project/openathan/blob/v0.2.1/docs/development/firmware-upgrades.md#startup-recovery-and-existing-devices"
-          >preserving upgrade guide</a
-        >
-        or <a href="https://github.com/OpenAthan-Project/openathan/issues">ask for firmware help</a
-        >. Do not use a new installation to update an existing speaker: it erases saved data.
-      </p>
+        </strong>
+        {
+          release && (
+            <a href={`${firmware}/releases/tag/${release.tag}`}>Read the current release notes</a>
+          )
+        }
+      </aside>
       {
-        release && (
-          <p>
-            <a href={`https://github.com/OpenAthan-Project/openathan/releases/tag/${release.tag}`}>
-              Read the current release notes
-            </a>
-            .
-          </p>
-        )
+        speakers.map(({ hardware, name, setupAnchor, connect, releaseTag }) => (
+          <section id={setupAnchor} data-setup-model={hardware} class="model-setup">
+            <div class="model-context">
+              <h3 tabindex="-1">Setup for {name}</h3>
+              <a class="guide-link" href="#choose-speaker">
+                Choose a different speaker
+              </a>
+            </div>
+            <p>
+              <a class="guide-link" href="#phone-setup">
+                Speaker installed? Continue to phone setup
+              </a>
+            </p>
+            <p>
+              You’ll need a computer running desktop Chrome or Edge, a USB-C <strong>data</strong>{' '}
+              cable, and 2.4 GHz WPA2 or WPA3 personal Wi-Fi. A charging-only cable cannot install
+              firmware. Use a network without an enterprise sign-in or a web sign-in page.
+            </p>
+            <p>{connect} Connect the speaker to your computer with a USB-C data cable.</p>
+            {hardware === HARDWARE && <CableDiagram connection="setup" />}
+            <p>
+              {releaseTag
+                ? `OpenAthan ${releaseTag} is available for this model.`
+                : 'Public installation is not currently available for this model.'}
+            </p>
+            {releaseTag && (
+              <>
+                <p>
+                  Close any other browser tab or serial tool using the speaker. Open USB setup and
+                  select <strong>Choose USB device</strong>. Choose the connected serial device and
+                  confirm the speaker model before selecting <strong>Install OpenAthan</strong>.
+                </p>
+                <aside class="notice">
+                  <strong>
+                    A new installation erases existing firmware, Wi-Fi details, settings, and prayer
+                    history.
+                  </strong>
+                  <p>
+                    Already running OpenAthan? See <a href="#firmware-updates">firmware updates</a>{' '}
+                    or <a href="#usb-recovery">USB recovery</a>.
+                  </p>
+                </aside>
+                <a class="button" href="/install/">
+                  Open USB setup
+                </a>
+                <details>
+                  <summary>USB setup shows an existing or unrecognized device</summary>
+                  <div>
+                    <p>
+                      USB setup checks for OpenAthan before it offers installation. If you expect
+                      OpenAthan and the installer cannot recognize it or read its status, reconnect
+                      and <a href="/docs/troubleshooting/">troubleshoot the connection</a>.
+                    </p>
+                    <p>
+                      Install only on supported hardware you intend to erase. Confirm the model and
+                      full erasure in USB setup.
+                    </p>
+                  </div>
+                </details>
+              </>
+            )}
+          </section>
+        ))
       }
-      <div class="actions">
-        <a class="button" href="/install/">Open device setup</a><a href="/docs/troubleshooting/"
-          >Troubleshooting</a
-        >
+    </section>
+
+    <section class="guide-section" id="phone-setup" aria-labelledby="phone-setup-title">
+      <div class="guide-copy">
+        <h2 id="phone-setup-title">3. Connect the speaker to home Wi-Fi</h2>
+        <p>
+          When USB setup offers <strong>Set up with your phone</strong>, choose it to finish now or
+          unplug and finish later. You can also <a href="#computer-setup"
+            >continue on this computer</a
+          >.
+        </p>
+        <p data-choose-setup>
+          Follow the instructions labeled for your speaker below, or <a href="#choose-speaker"
+            >choose your speaker</a
+          > to see only its steps.
+        </p>
+        <div class="guide-phase">
+          <h3>Join the speaker’s setup Wi-Fi</h3>
+          {
+            speakers.map(({ hardware, name, power, joinWifi }) => (
+              <div data-setup-model={hardware}>
+                <p>
+                  <strong>{name}.</strong> {power}
+                </p>
+                {hardware === HARDWARE && <CableDiagram connection="power" />}
+                <p>
+                  {joinWifi}{' '}
+                  {hardware === AUDIO_BOARD
+                    ? 'On your phone, join your speaker’s'
+                    : 'Scan the Wi-Fi QR code or join the displayed'}{' '}
+                  <strong>OpenAthan-Setup-…</strong> Wi-Fi network.
+                </p>
+              </div>
+            ))
+          }
+          <p>
+            Stay connected if your phone warns that this network has no internet. Open the setup
+            page. If it does not appear, visit <code>http://192.168.4.1/setup/</code> while still on
+            the speaker’s setup Wi-Fi.
+          </p>
+        </div>
+        <div class="guide-phase">
+          <h3>Prepare home Wi-Fi and save the address</h3>
+          <ol>
+            <li>
+              Create a <strong>speaker password</strong> of at least 12 characters, then choose <strong
+                >Continue to Wi-Fi</strong
+              >. Keep this password for signing in to OpenAthan.
+            </li>
+            <li>
+              Select your home Wi-Fi, enter <strong>that network’s Wi-Fi password</strong>, then
+              choose <strong>Review connection</strong>.
+            </li>
+            <li>
+              On <strong>Keep your speaker’s address</strong>, copy the permanent address shown.{
+                ' '
+              }
+              <strong>Save it before choosing Connect speaker.</strong> Use it for everyday settings.
+            </li>
+          </ol>
+        </div>
+        <div class="guide-phase">
+          <h3>Connect and reopen settings</h3>
+          <p>
+            Choose <strong>Connect speaker</strong>. The setup Wi-Fi closes while the speaker
+            connects to your home network.
+          </p>
+          <p>
+            Reconnect your phone to <strong>home Wi-Fi</strong> and open the address you saved. Sign
+            in as <strong>admin</strong> with your speaker password.
+          </p>
+          <p data-setup-model={AUDIO_BOARD}>
+            <strong>Waveshare AUDIO-Board.</strong> Bookmark the speaker’s address. If you lose it,{
+              ' '
+            }
+            <a href="#find-speaker-page"
+              >read its hostname and current IP address through USB setup</a
+            >.
+          </p>
+          <p>
+            The temporary <code>192.168.4.1</code> address works only on the speaker’s setup Wi-Fi. Use
+            the saved address on your home Wi-Fi.
+          </p>
+        </div>
+        <details>
+          <summary id="computer-setup">Finish Wi-Fi setup on this computer instead</summary>
+          <div>
+            <p>
+              Keep USB connected and choose <strong>Continue on this computer</strong> when offered.
+              Enter your home Wi-Fi details and create a separate speaker password. Your browser sends
+              these details to the speaker over USB.
+            </p>
+            <p>When USB setup gives you the speaker’s address, save it for everyday settings.</p>
+            {
+              speakers.map(({ hardware, name, power }) => (
+                <p data-setup-model={hardware}>
+                  <strong>{name}.</strong> {power}
+                </p>
+              ))
+            }
+            <p>
+              Wait for the speaker to reconnect, then open the saved address from the same home
+              Wi-Fi. Sign in as <strong>admin</strong> with your speaker password.
+            </p>
+            <p>If your firmware does not offer phone setup, use this computer path.</p>
+          </div>
+        </details>
       </div>
-      <h2 id="other-hardware">Other hardware</h2>
+    </section>
+
+    <section class="guide-section guide-copy" aria-labelledby="finish-setup-title">
+      <h2 id="finish-setup-title">4. Review prayer times and finish setup</h2>
       <p>
-        OpenAthan is designed to keep prayer calculations, scheduling, and settings independent of
-        the hardware. Hardware adapters connect these functions to a device’s audio and controls,
-        allowing contributors to develop lower-cost builds or add capabilities on other hardware.
-      </p>
-      <p>
-        Audio playback is required. Displays, status lights, buttons, touch controls, microphones, a
-        hardware clock, and removable storage are optional capabilities. Standalone operation does
-        not require Home Assistant.
-      </p>
-      <p>
-        Additional hardware integrations require development and testing. The reusable core and
-        ESPHome integration provide a starting point; broader support for optional peripherals is
-        still planned. The browser installer offers qualified releases for supported boards.
-      </p>
-      <p>For implementation details, see:</p>
-      <ul>
-        <li>
-          <a
-            href="https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/architecture.md"
-            >Firmware architecture and hardware adapters</a
-          >
-        </li>
-        <li>
-          <a
-            href="https://github.com/OpenAthan-Project/openathan/blob/main/firmware/esphome/scheduler/README.md#controls-and-reuse"
-            >Scheduler controls and reuse</a
-          >
-        </li>
-      </ul>
-    </div>
-  </article>
-  <section class="docs wrap" aria-labelledby="waveshare-setup">
-    <div class="docs-body">
-      <h2 id="waveshare-setup">Waveshare Box V2</h2>
-      <p>
-        {
-          waveshareRelease
-            ? `OpenAthan ${waveshareRelease.tag} is available for this model.`
-            : 'Support is being prepared for v0.5.0 and becomes available after its qualified release is published.'
+        In the speaker’s settings, enter your location and timezone. You can choose <strong
+          >Find my location</strong
+        >{' '}
+        to open the optional <a href="/location/">location helper</a>. Check its suggestion, choose{
+          ' '
         }
-        Use ESP32-S3-Touch-LCD-1.85C-BOX V2; V1 is not supported.
+        <strong>Review on device</strong>, and verify the coordinates and timezone. On older
+        firmware, copy the helper’s values into the settings yourself.
       </p>
       <p>
-        Connect its rear USB-C port using a USB data cable. Existing OpenAthan reports its hardware
-        automatically. For a new installation, choose Waveshare Box V2 and confirm that existing
-        firmware and saved data will be erased.
+        Choose <strong>Continue to calculation</strong> and set your calculation method. Choose{' '}
+        <strong>Review timetable</strong> to check the prayer times.
       </p>
       <p>
-        When offered, choose phone setup now or later, or continue on the computer. Earlier releases
-        use USB to save Wi-Fi and a device password first. Then open device settings to choose your
-        location, prayer settings and volume. The rear USB-C port also supplies normal power; RESET
-        restarts the device. Touch and microphones are not supported.
+        Choose <strong>Finish setup</strong> to enable scheduled Athan. Then go to{' '}
+        <strong>Athan preferences</strong> in Settings and set <strong>Volume</strong> low to start.
       </p>
+      <div class="guide-phase">
+        <h3>Check that the speaker is ready</h3>
+        <ul>
+          <li>The speaker’s status says <strong>Ready to play</strong>.</li>
+          <li>The timetable, next prayer, and enabled prayers match what you expect.</li>
+          <li>The volume is set and you have saved the settings address.</li>
+        </ul>
+        <p>Keep the speaker powered for the next scheduled Athan.</p>
+      </div>
+      <details>
+        <summary>Still seeing “Waiting for time”?</summary>
+        <div>
+          <p>
+            Leave the speaker powered and connected to home Wi-Fi with internet access so it can
+            synchronize its clock. Scheduled Athan waits until the clock is ready. Review the
+            timetable again after synchronization.
+          </p>
+          <p>
+            If the status stays the same, <a href="/docs/troubleshooting/"
+              >check the Wi-Fi connection</a
+            >. If the speaker is connected and still shows <strong>Waiting for time</strong>,{' '}
+            <a href={`${firmware}/issues`}>ask for help with clock synchronization</a>.
+          </p>
+        </div>
+      </details>
+    </section>
+
+    <section
+      class="guide-section owner-help"
+      id="existing-speaker"
+      aria-labelledby="existing-speaker-title"
+    >
+      <h2 id="existing-speaker-title">Already have OpenAthan?</h2>
+      <div class="owner-choice" hidden>
+        <label for="owner-model">Your existing speaker</label>
+        <select id="owner-model" autocomplete="off">
+          <option value="">Choose your model</option>
+          {speakers.map(({ hardware, name }) => <option value={hardware}>{name}</option>)}
+        </select>
+      </div>
+      <details>
+        <summary id="find-speaker-page">Find your speaker’s settings</summary>
+        <div class="guide-copy">
+          <p>
+            Connect your phone or computer to the same home Wi-Fi as the speaker and open its saved
+            address.
+          </p>
+          <p data-owner-prompt hidden>
+            Choose your model above to see its button or USB instructions.
+          </p>
+          {
+            speakers.map(({ hardware, name, findAddress }) => (
+              <p data-owner-model={hardware}>
+                <strong>{name}.</strong> {findAddress}
+              </p>
+            ))
+          }
+          <p>
+            If the <code>.local</code> address does not open, use the current IP address. It can change
+            when the speaker reconnects.
+          </p>
+          <p>
+            To read the address over USB, connect your speaker and open <a href="/install/"
+              >USB setup</a
+            >. Choose <strong>Continue to device settings</strong>, then <strong
+              >Open device settings</strong
+            >{' '}
+            after switching to normal power. The installer shows the available addresses before you open
+            settings.
+          </p>
+          <p>Keep the settings page on your trusted home network.</p>
+        </div>
+      </details>
+      <details>
+        <summary id="firmware-updates">Update firmware without erasing settings</summary>
+        <div class="guide-copy">
+          <p>
+            Open your speaker’s settings on the same home Wi-Fi and sign in. In <strong
+              >Updates</strong
+            >, choose <strong>Check for updates</strong>, read the release notes, then choose <strong
+              >Install update</strong
+            >. Older firmware may show this section as <strong>Firmware</strong>.
+          </p>
+          <p>
+            The update waits until playback finishes and the next announcement is at least 15
+            minutes away. Keep the speaker powered while it updates and reconnects.
+          </p>
+          <p>
+            Compatible updates preserve Wi-Fi, the device password, prayer settings, playback
+            history, light preferences, and stored recordings.
+          </p>
+          <p>
+            On v0.2.0, update checks may fail with “Could not check for updates”. Use a preserving
+            USB application update for the fix. If the update section is missing or the device
+            reports an incompatible bootloader, follow the{' '}
+            <a
+              href={`${firmware}/blob/v0.2.1/docs/development/firmware-upgrades.md#startup-recovery-and-existing-devices`}
+              >preserving upgrade guide</a
+            >. A new installation erases saved data.
+          </p>
+        </div>
+      </details>
+      <details>
+        <summary id="usb-recovery">Change Wi-Fi or reset a forgotten speaker password</summary>
+        <div class="guide-copy">
+          <p data-owner-prompt hidden>Choose your model above for the correct USB connection.</p>
+          {
+            speakers.map(({ hardware, name, connect }) => (
+              <p data-owner-model={hardware}>
+                <strong>{name}.</strong> {connect}
+              </p>
+            ))
+          }
+          <p>
+            Use a USB-C data cable and open <a href="/install/">USB setup</a>. When the installer
+            recognizes your speaker, choose the action you need.
+          </p>
+          <ul>
+            <li>If the speaker’s Wi-Fi is disconnected, choose <strong>Connect Wi-Fi</strong>.</li>
+            <li>
+              If Wi-Fi is connected and the speaker has no password, choose{' '}
+              <strong>Create device password</strong> below its status.
+            </li>
+            <li>
+              To change a saved Wi-Fi network or reset a forgotten password, open{' '}
+              <strong>Wi-Fi and password recovery</strong>. Choose <strong>Change Wi-Fi</strong> or{
+                ' '
+              }
+              <strong>Reset device password</strong>.
+            </li>
+          </ul>
+          <p>
+            Recovery changes only the Wi-Fi or password you choose. It preserves prayer settings and
+            playback history.
+          </p>
+        </div>
+      </details>
       <p>
-        The onboard RTC restores previously synchronized time across powered restarts. First use
-        needs internet time. Retention after unplugging, battery behavior and clock drift remain
-        unqualified.
-      </p>
-    </div>
-  </section>
-  <section class="docs wrap" aria-labelledby="audio-board-setup">
-    <div class="docs-body">
-      <h2 id="audio-board-setup">Waveshare AUDIO-Board (no screen)</h2>
-      <p>
-        {
-          audioBoardRelease
-            ? `OpenAthan ${audioBoardRelease.tag} is available for this model.`
-            : 'Public installation is not currently available for this model.'
-        }
-        Public installation requires hardware qualification and a compatible published release. The AUDIO-Board
-        is a different model from the Box V2; check the exact board and revision before installing.
-      </p>
-      <p>
-        This profile uses the speaker’s USB-C port for installation and normal power. It provides
-        prayer-status RGB lights. KEY1 lowers volume, KEY2 stops playback and KEY3 raises volume.
-        Microphones, external displays, SD storage and battery management are not supported.
-      </p>
-      <p>
-        An optional <a href="https://makerworld.com/models/3509161"
-          >3D-printable lid on MakerWorld</a
+        <a class="guide-link" href="/docs/troubleshooting/"
+          >Troubleshoot a connection or setup problem</a
         >
-        makes the K1, K2 and K3 buttons easier to press.
       </p>
-      <p>
-        With USB-C at the top, the buttons down the right edge are <strong
-          >RESET → BOOT → KEY3 → KEY2 → KEY1</strong
-        >. A short BOOT press also stops playback; hold it for 2–5 seconds to skip the next Athan,
-        or 6–10 seconds to cancel a skip. RESET restarts the speaker.
-      </p>
-      <p>
-        When phone setup is offered, join <strong>OpenAthan-Setup-</strong> Wi-Fi. Open <code
-          >http://192.168.4.1/setup/</code
-        > if the setup page does not appear. Copy the permanent address shown before connecting to home
-        Wi-Fi. Rejoin home Wi-Fi, open that address, review prayer settings and choose <strong
-          >Finish setup</strong
-        >.
-      </p>
-      <p>
-        Bookmark the speaker address. This model has no screen or QR code. Reconnect through USB
-        setup to read its hostname and current IP address again; credential recovery does not
-        require reinstalling.
-      </p>
-    </div>
-  </section>
+    </section>
+
+    <details class="other-hardware">
+      <summary id="other-hardware">Other hardware</summary>
+      <div class="guide-copy">
+        <p>
+          Hardware adapters connect OpenAthan’s prayer calculations, scheduling, and settings to a
+          device’s audio and controls. Audio playback is required. Displays, lights, buttons, and
+          other peripherals are optional. OpenAthan works without Home Assistant.
+        </p>
+        <p>
+          Additional builds require development and testing. The browser installer offers qualified
+          releases for supported hardware.
+        </p>
+        <ul>
+          <li>
+            <a href={`${firmware}/blob/main/docs/development/architecture.md`}
+              >Firmware architecture and hardware adapters</a
+            >
+          </li>
+          <li>
+            <a
+              href={`${firmware}/blob/main/firmware/esphome/scheduler/README.md#controls-and-reuse`}
+              >Scheduler controls and reuse</a
+            >
+          </li>
+        </ul>
+      </div>
+    </details>
+  </article>
 </Layout>
+
+<script>
+  import { isHardware, type Hardware } from '../../../installer/release';
+
+  type GuideHistoryEntry = { openAthanSetupModel: Hardware | null };
+
+  const guide = document.getElementById('getting-started-guide');
+  if (guide) {
+    const setupPanels = guide.querySelectorAll<HTMLElement>('[data-setup-model]');
+    const setupModels = new Set(
+      Array.from(setupPanels, (panel) => panel.dataset.setupModel).filter(isHardware),
+    );
+    const setupLinks = guide.querySelectorAll<HTMLAnchorElement>('#choose-speaker a[href^="#"]');
+    const chooseSetup = guide.querySelector<HTMLElement>('[data-choose-setup]');
+    const ownerChoice = guide.querySelector<HTMLElement>('.owner-choice');
+    const ownerModel = guide.querySelector<HTMLSelectElement>('#owner-model');
+    const ownerPanels = guide.querySelectorAll<HTMLElement>('[data-owner-model]');
+    const ownerPrompts = guide.querySelectorAll<HTMLElement>('[data-owner-prompt]');
+
+    let setupModel: Hardware | null = null;
+
+    function isSetupModel(value: unknown): value is Hardware {
+      return isHardware(value) && setupModels.has(value);
+    }
+
+    function readGuideHistory(state: unknown): GuideHistoryEntry | undefined {
+      if (typeof state !== 'object' || state === null || !('openAthanSetupModel' in state))
+        return undefined;
+      const model = state.openAthanSetupModel;
+      return model === null || isSetupModel(model) ? { openAthanSetupModel: model } : undefined;
+    }
+
+    function selectSetup(model: Hardware | null) {
+      setupModel = model;
+      for (const panel of setupPanels) {
+        panel.hidden = model !== null && panel.dataset.setupModel !== model;
+      }
+      for (const link of setupLinks) {
+        const selected = document.getElementById(link.hash.slice(1))?.dataset.setupModel === model;
+        if (selected) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      }
+      if (chooseSetup) chooseSetup.hidden = model !== null;
+    }
+
+    function revealFragment(hash: string) {
+      const target = document.getElementById(hash.slice(1));
+      if (!target || !guide?.contains(target)) return;
+      for (
+        let details = target.closest('details');
+        details;
+        details = details.parentElement?.closest('details') ?? null
+      ) {
+        details.open = true;
+      }
+      return target;
+    }
+
+    function restoreFragment(fallback: Hardware | null) {
+      const target = revealFragment(location.hash);
+      const fragmentModel = target?.dataset.setupModel;
+      const saved = readGuideHistory(history.state);
+      const model = isSetupModel(fragmentModel)
+        ? fragmentModel
+        : saved
+          ? saved.openAthanSetupModel
+          : fallback;
+      selectSetup(model);
+      if (!saved || saved.openAthanSetupModel !== model)
+        history.replaceState({ openAthanSetupModel: model } satisfies GuideHistoryEntry, '');
+      target?.scrollIntoView();
+    }
+
+    const defaultModel = setupPanels[0]?.dataset.setupModel;
+    const startsAtOverview = ['', '#main', '#choose-speaker'].includes(location.hash);
+    restoreFragment(startsAtOverview && isSetupModel(defaultModel) ? defaultModel : null);
+
+    guide.addEventListener('click', (event) => {
+      if (
+        !(event.target instanceof Element) ||
+        event.button !== 0 ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const link = event.target.closest<HTMLAnchorElement>('a[href^="#"]');
+      if (!link) return;
+      const target = revealFragment(link.hash);
+      const model = target?.dataset.setupModel;
+      if (!target || !isSetupModel(model)) return;
+      event.preventDefault();
+      const entry: GuideHistoryEntry = { openAthanSetupModel: model };
+      if (link.hash === location.hash) history.replaceState(entry, '');
+      else history.pushState(entry, '', link.hash);
+      selectSetup(model);
+      target.scrollIntoView();
+      target.querySelector<HTMLElement>('h3')?.focus({ preventScroll: true });
+    });
+    const handleHistoryNavigation = () => restoreFragment(setupModel);
+    window.addEventListener('popstate', handleHistoryNavigation);
+    window.addEventListener('hashchange', handleHistoryNavigation);
+
+    if (ownerChoice && ownerModel) {
+      const selectOwner = () => {
+        for (const panel of ownerPanels)
+          panel.hidden = panel.dataset.ownerModel !== ownerModel.value;
+        for (const prompt of ownerPrompts) prompt.hidden = ownerModel.value !== '';
+      };
+      ownerModel.value = '';
+      selectOwner();
+      ownerChoice.hidden = false;
+      ownerModel.addEventListener('change', selectOwner);
+    }
+  }
+</script>
+
+<style>
+  .guide h1 {
+    font-size: clamp(2.4rem, 5.5vw, 3.7rem);
+  }
+  .guide .lede,
+  .guide-copy {
+    max-width: 72ch;
+  }
+  .guide-section {
+    padding-block: 28px;
+    border-top: 1px solid var(--line);
+  }
+  #choose-speaker,
+  .other-hardware {
+    margin-bottom: 16px;
+  }
+  .guide [id] {
+    scroll-margin-top: 24px;
+  }
+  .guide p:last-child {
+    margin-bottom: 0;
+  }
+  .guide-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+  }
+  .release-summary {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    column-gap: 16px;
+    margin-block: 12px 20px;
+    padding-block: 10px;
+  }
+  .model-setup + .model-setup {
+    margin-top: 20px;
+  }
+  .model-context {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0 16px;
+    margin-block: 8px;
+  }
+  .model-context h3 {
+    margin-bottom: 0;
+  }
+  .guide-phase {
+    margin-block: 24px;
+  }
+  .guide ol,
+  .guide ul {
+    padding-left: 26px;
+  }
+  .guide li {
+    margin-bottom: 8px;
+    padding-left: 4px;
+  }
+  .guide details > div {
+    padding-block: 8px 12px;
+  }
+  .guide summary {
+    min-height: 48px;
+    padding-block: 10px;
+    cursor: pointer;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 0.16em;
+  }
+  .guide summary:hover {
+    color: var(--accent-hover);
+    text-decoration-thickness: 2px;
+  }
+  .guide details[open] > summary {
+    font-weight: 700;
+  }
+  .owner-choice {
+    max-width: 440px;
+    margin-bottom: 20px;
+  }
+  .owner-help details {
+    border-bottom: 1px solid var(--line);
+  }
+  .owner-help > p {
+    margin-top: 12px;
+  }
+  .other-hardware {
+    border-top: 1px solid var(--line);
+  }
+  @media (max-width: 640px) {
+    .guide h2 {
+      font-size: 1.6rem;
+    }
+    .guide-section {
+      padding-block: 24px;
+    }
+    .model-setup .button {
+      width: 100%;
+    }
+  }
+</style>

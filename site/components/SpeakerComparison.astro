@@ -1,0 +1,176 @@
+---
+import type { GuideSpeaker } from '../getting-started';
+
+interface Props {
+  speakers: GuideSpeaker[];
+}
+
+const { speakers } = Astro.props;
+---
+
+<table class="comparison" aria-label="Compare OpenAthan speakers">
+  <thead>
+    <tr>
+      <th scope="col"><span class="sr-only">Compare</span></th>
+      {
+        speakers.map(({ name, subtitle }) => (
+          <th scope="col">
+            {name}
+            <span>{subtitle}</span>
+          </th>
+        ))
+      }
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th scope="row">What you see</th>
+      {speakers.map(({ display }) => <td>{display}</td>)}
+    </tr>
+    <tr>
+      <th scope="row">Buttons</th>
+      {speakers.map(({ controls }) => <td>{controls}</td>)}
+    </tr>
+    <tr>
+      <th scope="row">Before buying</th>
+      {
+        speakers.map(({ buyingNote, parts }) => (
+          <td>
+            {buyingNote && <>{buyingNote} </>}
+            <a href={parts.href}>{parts.label}</a>
+          </td>
+        ))
+      }
+    </tr>
+    <tr>
+      <th scope="row">Setup</th>
+      {
+        speakers.map(({ name, setupAnchor }) => (
+          <td>
+            <a class="choice" href={`#${setupAnchor}`} aria-label={`Show setup steps for ${name}`}>
+              Show setup steps
+            </a>
+          </td>
+        ))
+      }
+    </tr>
+  </tbody>
+</table>
+
+<div class="stacked-comparison">
+  {
+    speakers.map(({ name, subtitle, display, controls, buyingNote, parts, setupAnchor }) => (
+      <article>
+        <h3>{name}</h3>
+        <p>{subtitle}</p>
+        <dl>
+          <div>
+            <dt>What you see</dt>
+            <dd>{display}</dd>
+          </div>
+          <div>
+            <dt>Buttons</dt>
+            <dd>{controls}</dd>
+          </div>
+          <div>
+            <dt>Before buying</dt>
+            <dd>
+              {buyingNote && <>{buyingNote} </>}
+              <a href={parts.href}>{parts.label}</a>
+            </dd>
+          </div>
+        </dl>
+        <a class="choice" href={`#${setupAnchor}`} aria-label={`Show setup steps for ${name}`}>
+          Show setup steps
+        </a>
+      </article>
+    ))
+  }
+</div>
+
+<style>
+  .comparison {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    margin-block: 20px 16px;
+    font-size: 1.125rem;
+  }
+  th,
+  td {
+    border-bottom: 1px solid var(--line);
+    padding: 12px 14px;
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+  }
+  th:first-child {
+    width: 15%;
+    padding-left: 0;
+  }
+  thead th {
+    border-top: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 1.25rem;
+    line-height: 1.3;
+  }
+  thead th > span:not(.sr-only) {
+    display: block;
+    margin-top: 8px;
+    color: var(--text);
+    font-size: 1.125rem;
+    font-weight: 400;
+  }
+  .choice {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    font-weight: 700;
+  }
+  .choice[aria-current='true']::after {
+    content: 'Selected';
+    margin-left: 8px;
+    color: var(--text);
+    font-size: 1rem;
+    font-weight: 400;
+  }
+  .stacked-comparison {
+    display: none;
+  }
+  @media (max-width: 640px) {
+    .comparison {
+      display: none;
+    }
+    .stacked-comparison {
+      display: block;
+      margin-bottom: 16px;
+    }
+    .stacked-comparison article {
+      padding-block: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+    .stacked-comparison article:first-child {
+      padding-top: 8px;
+    }
+    .stacked-comparison h3,
+    .stacked-comparison p {
+      margin-bottom: 8px;
+    }
+    dl {
+      margin-block: 10px 4px;
+    }
+    dl > div {
+      display: grid;
+      grid-template-columns: 90px minmax(0, 1fr);
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    dt {
+      font-weight: 700;
+    }
+    dd {
+      margin: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+</style>
