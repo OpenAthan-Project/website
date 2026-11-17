@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
-import { AUDIO_BOARD } from '../../installer/release';
+import { AUDIO_BOARD, HARDWARE, WAVESHARE } from '../../installer/release';
+import type { Metadata } from '../../tools/release-selection';
 
 test('USB setup requires an explicit connection request', async ({ page }) => {
   let requests = 0;
@@ -33,7 +34,7 @@ test('served metadata, version labels, release links and installer use one selec
 }) => {
   const response = await request.get('/release.json');
   expect(response.ok()).toBe(true);
-  const served = await response.json();
+  const served: Metadata = await response.json();
   expect(served.schema).toBe(1);
   expect(served.websiteCommit).toMatch(/^[a-f0-9]{40}$/);
   for (const path of ['/', '/docs/', '/docs/getting-started/']) {
@@ -48,15 +49,37 @@ test('served metadata, version labels, release links and installer use one selec
         ),
       ).toBeVisible();
     if (path === '/docs/getting-started/') {
-      const audioBoardRelease = served.hardwareReleases?.[AUDIO_BOARD];
-      const availability = page
-        .locator('section[aria-labelledby="audio-board-setup"]')
-        .locator('p')
-        .first();
-      await expect(availability).toContainText(
-        audioBoardRelease
-          ? `OpenAthan ${audioBoardRelease.tag} is available for this model.`
-          : 'Public installation is not currently available for this model.',
+      for (const [hardware, name, anchor] of [
+        [AUDIO_BOARD, 'Waveshare AUDIO-Board', 'audio-board-setup'],
+        [WAVESHARE, 'Waveshare Box V2', 'waveshare-setup'],
+        [HARDWARE, 'M5Stack AtomS3R + Voice Pyramid', 'atom-setup'],
+      ] as const) {
+        const modelRelease =
+          hardware === HARDWARE ? served.release : served.hardwareReleases?.[hardware];
+        await page.getByRole('link', { name: `Show setup steps for ${name}` }).click();
+        const setup = page.locator(`#${anchor}`);
+        await expect(
+          setup.getByText(
+            modelRelease
+              ? `OpenAthan ${modelRelease.tag} is available for this model.`
+              : 'Public installation is not currently available for this model.',
+          ),
+        ).toBeVisible();
+        const freshInstall = setup.getByRole('link', { name: 'Open USB setup', exact: true });
+        if (modelRelease) {
+          await expect(freshInstall).toBeVisible();
+          await expect(freshInstall).toHaveAttribute('href', '/install/');
+        } else {
+          await expect(freshInstall).toHaveCount(0);
+        }
+      }
+      await page
+        .getByText('Change Wi-Fi or reset a forgotten speaker password', { exact: true })
+        .click();
+      const recovery = page.locator('details').filter({ has: page.locator('#usb-recovery') });
+      await expect(recovery.getByRole('link', { name: 'USB setup', exact: true })).toHaveAttribute(
+        'href',
+        '/install/',
       );
     }
   }

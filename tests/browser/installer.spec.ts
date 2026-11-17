@@ -662,11 +662,23 @@ test('AUDIO-Board requires explicit model confirmation and offers screenless pho
   await help.press('Enter');
   await expect(page).toHaveURL(/\/docs\/getting-started\/#audio-board-setup$/);
   await expect(page.locator('#audio-board-setup')).toBeInViewport();
-  const guidance = page.locator('section[aria-labelledby="audio-board-setup"]');
+  await page
+    .locator('#audio-board-setup')
+    .getByRole('link', { name: /Continue to phone setup/ })
+    .click();
+  await expect(page).toHaveURL(/#phone-setup$/);
+  const guidance = page.locator('#phone-setup');
   await expect(guidance.getByText('http://192.168.4.1/setup/', { exact: true })).toBeVisible();
-  await expect(guidance).toContainText('Copy the permanent address shown before connecting');
-  await expect(guidance).toContainText('Bookmark the speaker address.');
-  await expect(guidance).toContainText('read its hostname and current IP address again');
+  await expect(guidance.getByText('Save it before choosing Connect speaker.')).toBeVisible();
+  await expect(guidance.getByText(/Bookmark the speaker’s address/)).toBeVisible();
+  const lookup = guidance.getByRole('link', {
+    name: 'read its hostname and current IP address through USB setup',
+  });
+  await lookup.click();
+  const settingsHelp = page.locator('details').filter({ has: page.locator('#find-speaker-page') });
+  await expect(
+    settingsHelp.getByText('Continue to device settings', { exact: true }),
+  ).toBeVisible();
 });
 test('recognized AUDIO-Board preserves the existing-device path', async ({ page }) => {
   await demo(page, 'audio-board');
