@@ -103,7 +103,10 @@ test('existing-owner update guidance is reachable by keyboard and retains the lo
   await page.getByRole('link', { name: 'Update an existing speaker' }).press('Enter');
   await expect(page).toHaveURL(/#firmware-updates$/);
   await expect(page.locator('#firmware-updates')).toBeInViewport();
-  await expect(page.getByText(/The update waits until playback finishes/)).toBeVisible();
+  const updateTiming = page.getByText(/playback finishes/);
+  await expect(updateTiming).toBeVisible();
+  await expect(updateTiming).toContainText('the clock is valid');
+  await expect(updateTiming).toContainText('at least 15 minutes away');
   await expect(page.getByText(/On v0.2.0, update checks may fail/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'preserving upgrade guide' })).toHaveAttribute(
     'href',
