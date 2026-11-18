@@ -1,14 +1,14 @@
 # OpenAthan browser installer
 
 The AUDIO-Board profile adds `waveshare-esp32-s3-audio-board` with
-`waveshare-audio-board.` artifact names and 16 MiB image headers. It remains
-unavailable publicly until a qualified stable release supplies its manifest.
+`waveshare-audio-board.` artifact names and 16 MiB image headers. Fresh installation
+requires the selected approved stable release to supply the matching manifest.
 Older Atom-only and Atom/Box releases remain accepted. No firmware is compiled
 by this repository. The screenless phone handoff supplies setup-network/manual
 URL guidance and recommends bookmarking the returned address; USB status is the
 fallback for rediscovery.
 
-The `/install/` wizard has one **Connect speaker** entry with a **Choose USB device** action. Read-only discovery then opens existing-speaker controls or new-installation confirmation. Installation and credential recovery remain separate operations. Supported reference hardware is M5Stack AtomS3R C126 + Pyramid A167, with an unlocked ESP32-S3 and 8 MiB flash. USB setup targets desktop Chrome and Edge with Web Serial in a secure context. The documentation at `/docs/` remains available in other browsers.
+The `/install/` wizard has one **Connect speaker** entry with a **Choose USB device** action. Read-only discovery then opens existing-speaker controls or new-installation confirmation. Installation and credential recovery remain separate operations. Supported profiles are M5Stack AtomS3R C126 + Pyramid A167 with 8 MiB flash, Waveshare Box V2 with 16 MiB flash, and Waveshare AUDIO-Board with 16 MiB flash. Each requires an unlocked ESP32-S3 and its matching release artifacts; chip detection alone cannot identify the board. USB setup targets desktop Chrome and Edge with Web Serial in a secure context. The documentation at `/docs/` remains available in other browsers.
 
 The website adopts the firmware repository’s latest approved stable release after verification and website tests. The committed pin is a local-preview default and a manual rollback option, not a version label that needs changing for every release. Credential recovery remains a command-only operation after discovery.
 
@@ -22,7 +22,7 @@ Capable fresh installations stop at **OpenAthan installed**, before Wi-Fi or pas
 
 Status faults and failed status reads revoke the deferred phone option and keep their recovery guidance visible through a later disconnect. Unplugging during a pending phone-choice read can retain the verified installation handoff when that read rejects; a returned fault or configured status takes precedence over those provisional phone instructions.
 
-The phone flow is staged until an approved published release supplies the capability field. Firmware publication, automatic release selection, qualification and rollout remain separate. The development scenarios `phone-new` and `phone-waveshare-new` exercise it without hardware; `new-device` and `waveshare-new` exercise legacy USB setup.
+The phone flow is available only when the selected approved release supplies the capability field. Firmware publication, automatic release selection, qualification and rollout remain separate. The development scenarios `phone-new` and `phone-waveshare-new` exercise it without hardware; `new-device` and `waveshare-new` exercise legacy USB setup.
 
 ## Protocol and session ownership
 
@@ -43,9 +43,9 @@ Recovery never imports or invokes the flashing adapter, erase operations or sett
 
 ## Preserving USB updates
 
-`catalog.json` has an optional `usbUpdateEnabled` boolean, omitted or `false` by default. It is currently **true**, enabling the website ahead of the next USB-capable firmware release. Release discovery carries this reviewed policy through the frozen selection, so automatic adoption of a newer approved release retains USB support without another activation PR. A transfer still requires capable confirmed firmware, a compatible bootloader, verified signed artifacts and a newer version. Released firmware through v0.4.0 needs an initial Wi-Fi or maintainer update. This setting does not publish firmware or change the schema-1 fresh-install manifest or `/release.json`.
+`catalog.json` has an optional `usbUpdateEnabled` boolean, omitted or `false` by default. It is currently **true**, enabling preserving USB updates for compatible firmware. Release discovery carries this reviewed policy through the frozen selection, so automatic adoption of a newer approved release retains USB support without another activation PR. A transfer still requires capable confirmed firmware, a compatible bootloader, verified signed artifacts and a newer version. Firmware through v0.4.0 needs an initial Wi-Fi or maintainer update. This setting does not publish firmware or change the schema-1 fresh-install manifest or `/release.json`.
 
-The firmware repository's [dated hardware observations](https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/usb-update-qualification-2026-10-09.md) record actual Chrome/Edge transfers, interruption handling, failed-startup rollback and preservation, along with unresolved timing observations and coverage limits. Review those limits during qualification of the next capable firmware release; website activation does not establish release readiness.
+The firmware repository's [dated hardware observations](https://github.com/OpenAthan-Project/openathan/blob/main/docs/development/usb-update-qualification-2026-10-09.md) record actual Chrome/Edge transfers, interruption handling, failed-startup rollback and preservation, along with unresolved timing observations and coverage limits. Review those limits during release qualification; website activation does not establish release readiness.
 
 **Check for updates** explicitly probes read-only firmware INFO command `0x10`; connection alone does not probe firmware or download update artifacts. Error 2 identifies legacy firmware: owners need an initial Wi-Fi or maintainer update, with credential recovery still available. New firmware reports its actual version/commit, boot health and update state. Unsupported bootloaders, pending startup checks and conflicting updates prevent offers. Checking never mutates the speaker.
 
@@ -59,11 +59,11 @@ Each update asset download has a 60-second deadline covering response headers an
 
 Chunks contain a device-issued 64-bit token, descriptor/application kind and exact offset. Each acknowledgement must echo the token/kind and next offset. Writes are sent once. Lost or malformed replies block later mutation; FINISH rejection or failed readback is also uncertain because boot selection may have succeeded. Reconnect and read authoritative firmware state before another owner decision. No automatic transfer retry or conversion to a device-side network download occurs. A rebooted incomplete request can be discarded explicitly through USB; a verified selected image cannot be discarded.
 
-Completion means **Update written and verified**, followed by Atom USB unplug and Pyramid bottom-only power. The browser displays this handoff as soon as writing and boot selection are verified, before closing USB. Cleanup errors show a nonfatal connection notice; disconnects, including earlier queued notices, cannot replace the power instructions or conditional settings guidance. **Finish power handoff** after reconnecting to an `awaiting_power` device has the same protection, even when Wi-Fi or password status is missing. Returning to the connection screen resets that protection. Installation and credential recovery retain their existing completion sequence.
+Completion means **Update written and verified**, followed by the model's power handoff. Atom uses Pyramid bottom-only power after unplugging Atom USB. Box V2 and AUDIO-Board retain their USB-C power and use RESET when prompted. The browser displays this handoff as soon as writing and boot selection are verified, before closing USB. Cleanup errors show a nonfatal connection notice; disconnects, including earlier queued notices, cannot replace the power instructions or conditional settings guidance. **Finish power handoff** after reconnecting to an `awaiting_power` device has the same protection, even when Wi-Fi or password status is missing. Returning to the connection screen resets that protection. Installation and credential recovery retain their existing completion sequence.
 
-When Wi-Fi is connected and the device password is ready, the handoff retains settings links and sign-in instructions. An absent password instead requires creation through USB setup after startup; settings links and sign-in instructions are withheld until recovery is complete. Disconnected Wi-Fi may reconnect using saved network settings and does not prove that credentials are missing. Let the speaker start on bottom power and reconnect first; use USB recovery if it remains offline.
+When Wi-Fi is connected and the device password is ready, the handoff retains settings links and sign-in instructions. An absent password instead requires creation through USB setup after startup; settings links and sign-in instructions are withheld until recovery is complete. Disconnected Wi-Fi may reconnect using saved network settings and does not prove that credentials are missing. Let the speaker start on its normal power connection and reconnect first; use USB recovery if it remains offline.
 
-For USB recovery after startup, disconnect Pyramid bottom power before reconnecting Atom USB. Select **Back to connection**, reconnect, and choose **Check for updates**. Resolve any remaining update prompts before repairing Wi-Fi or creating the device password. After recovery, unplug Atom USB and return to Pyramid bottom-only power before opening the device's settings.
+For USB recovery after startup, use the model's USB data connection. On Atom, disconnect Pyramid bottom power before reconnecting Atom USB; Waveshare uses its normal USB-C port. Select **Back to connection**, reconnect, and choose **Check for updates**. Resolve any remaining update prompts before repairing Wi-Fi or creating the device password. After recovery, return to normal power before opening the device's settings.
 
 Verified writing and selection do not mean startup succeeded. Owners confirm the installed version and health result on the device page after startup; the firmware retains its existing confirmation/rollback checks. A failed or uncertain transfer still requires reconnecting and reading firmware status, without an automatic resend or success claim. Settings, prayer-consumption history and shared audio are outside the application write range.
 
