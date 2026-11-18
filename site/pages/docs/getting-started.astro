@@ -49,11 +49,17 @@ const firmware = 'https://github.com/OpenAthan-Project/openathan';
             OpenAthan uses the board’s lights and speaker. Microphones, external displays, SD
             storage, and battery management are unsupported.
           </p>
+          <p>
+            Like the Box V2, the AUDIO-Board has an onboard PCF85063 real-time clock. It can restore
+            synchronized time across powered restarts. First use needs internet time. Time retention
+            while unplugged and backup-battery operation remain unverified.
+          </p>
           <h3>Waveshare Box V2</h3>
           <p>
             Look for ESP32-S3-Touch-LCD-1.85C-BOX V2. RESET restarts the speaker. OpenAthan uses the
-            display, and touch and microphones are unsupported. The onboard clock can retain
-            synchronized time across powered restarts. First use still needs internet time.
+            display, and touch and microphones are unsupported. The onboard PCF85063 real-time clock
+            can restore synchronized time across powered restarts. First use needs internet time.
+            Time retention while unplugged and backup-battery operation remain unverified.
           </p>
           <h3>M5Stack AtomS3R + Voice Pyramid</h3>
           <p>
@@ -323,6 +329,11 @@ const firmware = 'https://github.com/OpenAthan-Project/openathan';
             Connect your phone or computer to the same home Wi-Fi as the speaker and open its saved
             address.
           </p>
+          <p>
+            On firmware with the speaker finder, open <code>http://openathan.local/</code> to choose
+            a speaker by name or short ID. If the finder does not open, use the speaker’s individual
+            address or read its current address over USB.
+          </p>
           <p data-owner-prompt hidden>
             Choose your model above to see its button or USB instructions.
           </p>
@@ -353,6 +364,12 @@ const firmware = 'https://github.com/OpenAthan-Project/openathan';
         <summary id="firmware-updates">Update firmware without erasing settings</summary>
         <div class="guide-copy">
           <p>
+            Firmware with automatic-update support enables it by default, including after a
+            preserving update on an existing speaker. Use <strong
+              >Settings → Updates → Automatic updates</strong
+            > to turn it off. Older speakers need one preserving update to receive this feature.
+          </p>
+          <p>
             Open your speaker’s settings on the same home Wi-Fi and sign in. In <strong
               >Updates</strong
             >, choose <strong>Check for updates</strong>, read the release notes, then choose <strong
@@ -360,8 +377,9 @@ const firmware = 'https://github.com/OpenAthan-Project/openathan';
             >. Older firmware may show this section as <strong>Firmware</strong>.
           </p>
           <p>
-            The update waits until playback finishes and the next announcement is at least 15
-            minutes away. Keep the speaker powered while it updates and reconnects.
+            Installation waits until playback finishes, the clock is valid, and the next
+            announcement is at least 15 minutes away. Keep the speaker powered while it updates and
+            reconnects.
           </p>
           <p>
             Compatible updates preserve Wi-Fi, the device password, prayer settings, playback

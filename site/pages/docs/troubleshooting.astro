@@ -13,12 +13,22 @@ import Layout from '../../layouts/Layout.astro';
       </p>
     </div><div class="docs-body">
       <p>
-        These instructions are for a speaker built with the AtomS3R C126 and Pyramid A167. For
-        custom builds, see <a href="/docs/getting-started/#other-hardware">Other hardware</a>.
+        These instructions cover Waveshare AUDIO-Board, Waveshare Box V2, and AtomS3R C126 with
+        Voice Pyramid A167. For custom builds, see <a href="/docs/getting-started/#other-hardware"
+          >Other hardware</a
+        >.
       </p>
       <h2>Connect for USB recovery</h2><ol>
-        <li>Unplug the Pyramid’s bottom power cable.</li><li>
-          Connect your computer to the Atom’s USB-C with a data cable.
+        <li>
+          Connect your computer with a USB data cable using the port for your model:
+          <ul>
+            <li><strong>Waveshare AUDIO-Board:</strong> use the board’s USB-C port.</li>
+            <li><strong>Waveshare Box V2:</strong> use the rear USB-C port.</li>
+            <li>
+              <strong>AtomS3R + Voice Pyramid:</strong> unplug the Pyramid’s bottom power cable, then
+              use the Atom’s own USB-C port.
+            </li>
+          </ul>
         </li><li>
           Open <a href="/install/">USB setup</a> in desktop Chrome or Edge, select <strong
             >Choose USB device</strong
@@ -63,12 +73,13 @@ import Layout from '../../layouts/Layout.astro';
         Password recovery signs out existing sessions. It does not reinstall firmware, reset prayer
         settings, or erase playback history.
       </p><p>
-        After either change, unplug the Atom’s USB cable and reconnect only the Pyramid’s bottom
-        power. Open the device’s settings on the same home network and sign in as <strong
+        After either change, return the speaker to normal power. On Atom, unplug its USB cable and
+        reconnect only the Pyramid’s bottom power. On Waveshare, keep using the model’s USB-C power
+        port. Open the speaker’s settings on the same home network and sign in as <strong
           >admin</strong
         >.
       </p><h2>No device appears</h2><p>
-        Check that your cable transfers data and is connected to the Atom’s port. Close other
+        Check that your cable transfers data and is connected to your model’s USB port. Close other
         browser tabs or serial tools using the device. If you cancelled the browser picker, select
         the connection button again when ready.
       </p><h2>The port is busy or the connection drops</h2><p>
@@ -97,12 +108,11 @@ import Layout from '../../layouts/Layout.astro';
           href="https://github.com/OpenAthan-Project/openathan/issues">firmware issue tracker</a
         >. Do not reinstall as a shortcut to repairing credentials.
       </p><h2>The settings page will not open</h2><p>
-        Use the device’s exact address, not a generic <code>openathan.local</code>. Try the IP
-        fallback from USB setup. Keep your phone on the same home network; guest-network isolation
-        can prevent access. An IP address may change after reconnecting, so read it again over USB
-        if needed. See <a href="/docs/getting-started/#find-speaker-page"
-          >Find your speaker’s page again</a
-        >
+        On firmware with the speaker finder, open <code>http://openathan.local/</code> and choose your
+        speaker. If the finder is unavailable, use the speaker’s individual hostname or the IP fallback
+        from USB setup. Keep your phone on the same home network; guest-network isolation can prevent
+        access. An IP address may change after reconnecting, so read it again over USB if needed. See
+        <a href="/docs/getting-started/#find-speaker-page">Find your speaker’s page again</a>
         for screen QR and current-address instructions on firmware that supports them.
       </p><h2>Installation was interrupted</h2><p>
         If USB disconnects during installation, unplug the cable, reload the installer page, then
@@ -110,10 +120,11 @@ import Layout from '../../layouts/Layout.astro';
         not reconnect, reconnect through USB setup to check the speaker; do not reinstall. Do not
         restore an old full-flash backup as routine recovery: it can restore old prayer history.
       </p><p>
-        The browser installer does not perform firmware upgrades on existing devices. Use the <a
+        Existing speakers can use a signed application update from their settings page or the
+        preserving USB updater when their firmware supports it. Follow the <a
           href="/docs/getting-started/#firmware-updates">firmware update instructions</a
         >
-        for the device-page update path and preserving USB transitions.
+        and the USB updater’s completion prompts. A fresh installation erases saved data.
       </p><div class="actions">
         <a class="button" href="/install/">Connect speaker</a><a href="/docs/getting-started/"
           >Setup instructions</a

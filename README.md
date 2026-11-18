@@ -10,11 +10,11 @@ Visit [openathan.com](https://openathan.com) for supported hardware, installatio
 
 ## Installation and updates
 
-Connect once through USB setup: the website checks the speaker and shows existing-device controls or installation confirmation. The browser installer supports fresh installation on **AtomS3R C126 + Pyramid A167** and Wi-Fi/password recovery for existing devices. **Fresh installation erases saved data.** Existing owners should [update from the device page or follow the preserving USB transition](https://openathan.com/docs/getting-started/#firmware-updates).
+Connect once through USB setup: the website checks the speaker and shows existing-device controls or installation confirmation. Fresh installation supports **Waveshare AUDIO-Board**, **Waveshare Box V2**, and **AtomS3R C126 + Pyramid A167** when the selected published release supplies the matching profile. USB recovery repairs Wi-Fi or the speaker password without reinstalling. **Fresh installation erases saved data.** Existing owners should [update from the device page or use the preserving USB updater](https://openathan.com/docs/getting-started/#firmware-updates).
 
 For a verified fresh release advertising phone setup, installation finishes before credentials are entered. Owners can unplug and set up later, use a phone, or continue over USB on the computer. Releases without that capability retain USB setup. This support does not publish or select a new firmware release.
 
-Existing speakers show one main task, a firmware status row and expandable Wi-Fi/password recovery. Signed application-only USB updates are enabled for firmware that explicitly supports them. Released firmware through v0.4.0 needs an initial Wi-Fi or maintainer update to gain USB support. The website is ready ahead of the next capable release; publishing that approved release as latest lets the existing release checks adopt it automatically. Firmware publication and qualification remain separate from this website setting.
+Existing speakers show one main task, a firmware status row and expandable Wi-Fi/password recovery. Signed application-only USB updates are enabled for firmware that explicitly supports them. Firmware through v0.4.0 needs an initial Wi-Fi or maintainer update to gain USB support. Automatic release selection retains the reviewed USB-update policy when adopting a newer approved release. Firmware publication and qualification remain separate from this website setting.
 
 The installer uses the latest approved stable OpenAthan release. The website is scheduled to check for releases twice hourly and deploys only after artifact verification and website tests pass. See the [deployment guide](deployment/README.md) for timing limitations, release selection, and rollback.
 
